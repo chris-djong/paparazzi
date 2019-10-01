@@ -30,6 +30,7 @@
 
 #include "state.h"
 #include "firmwares/fixedwing/nav.h"
+#include "modules/ctrl/follow_me.h"
 #include <stdint.h>
 
 // ap copy of fbw readings
@@ -64,6 +65,10 @@ static void send_estimator(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_ESTIMATOR(trans, dev, AC_ID,
                           &(stateGetPositionUtm_f()->alt), &(stateGetSpeedEnu_f()->z));
+}
+
+static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow);
 }
 
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
@@ -123,6 +128,7 @@ void autopilot_firmware_init(void)
 
 #if PERIODIC_TELEMETRY
   /* register some periodic message */
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PPRZ_MODE, send_mode);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ESTIMATOR, send_estimator);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED, send_airspeed);
