@@ -96,6 +96,10 @@
       <field name="pos_y" type="float" unit="m" format="%.1f"/>
       <field name="dist_wp" type="float" format="%.1f" unit="m"/>
       <field name="dist_home" type="float" format="%.1f" unit="m"/>
+      <field name="flight_time" type="uint16" unit="s"/>
+      <field name="block_time" type="uint16" unit="s"/>
+      <field name="stage_time" type="uint16" unit="s"/>
+      <field name="kill_auto_throttle" type="uint8" unit="bool"/>
       <field name="circle_count" type="uint8"/>
       <field name="oval_count" type="uint8"/>
     </message>
@@ -109,15 +113,13 @@
       <field name="mcu1_status" type="uint8" values="LOST|OK|REALLY_LOST"/>
     </message>
 
-    <message name="BAT" id="12">
-      <field name="throttle" type="int16" unit="pprz"/>
-      <field name="voltage" type="uint16" unit="1e-1V" alt_unit="V" alt_unit_coef="0.1"/>
-      <field name="amps" type="int16" unit="1e-2A" alt_unit="A" alt_unit_coef="0.01"/>
-      <field name="flight_time" type="uint16" unit="s"/>
-      <field name="kill_auto_throttle" type="uint8" unit="bool"/>
-      <field name="block_time" type="uint16" unit="s"/>
-      <field name="stage_time" type="uint16" unit="s"/>
-      <field name="energy" type="int16" unit="mAh"/>
+    <message name="ENERGY" id="12">
+      <field name="throttle" type="uint8" unit="%">Throttle setting</field>
+      <field name="voltage"  type="float" unit="V">Input battery voltage</field>
+      <field name="current"  type="float" unit="A">Current consumption</field>
+      <field name="power"    type="float" unit="W">Electrical power</field>
+      <field name="charge"   type="float" unit="Ah">Accumulated consumed charge</field>
+      <field name="energy"   type="float" unit="Wh">Accumulated consumed energy</field>
     </message>
 
     <message name="DEBUG_MCU_LINK" id="13">
@@ -291,7 +293,7 @@
 
     <message name="MOTOR" id="34">
       <field name="rpm" type="uint16" unit="Hz"/>
-      <field name="current" type="int32" unit="mA"/>
+      <field name="current" type="float" unit="A"/>
     </message>
 
     <message name="WP_MOVED" id="35">
@@ -312,12 +314,7 @@
       <field name="temp" type="int8" unit="deg"/>
     </message>
 
-    <message name="ENERGY" id="37">
-      <field name="bat"      type="float" unit="V"/>
-      <field name="amp"      type="float" unit="A"/>
-      <field name="energy"   type="uint16" unit="mAh"/>
-      <field name="power"   type="float" unit="W"/>
-    </message>
+    <!-- 38 is free -->
 
     <message name="DRAGSPEED" id="38">
       <description>
@@ -368,7 +365,17 @@
       <field name="alt" type="float" unit="m"/>
     </message>
 
-    <!-- 45 is free -->
+    <message name="CHIRP" id="45">
+      <field name="active"        type="uint8">Chirp is active</field>
+      <field name="percentage_done"     type="float">Percentage done</field>
+      <field name="current_frequency"   type="float">Current frequency</field>
+      <field name="axis"          type="uint8">Current chirp axis</field>
+      <field name="amplitude"           type="int16">Amplitude</field>
+      <field name="fstart"              type="float">Start frequency</field>
+      <field name="fstop"               type="float">Stop frequency</field>
+      <field name="noise_onaxis_ratio"  type="float">Noise ratio onaxis</field>
+      <field name="noise_offaxis"       type="float">Noise offaxis</field>
+    </message>
 
     <message name="BARO_WORDS" id="46">
       <field name="w1"  type="uint16"/>
@@ -622,7 +629,7 @@
       <field name="gnss"  type="uint8" values="NONE|GPS|GLONAS|GPS+GLONAS|BEIDOU|GPS+BEIDOU|GLONAS+BEIDOU|GPS+GLONAS+BEIDOU|GALILEO"/>
     </message>
 
-    <!-- Message for follow_me_module --> 
+    <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
       <field name="Soaring_location" type="float"/>
       <field name="Desired_groundspeed" type="float"/>
@@ -635,6 +642,8 @@
       <field name="Follow_difference_distance" type="float"/>
       <field name="Distance_WP" type="float"/>
     </message>
+
+
     <!-- 76 is free -->
     <!-- 77 is free -->
 
@@ -664,19 +673,30 @@
       <field name="index_list" type="uint8[]"/>
     </message>
 
-    <!-- 80 is free -->
+    <message name="JEVOIS" id="80">
+      <description>
+        Debug message for the JeVois smart camera
+        corresponding to the standardized messages
+      </description>
+      <field name="type" type="uint8">Standardized message type JEVOIS_MSG_[T1|N1|D1|T2|N2|D2|F2|T3|N3|D3|F3]</field>
+      <field name="id" type="char[]">Text string describing the reported object</field>
+      <field name="nb" type="uint8">Number of elements in the coordinates array</field>
+      <field name="coord" type="int16[]">List of coordinates corresponding to 1D, 2D or 3D messages</field>
+      <field name="dim" type="uint16[3]">1, 2 or 3D dimension</field>
+      <field name="quat" type="float[4]">Quaternion that relates the object's frame to the camera's frame, if appropriate</field>
+    </message>
 
     <message name="GENERIC_COM" id="81">
-      <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="alt" type="int16" unit="m"/>
-      <field name="gspeed" type="uint16" unit="cm/s" alt_unit="m/s"/>
-      <field name="course" type="int16" unit="decideg" alt_unit="deg"/>
+      <field name="lat"      type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"      type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt"      type="int16" unit="m"/>
+      <field name="gspeed"   type="uint16" unit="cm/s" alt_unit="m/s"/>
+      <field name="course"   type="int16" unit="decideg" alt_unit="deg"/>
       <field name="airspeed" type="uint16" unit="cm/s" alt_unit="m/s"/>
-      <field name="vsupply" type="uint8" unit="decivolt"/>
-      <field name="energy" type="uint8" unit="deciAh"/>
+      <field name="vsupply"  type="uint8" unit="deciV"/>
+      <field name="charge"   type="uint8" unit="deciAh"/>
       <field name="throttle" type="uint8" unit="%"/>
-      <field name="ap_mode" type="uint8"/>
+      <field name="ap_mode"  type="uint8"/>
       <field name="nav_block" type="uint8"/>
       <field name="flight_time" type="uint16" unit="s"/>
     </message>
@@ -823,8 +843,8 @@
       <field name="rc_status" type="uint8" values="OK|LOST|REALLY_LOST"/>
       <field name="frame_rate" type="uint8" unit="Hz"/>
       <field name="mode" type="uint8" values="MANUAL|AUTO|FAILSAFE"/>
-      <field name="vsupply" type="uint16" unit="decivolt"/>
-      <field name="current" type="int32" unit="mA"/>
+      <field name="vsupply" type="float" unit="V"/>
+      <field name="current" type="float" unit="A"/>
     </message>
 
   <!-- Only used in airborne/test/mcu_periph/test_adc.c -->
@@ -1446,7 +1466,23 @@
       <field name="save_cnt"    type="int16"/>
     </message>
 
-    <!-- 167 is free -->
+    <message name="INS_EKF2" id="167">
+      <description>
+        Extended Kalman Filter 2 status message which gives feedback about the input- and output states of the filter.
+      </description>
+      <field name="control_mode"          type="uint32">description of the control status (bitfields from common.h)</field>
+      <field name="filter_fault_status"   type="uint16">numerical errors in output states (bitfields from common.h)</field>
+      <field name="gps_check_status"      type="uint16">quality check of the GPS feedback (bitfields from common.h)</field>
+      <field name="soln_status"           type="uint16">which output states are valid or has an error (bitfields from common.h)</field>
+      <field name="innov_test_status"     type="uint16">which inputs exceed the innovation test</field>
+      <field name="innov_mag"             type="float"/>
+      <field name="innov_vel"             type="float"/>
+      <field name="innov_pos"             type="float"/>
+      <field name="innov_hgt"             type="float"/>
+      <field name="innov_tas"             type="float"/>
+      <field name="innov_hagl"            type="float"/>
+      <field name="innov_beta"            type="float"/>
+    </message>
 
     <message name="ROTORCRAFT_CAM" id="168">
       <field name="tilt" type="int16" unit="2^12rad" alt_unit="deg" alt_unit_coef="0.0139882"/>
@@ -1636,7 +1672,7 @@
       <field name="mx" type="int32" unit="adc"/>
       <field name="my" type="int32" unit="adc"/>
       <field name="mz" type="int32" unit="adc"/>
-      <field name="electrical_current" type="int32" unit="mA"/>
+      <field name="electrical_current" type="float" unit="A"/>
     </message>
 
     <message name="UART_ERRORS" id="208">
@@ -1818,8 +1854,8 @@
       <field name="gps_status"   type="uint8" values="NO_FIX|NA|2D|3D|DGPS|RTK"/>
       <field name="ap_mode"      type="uint8">Rover AP modes are generated from XML file</field>
       <field name="ap_motors_on" type="uint8" values="MOTORS_OFF|MOTORS_ON"/>
-      <field name="vsupply"      type="uint16" unit="decivolt"/>
       <field name="cpu_time"     type="uint16" unit="s"/>
+      <field name="vsupply"      type="float" unit="V"/>
     </message>
 
     <message name="ROTORCRAFT_STATUS" id="231">
@@ -1834,8 +1870,8 @@
       <field name="arming_status" type="uint8" values="NO_RC|WAITING|ARMING|ARMED|DISARMING|KILLED|YAW_CENTERED|THROTTLE_DOWN|NOT_MODE_MANUAL|UNARMED_IN_AUTO|THROTTLE_NOT_DOWN|STICKS_NOT_CENTERED|PITCH_NOT_CENTERED|ROLL_NOT_CENTERED|YAW_NOT_CENTERED|AHRS_NOT_ALLIGNED|OUT_OF_GEOFENCE|LOW_BATTERY"/>
       <field name="ap_h_mode"    type="uint8" values="KILL|RATE|ATTITUDE|HOVER|NAV|RC_DIRECT|CF|FORWARD|MODULE|FLIP|GUIDED"/>
       <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
-      <field name="vsupply"      type="uint16" unit="decivolt"/>
       <field name="cpu_time"     type="uint16" unit="s"/>
+      <field name="vsupply"      type="float" unit="V"/>
     </message>
 
     <message name="STATE_FILTER_STATUS" id="232">
@@ -2155,10 +2191,16 @@
     </message>
 
     <message name="JOYSTICK_RAW" id="11" link="forwarded">
+      <description>
+        This message is used to send joystick input that can be used in any mode for control of
+        the vehicle or the payload depending of the 'joystick_handler' function implementation.
+        The scale of the inputs should be between -PPRZ_MAX (or 0) and PPRZ_MAX.
+      </description>
+      <field name="roll" type="int16"/>
+      <field name="pitch" type="int16"/>
+      <field name="yaw" type="int16"/>
+      <field name="throttle" type="int16"/>
       <field name="ac_id" type="uint8"/>
-      <field name="roll" type="int8"/>
-      <field name="pitch" type="int8"/>
-      <field name="throttle" type="int8"/>
     </message>
 
     <message name="COMMANDS_RAW" id="12" link="forwarded">
@@ -2462,8 +2504,22 @@
       <field name="tow"     type="uint32"/>
       <field name="course"  type="float" unit="deg"/>
     </message>
-    
-    <message name="GROUND_GPS" id="57" link="forwarded">
+
+    <message name="TARGET_POS" id="57" link="forwarded">
+      <description>
+        Global position, speed and ID a target for functions like Follow Me
+      </description>
+      <field name="ac_id" type="uint8"/>
+      <field name="target_id" type="uint8"/>
+      <field name="lat" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon" type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="alt" type="int32" unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="speed" type="float" unit="m/s">Ground speed</field>
+      <field name="climb" type="float" unit="m/s">Climb speed</field>
+      <field name="course" type="float" unit="deg" format="%.1f"/>
+    </message>
+
+    <message name="GROUND_GPS" id="58" link="forwarded">
       <description>
         Ground station GPS position for functions like Follow Me
       </description>
@@ -2475,7 +2531,6 @@
       <field name="climb" type="float" unit="m/s">Climb speed</field>
       <field name="course" type="float" unit="deg" format="%.1f"/>
     </message>
-
 
     <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>
@@ -2686,11 +2741,11 @@
       <field name="ac_id" type="string"/>
       <field name="throttle" type="float" unit="%"  format="%.1f"/>
       <field name="throttle_accu" type="float" format="%.1f"/>
-      <field name="rpm"      type="float" unit="rpm"  format="%.1f"/>
-      <field name="temp"     type="float" unit="celcius"/>
-      <field name="bat"      type="float" unit="V"/>
-      <field name="amp"      type="float" unit="A"/>
-      <field name="energy"   type="uint16" unit="Wh"/>
+      <field name="rpm"      type="float" unit="rpm" format="%.1f"/>
+      <field name="temp"     type="float" unit="C"/>
+      <field name="bat"      type="float" unit="V" format="%.2f"/>
+      <field name="amp"      type="float" unit="A" format="%.1f"/>
+      <field name="charge"   type="float" unit="Ah" format="%.2f"/>
     </message>
 
     <message name="SVSINFO" id="16">
@@ -2993,8 +3048,8 @@
       <field name="mode" type="uint8" values="MANUAL|AUTO|FAILSAFE"/>
       <field name="rc_status" type="uint8" values="OK|LOST|REALLY_LOST"/>
       <field name="frame_rate" type="uint8" unit="Hz"/>
-      <field name="vsupply" type="uint16" unit="decivolt"/>
-      <field name="current" type="int32" unit="mA"/>
+      <field name="vsupply" type="float" unit="V"/>
+      <field name="current" type="float" unit="A"/>
     </message>
 
     <message name="IMCU_REMOTE_MAG" id="10">

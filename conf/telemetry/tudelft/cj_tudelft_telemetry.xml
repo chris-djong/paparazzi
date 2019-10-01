@@ -14,7 +14,6 @@
       <message name="WP_MOVED"            period="0.5"/>
       <message name="CIRCLE"              period="1.05"/>
       <message name="DESIRED"             period="0.2"/>
-      <message name="BAT"                 period="1.1"/>
       <message name="SEGMENT"             period="1.2"/>
       <message name="CALIBRATION"         period="2.1"/>
       <message name="NAVIGATION_REF"      period="9."/>
@@ -44,7 +43,6 @@
       <message name="WP_MOVED"            period="1.4"/>
       <message name="CIRCLE"              period="3.05"/>
       <message name="DESIRED"             period="4.05"/>
-      <message name="BAT"                 period="1.1"/>
       <message name="SEGMENT"             period="3.2"/>
       <message name="CALIBRATION"         period="5.1"/>
       <message name="NAVIGATION_REF"      period="9."/>
@@ -61,7 +59,6 @@
       <message name="ALIVE"               period="5"/>
       <message name="GPS"                 period="5.1"/>
       <message name="ESTIMATOR"           period="5.3"/>
-      <message name="BAT"                 period="10.1"/>
       <message name="DESIRED"             period="10.2"/>
       <message name="NAVIGATION"          period="5.4"/>
       <message name="PPRZ_MODE"           period="7.5"/>
@@ -88,9 +85,7 @@
       <message name="ALIVE"               period="5"/>
       <message name="GPS"                 period="5.1"/>
       <message name="ESTIMATOR"           period="5.3"/>
-      <message name="BAT"                 period="10.1"/>
       <message name="DESIRED"             period="10.2"/>
-      <message name="NAVIGATION"          period="5.4"/>
       <message name="PPRZ_MODE"           period="5.5"/>
       <message name="STATE_FILTER_STATUS" period="5."/>
       <message name="DATALINK_REPORT"     period="5.7"/>
