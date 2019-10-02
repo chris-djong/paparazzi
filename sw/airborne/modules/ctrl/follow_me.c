@@ -323,11 +323,14 @@ int follow_me_set_wp(void){
 	    // If the follow me waypoint is behind the UAV then use backwards approach
 		if (wp_follow_body.y < 1 && wp_follow_body.y > -30){
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
+			printf("Location set to 1 because wp_follow in body is given by: %d\n", wp_follow_body.y);
 			return 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
+			printf("Location set to 0 because wp_ground in body is given by: %d\n", wp_ground_body.y);
 			return 0;
 		}
 		else{ // if the UAV is behind the boat
+			printf("Location set to -1 because wp_ground %d and wp_follow %d\n", wp_ground_body.y, wp_follow_body.y);
 			return -1;
 		}
 	}

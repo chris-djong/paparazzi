@@ -35,7 +35,7 @@
 
   <exceptions>
       <exception cond="datalink_time > 60" deroute="Standby"/>
-      <exception cond="! InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> 
+      <!-- <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>  exception removed from here because it standby error at startup-->  
   </exceptions>
 
   <!-- *********** Initial setup *********** -->
@@ -84,12 +84,14 @@
     <block name="follow_me" strip_button="Follow me" group="flight">
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>
     
     
   <!-- *********** Land *********** -->
     <block name="follow_module_land" strip_button="Follow Land" group="land">
       <stay pre_call="follow_me_set_wp()" climb="-1" vmode="climb" wp="FOLLOW"/>
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>
     
     <!--  Set the Touchdown waypoint to the current GCS GPSlocation
