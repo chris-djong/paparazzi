@@ -45,7 +45,7 @@
 
 //declarations
 #define MAXSIZE 10
-float cq[MAXSIZE]={0};
+float average_array[MAXSIZE]={0};
 int front=-1,rear=-1, count=0;
 float AverageForNewElement(float);
 
@@ -60,21 +60,16 @@ float AverageForNewElement(float item)
             front=rear=-1;
         else
             front = (front+1)%MAXSIZE;
-        Sum=Sum-cq[front];
+        Sum=Sum-average_array[front];
     }
     if(front==-1)
         front=rear=0;
     else
         rear=(rear+1)%MAXSIZE;
-    cq[rear]=item;
-    Sum=Sum+cq[rear];
+    average_array[rear]=item;
+    Sum=Sum+average_array[rear];
     return ((float)Sum/fmin(MAXSIZE, count));
 }
-
-
-
-
-
 
 
 // Parameters for follow_me module
@@ -135,6 +130,7 @@ void follow_me_init(void){
 
 /*Translate frame to a new point
  * The frame is moved from its origin to the new point (transx, transy, transz)*/
+struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int trans_y, int trans_z);
 struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int trans_y, int trans_z){
 	// Create return vectore for function
 	struct Int32Vect3 transformation;
@@ -148,6 +144,7 @@ struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int tra
 }
 
 /*Rotate a point in a frame by an angle theta (clockwise positive)*/
+struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta);
 struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta){
 	// Create return Vector for function
 	struct Int32Vect3 transformation;
@@ -163,6 +160,7 @@ struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta){
 /*Transformation from UTM coordinate system to the Body system
  * Pos UTM is used as input so that during a whole function execution it stays constant for all the transforms
  * Same for heading */
+struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point);
 struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point){
 	// Create return vector for the function
 	struct Int32Vect3 transformation;
@@ -185,6 +183,7 @@ struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point){
 }
 
 /*Transformation from the Body system to the UTM coordinate system */
+struct Int32Vect3 ENU_to_UTM(struct Int32Vect3 *point);
 struct Int32Vect3 ENU_to_UTM(struct Int32Vect3 *point){
 	// Create return vector for the function
 	struct Int32Vect3 transformation;
@@ -232,6 +231,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 
 
 // Manage the throttle so that the groundspeed of both the boat and the uav are equivalent
+void follow_me_set_throttle(void);
 void follow_me_set_throttle(void){
 	struct EnuCoor_f *speedEnu;
 
@@ -338,6 +338,7 @@ int follow_me_set_wp(void){
 // 3 possible location: -1 is behind the boat
 //                       0 is between the boat and the Follow me waypoint
 //                       1 is in front of the follow me waypoint
+void follow_me_go(float location);
 void follow_me_go(float location){
 	// In case we switch from location reset the sum error so that they are not carried through to the next phase
 	if (old_location == -1){

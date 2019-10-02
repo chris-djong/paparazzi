@@ -25,6 +25,8 @@
 #define BOARD_DISCO
 
 #include "std.h"
+#define DEFAULT_ACTUATORS "boards/disco/actuators.h"
+
 #include "peripherals/video_device.h"
 // re-use the Parrot Bebop video drivers
 #include "boards/bebop/mt9v117.h"
@@ -58,7 +60,6 @@
 #endif
 
 /* Default actuators driver */
-#define DEFAULT_ACTUATORS "boards/disco/actuators.h"
 #define ActuatorDefaultSet(_x,_y) ActuatorsDiscoSet(_x,_y)
 #define ActuatorsDefaultInit() ActuatorsDiscoInit()
 #define ActuatorsDefaultCommit() ActuatorsDiscoCommit()

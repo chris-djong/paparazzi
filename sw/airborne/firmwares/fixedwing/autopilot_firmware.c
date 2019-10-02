@@ -30,7 +30,6 @@
 
 #include "state.h"
 #include "firmwares/fixedwing/nav.h"
-// #include "modules/ctrl/follow_me.h"
 #include <stdint.h>
 
 // ap copy of fbw readings
