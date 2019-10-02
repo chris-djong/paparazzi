@@ -31,30 +31,18 @@
 #include "firmwares/fixedwing/guidance/guidance_v_n.h"
 
 
-/** distance from the ground gps
- */
+// Variables required for settings and file logger
 extern int32_t follow_me_distance;
-
-// Height at which the waypoint are created
 extern int32_t follow_me_height;
-
-/** heading direction in which to hover from (automatically set if ground is exceeding speed) */
 extern float follow_me_heading;
-extern float follow_me_throttle;
+//extern float follow_me_throttle;
 extern float throttle_pgain;
 extern float throttle_dgain;
 extern float throttle_igain;
 extern float throttle_constant;
-
-// Variables that are send to the ground station for real time plotting
-extern float follow_me_location;
 extern float desired_ground_speed;
+extern float follow_me_location;
 extern float actual_ground_speed;
-extern float p_thrust;
-extern float i_thrust;
-extern float d_thrust;
-extern float ground_speed_diff;
-extern float difference_distance;
 extern float dist_wp_follow;
 
 /** init function */

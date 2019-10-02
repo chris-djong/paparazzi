@@ -122,8 +122,14 @@ static float ground_speed;
 static float ground_climb;
 static float ground_course;
 
+static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow);
+}
+
+
 // Called at compiling of module
 void follow_me_init(void){
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
     ground_set = false;
 }
 
@@ -396,6 +402,7 @@ int follow_me_call(void){
 
 	follow_me_go(follow_me_location);
 	follow_me_set_throttle();
+
 	return 1;
 }
 
