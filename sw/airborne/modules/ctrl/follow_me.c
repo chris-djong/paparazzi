@@ -46,7 +46,7 @@
 //declarations
 #define MAXSIZE 10
 float average_array[MAXSIZE]={0};
-int front=-1,rear=-1, count=0;
+int8_t front=-1,rear=-1, count=0;
 float AverageForNewElement(float);
 
 //function definition
@@ -73,22 +73,17 @@ float AverageForNewElement(float item)
 
 
 // Parameters for follow_me module
-int32_t follow_me_distance = 5; // distance from which the follow me points are created
-int32_t follow_me_height = 10;
+uint8_t follow_me_distance = 5; // distance from which the follow me points are created
+uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 
-
-
-
 // Parameters to be set for landing procedure
-int32_t flare_height = 10; // height at which flaring starts
+int8_t flare_height = 10; // height at which flaring starts
 float land_vspeed = 2.7; // descend speed in m/s
-int32_t land_hspeed = 13.5; //assumed airspeed during landing
-int32_t flare_hspeed = 7;
+float land_hspeed = 13.5; //assumed airspeed during landing
+float flare_hspeed = 7;
 float flare_vspeed = 0.8;
 float flare_heading = 0.;     // heading used to set flare point based on gps
-float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
-float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
 // Gains for the throttle management
 // gains should be negative as a lower groundspeed should result in a higher throttle
@@ -100,7 +95,9 @@ float throttle_sum_err = 0;
 float last_err = 0;
 
 // Variables that are send to the ground station for real time plotting
-float follow_me_location; //
+int8_t follow_me_location;
+int8_t old_location;
+
 float desired_ground_speed;
 float desired_ground_speed_max;
 float desired_ground_speed_min;
@@ -111,11 +108,12 @@ float i_thrust;
 float d_thrust;
 float difference_distance;
 float dist_wp_follow; // distance to follow me wp
+float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
+float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
+
 
 // Old location to reset sum error
-float old_location;
 float dist_wp_follow_old; // old distance to follow me wp
-
 
 // Variables initialised in functions themselves
 static bool ground_set;

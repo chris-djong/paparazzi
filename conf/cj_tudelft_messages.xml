@@ -631,7 +631,7 @@
 
     <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
-      <field name="Soaring_location" type="float"/>
+      <field name="Soaring_location" type="int8"/>
       <field name="Desired_groundspeed" type="float"/>
       <field name="Desired_groundspeed_min" type="float"/>
       <field name="Desired_groundspeed_max" type="float"/>

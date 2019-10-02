@@ -32,15 +32,15 @@
 
 
 // Variables required for settings and file logger
-extern int32_t follow_me_distance;
-extern int32_t follow_me_height;
+extern uint8_t follow_me_distance;
+extern uint8_t follow_me_height;
 extern float follow_me_heading;
 extern float throttle_pgain;
 extern float throttle_dgain;
 extern float throttle_igain;
 extern float throttle_constant;
 extern float desired_ground_speed;
-extern float follow_me_location;
+extern int8_t follow_me_location;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
 
