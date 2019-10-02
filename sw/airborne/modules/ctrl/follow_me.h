@@ -35,7 +35,6 @@
 extern int32_t follow_me_distance;
 extern int32_t follow_me_height;
 extern float follow_me_heading;
-//extern float follow_me_throttle;
 extern float throttle_pgain;
 extern float throttle_dgain;
 extern float throttle_igain;

@@ -633,6 +633,8 @@
     <message name="FOLLOW_ME" id ="75">
       <field name="Soaring_location" type="float"/>
       <field name="Desired_groundspeed" type="float"/>
+      <field name="Desired_groundspeed_min" type="float"/>
+      <field name="Desired_groundspeed_max" type="float"/>
       <field name="Actual_groundspeed" type="float"/>
       <field name="Total_thrust_input" type="float"/>
       <field name="Proportional_thrust" type="float"/>
@@ -642,7 +644,6 @@
       <field name="Follow_difference_distance" type="float"/>
       <field name="Distance_WP" type="float"/>
     </message>
-
 
     <!-- 76 is free -->
     <!-- 77 is free -->

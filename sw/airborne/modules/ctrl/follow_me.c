@@ -88,7 +88,7 @@ int32_t flare_hspeed = 7;
 float flare_vspeed = 0.8;
 float flare_heading = 0.;     // heading used to set flare point based on gps
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
-
+float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
 // Gains for the throttle management
 // gains should be negative as a lower groundspeed should result in a higher throttle
@@ -102,6 +102,8 @@ float last_err = 0;
 // Variables that are send to the ground station for real time plotting
 float follow_me_location; //
 float desired_ground_speed;
+float desired_ground_speed_max;
+float desired_ground_speed_min;
 float actual_ground_speed;
 float v_ctl_auto_throttle_cruise_throttle;
 float p_thrust;
@@ -123,7 +125,7 @@ static float ground_climb;
 static float ground_course;
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow);
 }
 
 
@@ -227,6 +229,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
 	ground_speed = DL_GROUND_GPS_speed(buf);
+	desired_ground_speed_min = ground_speed - ground_speed_diff_limit;
+	desired_ground_speed_max = ground_speed + ground_speed_diff_limit;
 	ground_climb = DL_GROUND_GPS_climb(buf);
 	ground_course = DL_GROUND_GPS_course(buf);
 	follow_me_heading = ground_course;
@@ -248,7 +252,7 @@ void follow_me_set_throttle(void){
 	if (desired_ground_speed < 0){
 		desired_ground_speed = 0;
 	}
-	float err = fmax(1, fmin(dist_wp_follow, 2))*(ground_speed + ground_speed_diff - actual_ground_speed);
+	float err = fmax(1, fmin(fabs(dist_wp_follow), 2))*(ground_speed + ground_speed_diff - actual_ground_speed);
 
 	// The error is calculated based on whether we get closer to the target or not
     float d_err = err - last_err;
@@ -329,14 +333,12 @@ int follow_me_set_wp(void){
 	    // If the follow me waypoint is behind the UAV then use backwards approach
 		if (wp_follow_body.y < 1 && wp_follow_body.y > -30){
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
-			printf("Location set to 1 because wp_follow in body is given by: %d\n", wp_follow_body.y);
 			return 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
-			printf("Location set to 0 because wp_ground in body is given by: %d\n", wp_ground_body.y);
+			dist_wp_follow = -dist_wp_follow;
 			return 0;
 		}
 		else{ // if the UAV is behind the boat
-			printf("Location set to -1 because wp_ground %d and wp_follow %d\n", wp_ground_body.y, wp_follow_body.y);
 			return -1;
 		}
 	}
@@ -364,7 +366,7 @@ void follow_me_go(float location){
 // This ground speed diff is used in order to propagate errors in case the GPS speed error is not reliable
 int follow_me_call(void){
 	follow_me_location = follow_me_set_wp();
-	difference_distance = dist_wp_follow - dist_wp_follow_old;
+	difference_distance = fabs(dist_wp_follow) - fabs(dist_wp_follow_old);
 	// In case we are between the boat and the waypoint t
 	if (follow_me_location == 0){
 		// If we were launched from the boat for example reset the difference
@@ -386,14 +388,14 @@ int follow_me_call(void){
 		}
 	// In case we are behind the boat
 	}  else if (follow_me_location == -1){
-		ground_speed_diff = 2;
+		ground_speed_diff = ground_speed_diff_limit;
 	}
 	// Bound groundspeed diff by 2 or -2
-	if (ground_speed_diff > 2){
-		ground_speed_diff = 2;
+	if (ground_speed_diff > ground_speed_diff_limit){
+		ground_speed_diff = ground_speed_diff_limit;
 	}
-	else if (ground_speed_diff < -2){
-		ground_speed_diff = -2;
+	else if (ground_speed_diff < -ground_speed_diff_limit){
+		ground_speed_diff = -ground_speed_diff_limit;
 	}
 
       if (follow_me_location != -1){

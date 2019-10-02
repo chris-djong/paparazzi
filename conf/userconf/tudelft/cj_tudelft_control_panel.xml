@@ -89,27 +89,20 @@
         <arg flag="-d" constant="0"/> <!-- Wind direction -->
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-g" constant="2000x300-0+0"/>
+        <arg flag="-g" constant="1900x500-0+0"/>
         <arg flag="-t" constant="Ground Speed"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_max:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_groundspeed:1"/>
         <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+320"/>
+        <arg flag="-g" constant="1980x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
+        <arg flag="-c" constant="-2"/>  <!--  Allowable min distance that one wants to stay within -->
+        <arg flag="-c" constant="3"/> <!-- Allowable max distance that one wants to stay within -->
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Soaring_location:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+640"/>
-        <arg flag="-t" constant="Thrust Values"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Proportional_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Integral_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Derived_thrust:1"/>
       </program>
     </session>
     
@@ -126,27 +119,20 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-g" constant="2000x300-0+0"/>
+        <arg flag="-g" constant="1980x500-0+0"/>
         <arg flag="-t" constant="Ground Speed"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_max:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_groundspeed:1"/>
         <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+320"/>
+        <arg flag="-g" constant="1980x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
+        <arg flag="-c" constant="-2"/>  <!--  Allowable min distance that one wants to stay within -->
+        <arg flag="-c" constant="3"/> <!-- Allowable max distance that one wants to stay within -->
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Soaring_location:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+640"/>
-        <arg flag="-t" constant="Thrust Values"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Proportional_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Integral_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Derived_thrust:1"/>
       </program>
       
     </session>
@@ -164,27 +150,20 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-g" constant="2000x300-0+0"/>
+        <arg flag="-g" constant="1980x500-0+0"/>
         <arg flag="-t" constant="Ground Speed"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed_max:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_groundspeed:1"/>
         <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+320"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
+        <arg flag="-u" constant="0.01"/>
+        <arg flag="-c" constant="-2"/>  <!--  Allowable min distance that one wants to stay within -->
+        <arg flag="-c" constant="3"/> <!-- Allowable max distance that one wants to stay within -->
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Soaring_location:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x300-0+640"/>
-        <arg flag="-t" constant="Thrust Values"/>
-        <arg flag="-u" constant="1"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Proportional_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Integral_thrust:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Derived_thrust:1"/>
       </program>
       
     </session>
