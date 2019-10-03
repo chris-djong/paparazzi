@@ -52,7 +52,11 @@ float AverageForNewElement(float);
 //function definition
 float AverageForNewElement(float item)
 {
-	count += 1;
+	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
+	// Count = int8_t
+	if (count<MAXSIZE){
+		count += 1;
+	}
     static float Sum=0;
     if(front ==(rear+1)%MAXSIZE)
     {
@@ -94,13 +98,13 @@ float throttle_igain = 0.03;
 float throttle_sum_err = 0;
 float last_err = 0;
 
-// Variables that are send to the ground station for real time plotting
+// Variables that are send to the ground station for real time plotting or logging
 int8_t follow_me_location;
 int8_t old_location;
-
+struct Int32Vect3 wp_ground_utm;
 float desired_ground_speed;
-float desired_ground_speed_max;
-float desired_ground_speed_min;
+float desired_ground_speed_max; // for the real time plotting
+float desired_ground_speed_min; // for the real time plotting
 float actual_ground_speed;
 float v_ctl_auto_throttle_cruise_throttle;
 float p_thrust;
@@ -108,6 +112,9 @@ float i_thrust;
 float d_thrust;
 float difference_distance;
 float dist_wp_follow; // distance to follow me wp
+float dist_wp_follow_min; // for the real time plotting
+float dist_wp_follow_max; // for the real time plotting
+float safety_boat_distance; // distance that the UAV should not move from the boat
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
@@ -123,7 +130,7 @@ static float ground_climb;
 static float ground_course;
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
 }
 
 
@@ -218,6 +225,7 @@ void follow_me_startup(void){
     follow_me_height = pos_Utm->alt;
 }
 
+
 void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
 		return;
@@ -297,8 +305,6 @@ int follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-
-		struct Int32Vect3 wp_ground_utm;
 		wp_ground_utm.x = utm.east;
 		wp_ground_utm.y = utm.north;
 		wp_ground_utm.z = utm.alt;
@@ -311,6 +317,9 @@ int follow_me_set_wp(void){
 
 		dist_wp_follow_old = dist_wp_follow;
 		dist_wp_follow = sqrt((x_follow - pos_Utm->east)*(x_follow - pos_Utm->east) + (y_follow - pos_Utm->north)*(y_follow - pos_Utm->north));
+        dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
+        dist_wp_follow_max = 3;
+
 
 		// Update STBDY HOME AND FOLLOW ME WP
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
@@ -394,11 +403,12 @@ int follow_me_call(void){
 	}
 	else if (ground_speed_diff < -ground_speed_diff_limit){
 		ground_speed_diff = -ground_speed_diff_limit;
+
 	}
 
-      if (follow_me_location != -1){
-        ground_speed_diff = AverageForNewElement(ground_speed_diff);
-      }
+    if (follow_me_location != -1){
+  	  ground_speed_diff = AverageForNewElement(ground_speed_diff);
+    }
 
 	follow_me_go(follow_me_location);
 	follow_me_set_throttle();

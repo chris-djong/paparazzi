@@ -43,6 +43,7 @@ extern float desired_ground_speed;
 extern int8_t follow_me_location;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
+extern struct Int32Vect3 wp_ground_utm;
 
 /** init function */
 extern void follow_me_init(void);

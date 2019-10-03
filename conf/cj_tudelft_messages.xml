@@ -643,6 +643,8 @@
       <field name="GroundSpeed_Diff" type="float"/>
       <field name="Follow_difference_distance" type="float"/>
       <field name="Distance_WP" type="float"/>
+      <field name="Distance_WP_min" type="float"/>
+      <field name="Distance_WP_max" type="float"/>
     </message>
 
     <!-- 76 is free -->
