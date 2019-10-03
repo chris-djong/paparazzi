@@ -346,6 +346,7 @@ int follow_me_set_wp(void){
 			return 0;
 		}
 		else{ // if the UAV is behind the boat
+			dist_wp_follow = -dist_wp_follow;
 			return -1;
 		}
 	}
