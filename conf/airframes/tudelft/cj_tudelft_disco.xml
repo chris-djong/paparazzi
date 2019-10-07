@@ -145,6 +145,7 @@
     <!--  Use airspeed control loops instead of ground speed -->
     <!--  <define name="USE_AIRSPEED" value="1"/> -->
     <!-- outer loop proportional gain -->
+    
     <define name="ALTITUDE_PGAIN" value="0.12"/>
     <!-- outer loop saturation -->
     <define name="ALTITUDE_MAX_CLIMB" value="4."/>

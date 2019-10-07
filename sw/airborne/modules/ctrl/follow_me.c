@@ -128,6 +128,8 @@ static struct LlaCoor_i ground_lla;
 static float ground_speed;
 static float ground_climb;
 static float ground_course;
+static float ground_timestamp;
+static float old_ground_timestamp;
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
@@ -180,11 +182,6 @@ struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point){
 
 	// Obtain current UTM position
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-
-	// Obtain current ENU position and Euler Angles in order to calculate the heading
-	// struct EnuCoor_i *pos             = stateGetPositionEnu_i();
-	// struct Int32Eulers *eulerAngles   = stateGetNedToBodyEulers_i();
-	// float heading = ANGLE_FLOAT_OF_BFP(eulerAngles->psi);
 
     // Translate frame
 	transformation = translate_frame(point, pos_Utm->east, pos_Utm->north, pos_Utm->alt);
@@ -239,6 +236,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	desired_ground_speed_max = ground_speed + ground_speed_diff_limit;
 	ground_climb = DL_GROUND_GPS_climb(buf);
 	ground_course = DL_GROUND_GPS_course(buf);
+	old_ground_timestamp = ground_timestamp;
+	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	follow_me_heading = ground_course;
 	flare_heading = ground_course + 180.f;
 	if(flare_heading > 360.f) flare_heading -= 360.f;
@@ -252,7 +251,6 @@ void follow_me_set_throttle(void){
 	struct EnuCoor_f *speedEnu;
 
 	speedEnu = stateGetSpeedEnu_f();
-	printf("Y speed is given by: %f\n", speedEnu->y);
 	actual_ground_speed = sqrt(speedEnu->x * speedEnu->x + speedEnu->y * speedEnu->y);
 	desired_ground_speed = ground_speed + ground_speed_diff;
 	if (desired_ground_speed < 0){
@@ -373,7 +371,10 @@ void follow_me_go(float location){
 // It calculates the difference in groundspeed between the UAV and the system
 // This ground speed diff is used in order to propagate errors in case the GPS speed error is not reliable
 int follow_me_call(void){
-	follow_me_location = follow_me_set_wp();
+	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
+	if (ground_timestamp > old_ground_timestamp){
+		follow_me_location = follow_me_set_wp();
+	}
 	difference_distance = fabs(dist_wp_follow) - fabs(dist_wp_follow_old);
 	// In case we are between the boat and the waypoint t
 	if (follow_me_location == 0){

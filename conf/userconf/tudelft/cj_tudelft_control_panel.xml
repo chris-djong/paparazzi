@@ -99,7 +99,7 @@
         <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.01"/>
+        <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
@@ -129,7 +129,7 @@
         <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.01"/>
+        <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
@@ -160,7 +160,7 @@
         <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
-        <arg flag="-u" constant="0.01"/>
+        <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>

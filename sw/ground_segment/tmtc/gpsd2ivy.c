@@ -158,7 +158,7 @@ static void update_gps(struct gps_data_t *gpsdata,
                 
         // Send GROUND_GPS message for data 
         if(strcmp(ac, "NONE") != 0) {
-            IvySendMsg("%s GROUND_GPS %s %d %d %d %f %f %f", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), fix_speed, fix_climb, fix_track); 
+            IvySendMsg("%s GROUND_GPS %s %d %d %d %f %f %f %f", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), fix_speed, fix_climb, fix_track, gpsdata->fix.time); 
             if (verbose)
                 printf("sending GROUND_GPS for aircraft %s\n", ac);
         }

@@ -2533,6 +2533,7 @@
       <field name="speed" type="float" unit="m/s">Ground speed</field>
       <field name="climb" type="float" unit="m/s">Climb speed</field>
       <field name="course" type="float" unit="deg" format="%.1f"/>
+      <field name="timestamp" type="float"/>
     </message>
 
     <message name="KITE_COMMAND" id="96">
