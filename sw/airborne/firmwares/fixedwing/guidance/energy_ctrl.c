@@ -67,6 +67,7 @@
 #include "generated/airframe.h"
 #include "autopilot.h"
 #include "subsystems/abi.h"
+#include <stdio.h>
 
 /////// DEFAULT GUIDANCE_V NECESSITIES //////
 
@@ -361,8 +362,7 @@ void v_ctl_climb_loop(void)
 #endif
 
   // Airspeed outerloop: positive means we need to accelerate
-  float speed_error = v_ctl_auto_airspeed_controlled - stateGetAirspeed_i();
-  printf("%f %d", stateGetAirspeed_f(), stateGetAirspeed_i());
+  float speed_error = v_ctl_auto_airspeed_controlled - stateGetAirspeed_f();  /////////////////////////////////////////////
   // Speed Controller to PseudoControl: gain 1 -> 5m/s error = 0.5g acceleration
   v_ctl_desired_acceleration = speed_error * v_ctl_airspeed_pgain / 9.81f;
   BoundAbs(v_ctl_desired_acceleration, v_ctl_max_acceleration);
@@ -453,7 +453,6 @@ void v_ctl_climb_loop(void)
  */
 void v_ctl_throttle_slew(void)
 {
-  printf("We are in throttle slew function\n");
   pprz_t diff_throttle = v_ctl_throttle_setpoint - v_ctl_throttle_slewed;
   BoundAbs(diff_throttle, TRIM_PPRZ(V_CTL_THROTTLE_SLEW * MAX_PPRZ));
   v_ctl_throttle_slewed += diff_throttle;

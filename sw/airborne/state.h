@@ -38,6 +38,7 @@
 #include "math/pprz_orientation_conversion.h"
 
 #include "std.h"
+#include <stdio.h>
 #include <string.h>
 
 /**
@@ -1409,6 +1410,7 @@ static inline float stateGetAirspeed_f(void)
   if (!bit_is_set(state.wind_air_status, AIRSPEED_F)) {
     stateCalcAirspeed_f();
   }
+
   return state.airspeed_f;
 }
 

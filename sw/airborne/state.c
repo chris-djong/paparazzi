@@ -32,6 +32,7 @@
  */
 
 #include "state.h"
+#include <stdio.h>
 
 struct State state;
 
