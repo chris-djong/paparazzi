@@ -20,11 +20,6 @@
       </module>
       <module name="imu" type="disco"/>
       
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
-      </module>
-      
       <module name="actuators" type="disco"/>
     </target>
     
@@ -42,7 +37,11 @@
         <configure name="MODEM_BAUD" value="B57600"/>
     </module> -->
     
-     
+    <module name="airspeed" type="ms45xx_i2c">
+      <define name="MS45XX_I2C_DEV" value="i2c1"/>
+      <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
+    </module>
+      
     <module name="gps" type="ublox"/>
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     <module name="gps" type="ubx_ucenter"/>
