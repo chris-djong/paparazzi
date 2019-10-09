@@ -45,10 +45,6 @@
         <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
     </module>
     
-    
-    
-    
-    
     <module name="telemetry" type="transparent_udp"/>
     <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
@@ -62,8 +58,9 @@
     
     <module name="ins" type="alt_float"/>
 
-    <module name="air_data"/>
     <module name="control" type="energy"/> <!-- This means it uses v_n guidance firmware-->
+    <module name="air_data"/>
+    
     <module name="navigation"/>
   </firmware>
 
