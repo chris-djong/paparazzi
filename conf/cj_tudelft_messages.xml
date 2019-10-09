@@ -631,17 +631,10 @@
 
     <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
-      <field name="Soaring_location" type="int8"/>
       <field name="Desired_groundspeed" type="float"/>
       <field name="Desired_groundspeed_min" type="float"/>
       <field name="Desired_groundspeed_max" type="float"/>
       <field name="Actual_groundspeed" type="float"/>
-      <field name="Total_thrust_input" type="float"/>
-      <field name="Proportional_thrust" type="float"/>
-      <field name="Integral_thrust" type="float"/>
-      <field name="Derived_thrust" type="float"/>
-      <field name="GroundSpeed_Diff" type="float"/>
-      <field name="Follow_difference_distance" type="float"/>
       <field name="Distance_WP" type="float"/>
       <field name="Distance_WP_min" type="float"/>
       <field name="Distance_WP_max" type="float"/>

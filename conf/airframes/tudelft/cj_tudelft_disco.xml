@@ -8,28 +8,42 @@
 
   <firmware name="fixedwing">
     <define name="USE_AIRSPEED" value="1"/>
+    <define name="STALL_AIRSPEED" value="8"/>
+    
     <configure name="PERIODIC_FREQUENCY" value="120"/>
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
+    <!--  AUTOPILOT TARGET -->
     <target name="ap" board="disco">
       <module name="radio_control" type="sbus"/>
       <module name="follow_me"/> 
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
+      </module>
       <!-- In /modules/loggers/file_logger.c include the required headers and specify that variables that should be loggeed -->
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
       </module>
       <module name="imu" type="disco"/>
-      
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
+      </module>
       <module name="actuators" type="disco"/>
     </target>
     
+    <!--  SIMULATION TARGET -->
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
       <module name="follow_me"/> 
       <!--  <module name="ahrs" type="float_dcm"/> -->
       <module name="ahrs" type="int_cmpl_quat"/>
-      
+      <define name="AIRSPEED_ADC_SCALE" value="1"/>
+      <define name="AIRSPEED_ADC_BIAS" value="1"/>
+      <module name="airspeed" type="adc"/>
     </target>
+
     
     <module name="telemetry" type="transparent_udp"/>
     <!-- <module name="telemetry" type="transparent">
@@ -48,8 +62,9 @@
     
     <module name="ins" type="alt_float"/>
 
+    <module name="control" type="energy"/> <!-- This means it uses v_n guidance firmware-->
     <module name="air_data"/>
-    <module name="control" type="new"/> <!-- This means it uses v_n guidance firmware-->
+    
     <module name="navigation"/>
   </firmware>
 
@@ -141,57 +156,32 @@
   </section>
 
   <section name="VERTICAL CONTROL" prefix="V_CTL_">
-    <!--  Use airspeed control loops instead of ground speed -->
-    <!--  <define name="USE_AIRSPEED" value="1"/> -->
-    <!-- outer loop proportional gain -->
-    
-    <define name="ALTITUDE_PGAIN" value="0.12"/>
-    <!-- outer loop saturation -->
-    <define name="ALTITUDE_MAX_CLIMB" value="4."/>
-    <!-- disable climb rate limiter -->
-    <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
-
-    <!-- Cruise throttle + limits -->
+    <define name="ALTITUDE_PGAIN" value="0.15"/>
+    <define name="AIRSPEED_PGAIN" value="0.15"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.4"/>
-    <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.25"/>
-    <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.85"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.1"/>
+    
+    <define name="ALTITUDE_MAX_CLIMB" value="2"/>
+    <define name="GLIDE_RATIO" value="8"/>
+    
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.1"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.1"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.1"/>
 
-    <!-- Climb loop (throttle) -->
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.088" unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_PGAIN" value="0.004"/>
-    <define name="AUTO_THROTTLE_DGAIN" value="0.0"/>
-    <define name="AUTO_THROTTLE_IGAIN" value="0."/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.077"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.35"/>
+    <define name="ENERGY_TOT_IGAIN" value="0.30"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.40"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.15"/>
 
-    <!-- Climb loop (pitch) -->
-    <define name="AUTO_PITCH_PGAIN" value="0.027"/>
-    <define name="AUTO_PITCH_DGAIN" value="0.01"/>
-    <define name="AUTO_PITCH_IGAIN" value="0.0"/>
-    <!--define name="AUTO_PITCH_CLIMB_THROTTLE_INCREMENT" value="0.14"/-->
-    <define name="AUTO_PITCH_MAX_PITCH" value="20" unit="deg"/>
-    <define name="AUTO_PITCH_MIN_PITCH" value="-20" unit="deg"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0." unit="%/(m/s)"/>
+    
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="12"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.01"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
+    <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/>
 
-    <!-- airspeed control -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="16."/>
-    <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.1"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.12"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.0"/>
-    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.06"/>
-    <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.0"/>
-    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.042"/>
-    <define name="AIRSPEED_MAX" value="30"/>
-    <define name="AIRSPEED_MIN" value="10"/>
-
-    <!-- groundspeed control -->
-    <define name="AUTO_GROUNDSPEED_SETPOINT" value="15"/>
-    <define name="AUTO_GROUNDSPEED_PGAIN" value="1"/>
-    <define name="AUTO_GROUNDSPEED_IGAIN" value="0."/>
-
-    <!-- pitch trim -->
-    <define name="PITCH_LOITER_TRIM" value="0." unit="deg"/>
-    <define name="PITCH_DASH_TRIM" value="0." unit="deg"/>
-
-    <define name="THROTTLE_SLEW" value="0.1"/>
   </section>
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">

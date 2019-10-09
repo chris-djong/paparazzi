@@ -73,6 +73,7 @@ extern float v_ctl_energy_diff_igain;
 
 extern float v_ctl_auto_groundspeed_pgain;
 extern float v_ctl_auto_groundspeed_igain;
+extern float v_ctl_auto_groundspeed_dgain;
 extern float v_ctl_auto_groundspeed_sum_err;
 
 /////////////////////////////////////////////////

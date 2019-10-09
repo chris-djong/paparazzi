@@ -80,41 +80,17 @@ float AverageForNewElement(float item)
 uint8_t follow_me_distance = 5; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
-
-// Parameters to be set for landing procedure
-int8_t flare_height = 10; // height at which flaring starts
-float land_vspeed = 2.7; // descend speed in m/s
-float land_hspeed = 13.5; //assumed airspeed during landing
-float flare_hspeed = 7;
-float flare_vspeed = 0.8;
-float flare_heading = 0.;     // heading used to set flare point based on gps
-
-// Gains for the throttle management
-// gains should be negative as a lower groundspeed should result in a higher throttle
-float throttle_constant = 0.3; // necesarry so that a negative error does not result in 0 thrust immediately
-float throttle_pgain = 0.17;
-float throttle_dgain = 0.09;
-float throttle_igain = 0.03;
-float throttle_sum_err = 0;
-float last_err = 0;
+int8_t follow_me_location;
 
 // Variables that are send to the ground station for real time plotting or logging
-int8_t follow_me_location;
 int8_t old_location;
-struct Int32Vect3 wp_ground_utm;
-float desired_ground_speed;
 float desired_ground_speed_max; // for the real time plotting
 float desired_ground_speed_min; // for the real time plotting
 float actual_ground_speed;
-float v_ctl_auto_throttle_cruise_throttle;
-float p_thrust;
-float i_thrust;
-float d_thrust;
-float difference_distance;
 float dist_wp_follow; // distance to follow me wp
 float dist_wp_follow_min; // for the real time plotting
 float dist_wp_follow_max; // for the real time plotting
-float safety_boat_distance; // distance that the UAV should not move from the boat
+float safety_boat_distance = 1; // distance that the UAV should not move from the boat
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
@@ -132,7 +108,7 @@ static float ground_timestamp;
 static float old_ground_timestamp;
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &follow_me_location, &desired_ground_speed, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &v_ctl_auto_throttle_cruise_throttle, &p_thrust, &i_thrust, &d_thrust, &ground_speed_diff, &difference_distance, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
 }
 
 
@@ -239,39 +215,17 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	follow_me_heading = ground_course;
-	flare_heading = ground_course + 180.f;
-	if(flare_heading > 360.f) flare_heading -= 360.f;
 	ground_set = true;
 }
 
 
 // Manage the throttle so that the groundspeed of both the boat and the uav are equivalent
-void follow_me_set_throttle(void);
-void follow_me_set_throttle(void){
-	struct EnuCoor_f *speedEnu;
-
-	speedEnu = stateGetSpeedEnu_f();
-	actual_ground_speed = sqrt(speedEnu->x * speedEnu->x + speedEnu->y * speedEnu->y);
-	desired_ground_speed = ground_speed + ground_speed_diff;
-	if (desired_ground_speed < 0){
-		desired_ground_speed = 0;
-	}
-	float err = fmax(1, fmin(fabs(dist_wp_follow), 2))*(ground_speed + ground_speed_diff - actual_ground_speed);
-
-	// The error is calculated based on whether we get closer to the target or not
-    float d_err = err - last_err;
-    last_err = err;
-    throttle_sum_err += err;
-
-	p_thrust = throttle_pgain * err;
-	d_thrust = throttle_dgain * d_err;
-	i_thrust = throttle_igain * throttle_sum_err;
-	v_ctl_auto_throttle_cruise_throttle = throttle_constant + p_thrust + i_thrust + d_thrust;
-	if (v_ctl_auto_throttle_cruise_throttle<0){
-		v_ctl_auto_throttle_cruise_throttle = 0;
-	}
-	else if (v_ctl_auto_throttle_cruise_throttle>1.5){
-		v_ctl_auto_throttle_cruise_throttle = 1.5;
+void follow_me_set_groundspeed(void);
+void follow_me_set_groundspeed(void){
+	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
+	actual_ground_speed = stateGetHorizontalSpeedNorm_f();
+	if (v_ctl_auto_groundspeed_setpoint < 0){
+		v_ctl_auto_groundspeed_setpoint = 0;
 	}
 }
 
@@ -303,6 +257,7 @@ int follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
+		struct Int32Vect3 wp_ground_utm;
 		wp_ground_utm.x = utm.east;
 		wp_ground_utm.y = utm.north;
 		wp_ground_utm.z = utm.alt;
@@ -357,9 +312,8 @@ int follow_me_set_wp(void){
 //                       1 is in front of the follow me waypoint
 void follow_me_go(float location);
 void follow_me_go(float location){
-	// In case we switch from location reset the sum error so that they are not carried through to the next phase
-	if (old_location == -1){
-		throttle_sum_err = 0;
+	if (old_location == -1 && location != -1){
+		v_ctl_auto_groundspeed_sum_err = 0;
 	}
 	NavGotoWaypoint(WP_FOLLOW2);
     NavVerticalAltitudeMode(follow_me_height, 0.);
@@ -375,7 +329,7 @@ int follow_me_call(void){
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_location = follow_me_set_wp();
 	}
-	difference_distance = fabs(dist_wp_follow) - fabs(dist_wp_follow_old);
+	float difference_distance = fabs(dist_wp_follow) - fabs(dist_wp_follow_old);
 	// In case we are between the boat and the waypoint t
 	if (follow_me_location == 0){
 		// If we were launched from the boat for example reset the difference
@@ -413,41 +367,8 @@ int follow_me_call(void){
     }
 
 	follow_me_go(follow_me_location);
-	follow_me_set_throttle();
+	follow_me_set_groundspeed();
 
 	return 1;
 }
-
-void follow_me_set_landing_points(void){
-		// Obtain lat lon coordinates for conversion
-		struct LlaCoor_f lla;
-
-
-        lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
-		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
-		lla.alt = ((float)(ground_lla.alt))/1000.;
-
-		// Convert LLA to UTM
-		struct UtmCoor_f utm;
-		utm.zone = nav_utm_zone0;
-		utm_of_lla_f(&utm, &lla);
-
-		// Flare waypoint
-		float flare_distance = flare_hspeed*flare_height/flare_vspeed;
-		int32_t x = flare_distance*sinf(flare_heading/180.*M_PI);
-		int32_t y = flare_distance*cosf(flare_heading/180.*M_PI);
-		int32_t z = flare_height; // height above which we want to be followed
-		nav_move_waypoint(WP_FLARE, utm.east + x, utm.north + y, utm.alt + z);
-
-		// Touchdown waypoint
-		nav_move_waypoint(WP_TD, utm.east, utm.north, utm.alt);
-
-		// AF waypoint
-		z = follow_me_height - flare_height + utm.alt;
-		int32_t d = land_hspeed*z/land_vspeed + flare_distance;
-		x = d*sinf(flare_heading/180.*M_PI);
-		y = d*cosf(flare_heading/180.*M_PI);
-		nav_move_waypoint(WP_AF, utm.east + x, utm.north + y, follow_me_height + utm.alt);
-}
-
 
