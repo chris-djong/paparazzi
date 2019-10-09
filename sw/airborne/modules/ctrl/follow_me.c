@@ -271,7 +271,7 @@ int follow_me_set_wp(void){
 		dist_wp_follow_old = dist_wp_follow;
 		dist_wp_follow = sqrt((x_follow - pos_Utm->east)*(x_follow - pos_Utm->east) + (y_follow - pos_Utm->north)*(y_follow - pos_Utm->north));
         dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
-        dist_wp_follow_max = 3;
+        dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
 
 
 		// Update STBDY HOME AND FOLLOW ME WP
