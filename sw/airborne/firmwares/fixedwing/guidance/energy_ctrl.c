@@ -354,11 +354,11 @@ void v_ctl_climb_loop(void)
   BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
 
   v_ctl_auto_airspeed_setpoint += v_ctl_auto_groundspeed_pgain*err_groundspeed + v_ctl_auto_groundspeed_igain*v_ctl_auto_groundspeed_sum_err + d_err*v_ctl_auto_groundspeed_dgain;
-  if (v_ctl_auto_airspeed_setpoint < 10){
-	  v_ctl_auto_airspeed_setpoint = 10;
+  if (v_ctl_auto_airspeed_setpoint < STALL_AIRSPEED*1.23){
+	  v_ctl_auto_airspeed_setpoint = STALL_AIRSPEED*1.23;
   }
-  if (v_ctl_auto_airspeed_setpoint_slew < 10){
-	  v_ctl_auto_airspeed_setpoint_slew = 10;
+  if (v_ctl_auto_airspeed_setpoint_slew < STALL_AIRSPEED*1.23){
+	  v_ctl_auto_airspeed_setpoint_slew = STALL_AIRSPEED*1.23;
   }
   v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
 
