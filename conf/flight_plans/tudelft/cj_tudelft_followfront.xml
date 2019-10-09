@@ -67,7 +67,7 @@
     
     <!-- Takeoff in direction of CLIMB waypoint until we have a height of 25 meters -->
     <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
-      <exception cond="GetPosAlt() > GetAltRef()+100" deroute="Standby"/>
+      <exception cond="GetPosAlt() > GetAltRef()+5" deroute="Standby"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
       <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="15"/>
@@ -92,30 +92,7 @@
     <block name="follow_module_land" strip_button="Follow Land" group="land">
       <stay pre_call="follow_me_set_wp()" climb="-1" vmode="climb" wp="FOLLOW"/>
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
-    </block>
-    
-    <!--  Set the Touchdown waypoint to the current GCS GPSlocation
-          And set the AF waypoint to the current drone GPSlocation -->
-    <block name="land here" strip_button="Land Here" group="land">      
-      <call_once fun="follow_me_set_landing_points()"/>
-    </block>
-    <!-- Glide from the AF waypoint to the TD waypoint 
-         In case the aircraft is less than 10 m above ground, deroute to flare-->
-    <block name="CircleAF" group="land">
-      <circle radius="nav_radius" until="NavCircleCount() > 0.5" wp="AF"/>
-    </block>
-    <block name="GoFlare" group ="land">
-      <exception cond="ground_alt + 10 > GetPosAlt()" deroute="CircleAF"/>
-      <go from="AF" hmode="route" vmode="glide" wp="FLARE"/>
-    </block>
-    <block name="flare" group="land">
-	   <go approaching_time="0" from="FLARE" hmode="route" throttle="0.0" wp="TD"/>
-	   <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>    
-	</block>
-    <block name="landed" group="land">
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
-    </block>
-    
+    </block>    
   </blocks>
   
   

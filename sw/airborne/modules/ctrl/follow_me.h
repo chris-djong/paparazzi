@@ -35,15 +35,9 @@
 extern uint8_t follow_me_distance;
 extern uint8_t follow_me_height;
 extern float follow_me_heading;
-extern float throttle_pgain;
-extern float throttle_dgain;
-extern float throttle_igain;
-extern float throttle_constant;
 extern float desired_ground_speed;
-extern int8_t follow_me_location;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
-extern struct Int32Vect3 wp_ground_utm;
 
 /** init function */
 extern void follow_me_init(void);
@@ -62,8 +56,6 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
 extern int follow_me_call(void);
 
 extern int follow_me_set_wp(void);
-
-extern void follow_me_set_landing_points(void);
 
 #endif
 

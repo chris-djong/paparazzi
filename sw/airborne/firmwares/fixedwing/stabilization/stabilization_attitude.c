@@ -283,7 +283,7 @@ void h_ctl_course_loop(void)
 #endif
 
   float speed_depend_nav = stateGetHorizontalSpeedNorm_f() / NOMINAL_AIRSPEED;
-  Bound(speed_depend_nav, 0.66, 1.5);
+  // Bound(speed_depend_nav, 0.66, 1.5);
 
   float cmd = -h_ctl_course_pgain * speed_depend_nav * (err + d_err * h_ctl_course_dgain);
 

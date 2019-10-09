@@ -17,6 +17,10 @@
     <target name="ap" board="disco">
       <module name="radio_control" type="sbus"/>
       <module name="follow_me"/> 
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
+      </module>
       <!-- In /modules/loggers/file_logger.c include the required headers and specify that variables that should be loggeed -->
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
@@ -37,13 +41,11 @@
       <module name="follow_me"/> 
       <!--  <module name="ahrs" type="float_dcm"/> -->
       <module name="ahrs" type="int_cmpl_quat"/>
-      
-      
+      <define name="AIRSPEED_ADC_SCALE" value="1"/>
+      <define name="AIRSPEED_ADC_BIAS" value="1"/>
+      <module name="airspeed" type="adc"/>
     </target>
-    <module name="airspeed" type="ms45xx_i2c">
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
-    </module>
+
     
     <module name="telemetry" type="transparent_udp"/>
     <!-- <module name="telemetry" type="transparent">
@@ -160,9 +162,6 @@
     <define name="ALTITUDE_MAX_CLIMB" value="2"/>
     <define name="GLIDE_RATIO" value="8"/>
     
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.2"/>
-    
     <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.1"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.1"/>
     <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.1"/>
@@ -173,6 +172,13 @@
     <define name="ENERGY_DIFF_IGAIN" value="0.15"/>
 
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0." unit="%/(m/s)"/>
+    
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="12"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.01"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
+    <define name="AUTO_GROUNDSPEED_DGAIN" value="0.00"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/>
 
   </section>
 

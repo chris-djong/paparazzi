@@ -126,6 +126,8 @@ float v_ctl_auto_airspeed_controlled;
 float v_ctl_auto_groundspeed_setpoint; ///< in meters per second
 float v_ctl_auto_groundspeed_pgain;
 float v_ctl_auto_groundspeed_igain;
+float v_ctl_auto_groundspeed_dgain;
+float v_ctl_auto_groundspeed_last_err=0;
 float v_ctl_auto_groundspeed_sum_err;
 #define V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR 100
 
@@ -277,6 +279,7 @@ void v_ctl_init(void)
   v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
   v_ctl_auto_groundspeed_pgain = V_CTL_AUTO_GROUNDSPEED_PGAIN;
   v_ctl_auto_groundspeed_igain = V_CTL_AUTO_GROUNDSPEED_IGAIN;
+  v_ctl_auto_groundspeed_dgain = V_CTL_AUTO_GROUNDSPEED_DGAIN;
   v_ctl_auto_groundspeed_sum_err = 0.;
 #endif
 
@@ -345,25 +348,26 @@ void v_ctl_climb_loop(void)
 #ifdef V_CTL_AUTO_GROUNDSPEED_SETPOINT
 // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
   float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
+  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
+  v_ctl_auto_groundspeed_last_err = err_groundspeed;
   v_ctl_auto_groundspeed_sum_err += err_groundspeed;
   BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
-  v_ctl_auto_airspeed_controlled = (err_groundspeed + v_ctl_auto_groundspeed_sum_err * v_ctl_auto_groundspeed_igain) *
-                                   v_ctl_auto_groundspeed_pgain;
 
-  // Do not allow controlled airspeed below the setpoint
-  if (v_ctl_auto_airspeed_controlled < v_ctl_auto_airspeed_setpoint_slew) {
-    v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
-    // reset integrator of ground speed loop
-    v_ctl_auto_groundspeed_sum_err = v_ctl_auto_airspeed_controlled / (v_ctl_auto_groundspeed_pgain *
-                                     v_ctl_auto_groundspeed_igain);
+  v_ctl_auto_airspeed_setpoint += v_ctl_auto_groundspeed_pgain*err_groundspeed + v_ctl_auto_groundspeed_igain*v_ctl_auto_groundspeed_sum_err + d_err*v_ctl_auto_groundspeed_dgain;
+  if (v_ctl_auto_airspeed_setpoint < 10){
+	  v_ctl_auto_airspeed_setpoint = 10;
   }
+  if (v_ctl_auto_airspeed_setpoint_slew < 10){
+	  v_ctl_auto_airspeed_setpoint_slew = 10;
+  }
+  v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
+
 #else
   v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
 #endif
 
   // Airspeed outerloop: positive means we need to accelerate
   float speed_error = v_ctl_auto_airspeed_controlled - stateGetAirspeed_f();
-  printf("%f %f\n", speed_error, stateGetAirspeed_f());
   // Speed Controller to PseudoControl: gain 1 -> 5m/s error = 0.5g acceleration
   v_ctl_desired_acceleration = speed_error * v_ctl_airspeed_pgain / 9.81f;
   BoundAbs(v_ctl_desired_acceleration, v_ctl_max_acceleration);
@@ -406,7 +410,6 @@ void v_ctl_climb_loop(void)
                               + v_ctl_auto_throttle_climb_throttle_increment * v_ctl_climb_setpoint
                               + v_ctl_auto_throttle_of_airspeed_pgain * speed_error
                               + v_ctl_energy_total_pgain * en_tot_err;
-
   if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
     // If your energy supply is not sufficient, then neglect the climb requirement
     en_dis_err = -vdot_err;
