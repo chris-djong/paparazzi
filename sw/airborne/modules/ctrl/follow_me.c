@@ -43,39 +43,6 @@
 
 
 
-//declarations
-#define MAXSIZE 10
-float average_array[MAXSIZE]={0};
-int8_t front=-1,rear=-1, count=0;
-float AverageForNewElement(float);
-
-//function definition
-float AverageForNewElement(float item)
-{
-	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
-	// Count = int8_t
-	if (count<MAXSIZE){
-		count += 1;
-	}
-    static float Sum=0;
-    if(front ==(rear+1)%MAXSIZE)
-    {
-        if(front==rear)
-            front=rear=-1;
-        else
-            front = (front+1)%MAXSIZE;
-        Sum=Sum-average_array[front];
-    }
-    if(front==-1)
-        front=rear=0;
-    else
-        rear=(rear+1)%MAXSIZE;
-    average_array[rear]=item;
-    Sum=Sum+average_array[rear];
-    return ((float)Sum/fmin(MAXSIZE, count));
-}
-
-
 // Parameters for follow_me module
 uint8_t follow_me_distance = 5; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
@@ -94,6 +61,11 @@ float safety_boat_distance = 1; // distance that the UAV should not move from th
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
+
+float ground_speed_diff_pgain = 0.3;
+float ground_speed_diff_dgain = 0.15;
+float ground_speed_diff_igain = 0.03;
+float ground_speed_diff_sum_err = 0.0;
 
 // Old location to reset sum error
 float dist_wp_follow_old; // old distance to follow me wp
@@ -223,7 +195,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 void follow_me_set_groundspeed(void);
 void follow_me_set_groundspeed(void){
 	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
-	actual_ground_speed = stateGetHorizontalSpeedNorm_f();
+	actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 	if (v_ctl_auto_groundspeed_setpoint < 0){
 		v_ctl_auto_groundspeed_setpoint = 0;
 	}
@@ -329,31 +301,18 @@ int follow_me_call(void){
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_location = follow_me_set_wp();
 	}
-	float difference_distance = fabs(dist_wp_follow) - fabs(dist_wp_follow_old);
-	// In case we are between the boat and the waypoint t
-	if (follow_me_location == 0){
-		// If we were launched from the boat for example reset the difference
-		// as otherwise the UAV will keep flying at the ground speed diff
-		if (old_location == -1){
-		    ground_speed_diff = 0;
-		}
-	    if (difference_distance > 0){
-	    	ground_speed_diff += difference_distance/10;
-	    } else if (difference_distance < 0){
-	    	ground_speed_diff -= difference_distance/10;
-	    }
-    // In case we are in front of the waypoint
-	} else if (follow_me_location == 1){
-		if (difference_distance > 0){
-			ground_speed_diff -= difference_distance/3;
-		} else if (difference_distance < 0){
-			ground_speed_diff += difference_distance/3;
-		}
+
+    ground_speed_diff_sum_err += dist_wp_follow;
+    BoundAbs(ground_speed_diff_sum_err, 20);
+    ground_speed_diff = -ground_speed_diff_pgain*dist_wp_follow - ground_speed_diff_igain*ground_speed_diff_sum_err - (dist_wp_follow-dist_wp_follow_old)*ground_speed_diff_igain;
+
+	if (follow_me_location == 0 && old_location == -1){
+		ground_speed_diff = 0;
 	// In case we are behind the boat
 	}  else if (follow_me_location == -1){
 		ground_speed_diff = ground_speed_diff_limit;
 	}
-	// Bound groundspeed diff by 2 or -2
+	// Bound groundspeed diff by limits
 	if (ground_speed_diff > ground_speed_diff_limit){
 		ground_speed_diff = ground_speed_diff_limit;
 	}
@@ -361,10 +320,6 @@ int follow_me_call(void){
 		ground_speed_diff = -ground_speed_diff_limit;
 
 	}
-
-    if (follow_me_location != -1){
-  	  ground_speed_diff = AverageForNewElement(ground_speed_diff);
-    }
 
 	follow_me_go(follow_me_location);
 	follow_me_set_groundspeed();

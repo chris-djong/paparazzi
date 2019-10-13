@@ -39,6 +39,10 @@ extern float desired_ground_speed;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
 
+extern float ground_speed_diff_igain;
+extern float ground_speed_diff_pgain;
+extern float ground_speed_diff_dgain;
+
 /** init function */
 extern void follow_me_init(void);
 
