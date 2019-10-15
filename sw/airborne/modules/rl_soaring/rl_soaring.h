@@ -40,9 +40,7 @@ typedef struct {
 #define DL_RL_TRAINING_UP 77
 
 typedef struct{
-//    float F_ext_rolling[RL_ROLLING_WINDOW_SIZE];
-    int discr_F_ext;
-    int discr_prev_action;
+ // states
 
 } rl_state;
 
@@ -65,18 +63,11 @@ extern void rl_soaring_stop(void);
 extern void rl_soaring_turn_on(void);
 extern void rl_soaring_turn_off(void);
 
-extern void rl_obstace_avoidance_new_log_file(void);
-extern int rl_soaring_est_accel_bias(void);
-extern void rl_soaring_est_k_over_m(void);
 extern void rl_soaring_update_measurements(void);
 extern void rl_soaring_flight_status(int);
 
-extern int rl_soaring_hover(void);
-extern int rl_soaring_save(void);
 extern int rl_soaring_fail(void);
 extern int rl_soaring_timeout(void);
-extern void rl_soaring_hover_concluded(void);
-extern void rl_soaring_save_concluded(void);
 
 extern void rl_soaring_parse_uplink(void);
 extern void rl_soaring_start_episode(void);

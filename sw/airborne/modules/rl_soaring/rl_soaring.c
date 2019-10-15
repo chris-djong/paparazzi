@@ -105,17 +105,11 @@ static int rl_soaring_check_crash(void);
 static float randn (float mu, float sigma);
 static float random_float_in_range(float min, float max);
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
+
+// sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
     // When prompted, return all the telemetry variables
-    pprz_msg_send_rl_soaring(trans, dev, AC_ID,
-                                        &timestep, &time_rl,
-                                        &body_acceleration_u, &body_acceleration_v, &body_acceleration_w,
-                                        &body_speed_u, &body_speed_v, &body_speed_w, &gps_vertical_speed,
-                                        &enu_position_x, &enu_position_y, &enu_position_z,
-                                        &body_rate_p, &body_rate_q, &body_rate_r,
-                                        &body_attitude_phi, &body_attitude_theta, &body_attitude_psi,
-                                        &motor_speed_nw, &motor_speed_ne, &motor_speed_se, &motor_speed_sw,
-                                        &F_ext_onboard_est, &F_ext_rolling_mean);
+    pprz_msg_send_rl_soaring(trans, dev, AC_ID,&timestep, &time_rl);
 }
 
 /** Initialization function **/
@@ -125,8 +119,6 @@ void rl_soaring_init(void) {
 }
 
 /** Function called when the module is started, performs the following functions:
- * -> Create log file
- * -> Open log file
  * */
 void rl_soaring_start(void){
     // HERE WAS INITIAL VARIABLES OF STATES ETC
@@ -137,6 +129,8 @@ void rl_soaring_start(void){
     start_time_milliseconds = currentTime.tv_usec;
 }
 
+
+// Updates all the mesaurements that were required to send down to the ground segment
 void rl_soaring_update_measurements(void){
     // Update timestep
     timestep++;
@@ -149,7 +143,6 @@ void rl_soaring_update_measurements(void){
                           episode_start_time_milliseconds / 1000;
     }
 
-    // HERE WAS UPDATE OF ALL THE STATES
 }
 
 
@@ -186,6 +179,12 @@ void rl_soaring_start_episode(){
         printf("New episode started, episode number %d\n", episode);
     }
 }
+
+
+void rl_soaring_state_estimator(void){
+    // Estimates the states (required for us?)
+}
+
 
 /*
  * Function periodic, the heartbeat of the module
@@ -225,18 +224,17 @@ void rl_soaring_periodic(void) {
     }
 }
 
+
+// Not used at all for now ///////
 void rl_soaring_end_episode(){
     rl_episode_fail = false;
     rl_episode_timeout = false;
     printf("Episode ended\n");
 }
 
-void rl_soaring_state_estimator(void){
-    // Re estimate states
-}
 
 /*
- *  Function used to check if the quadrotor is 'crashed' and the episode should be aborted
+ *  Function used to check if the fixedwing is 'crashed' and the episode should be aborted
  */
 int rl_soaring_check_crash(void){
     // Check whether we are in window
@@ -266,7 +264,6 @@ int rl_soaring_timeout(void){
 }
 
 // Here there were function which set the start of an action to false (in case they terminate)
-
 void rl_soaring_turn_on(void){
     rl_soaring_rl_soaring_periodic_status = MODULES_START;
 }
@@ -276,7 +273,6 @@ void rl_soaring_turn_off(void){
 }
 
 /** Function called when the module is stopped, performs the following functions:
- * -> Close log file
  * */
 void rl_soaring_stop(void){
     // Reset episode counter
@@ -356,7 +352,6 @@ void rl_soaring_request_new_policy(void){
 /*
  *  Function to send a message down
  */
-
 void rl_soaring_send_message_down(char *_request, char *_parameters){
     uint16_t nb_request;
     uint16_t nb_parameters;
