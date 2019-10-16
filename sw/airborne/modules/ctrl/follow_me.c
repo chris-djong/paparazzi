@@ -86,6 +86,7 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 
 // Called at compiling of module
 void follow_me_init(void){
+
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
     ground_set = false;
 }
@@ -172,6 +173,7 @@ void follow_me_startup(void){
 
 
 void follow_me_parse_ground_gps(uint8_t *buf){
+
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
 		return;
 
@@ -194,6 +196,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 // Manage the throttle so that the groundspeed of both the boat and the uav are equivalent
 void follow_me_set_groundspeed(void);
 void follow_me_set_groundspeed(void){
+
 	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
 	actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 	if (v_ctl_auto_groundspeed_setpoint < 0){
@@ -204,6 +207,7 @@ void follow_me_set_groundspeed(void){
 // Sets the WP_FOLLOW based on GPS coordinates received by ground segment
 // Returns 0 if the waypoint is in front of the UAV and 1 otherwise
 int follow_me_set_wp(void){
+
 	if(ground_set) {
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
@@ -281,6 +285,7 @@ int follow_me_set_wp(void){
 //                       1 is in front of the follow me waypoint
 void follow_me_go(float location);
 void follow_me_go(float location){
+
 	if (old_location == -1 && location != -1){
 		v_ctl_auto_groundspeed_sum_err = 0;
 	}
@@ -294,6 +299,7 @@ void follow_me_go(float location){
 // It calculates the difference in groundspeed between the UAV and the system
 // This ground speed diff is used in order to propagate errors in case the GPS speed error is not reliable
 int follow_me_call(void){
+
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_location = follow_me_set_wp();
@@ -322,5 +328,10 @@ int follow_me_call(void){
 	follow_me_set_groundspeed();
 
 	return 1;
+}
+
+void follow_me_stop(void){
+	ground_speed_diff = 0;
+	v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
 }
 

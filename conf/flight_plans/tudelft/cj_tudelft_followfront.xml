@@ -74,7 +74,7 @@
     </block>
     <!--  After the height of 25 m is obtained we deroute to the standby waypoint for 1 minute-->
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="flight">
-      <set value="V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" var="v_ctl_auto_throttle_cruise_throttle"/>
+      <call_once fun="follow_me_stop()"/>
       <circle radius="nav_radius" wp="STDBY" pre_call="follow_me_set_wp()"/>    
     </block>
     

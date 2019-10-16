@@ -84,8 +84,6 @@ static uint16_t action_policy; // not used
 static uint16_t action_chosen; // not used
 static uint16_t action_performed; // not used
 
-static float discr_state_1_bounds[STATE_SIZE_1]
-static float discr_state_2_bounds[STATE_SIZE_2]
 static uint16_t action_space[ACTION_SIZE_1];
 static float Q[STATE_SIZE_1][STATE_SIZE_2][ACTION_SIZE_1];
 
@@ -120,11 +118,10 @@ void rl_soaring_init(void) {
 void rl_soaring_start(void){
     // Initialise discrete state space
 	for (int i=0; i<STATE_SIZE_1; i++){
-		discr_state_1_bounds[i] = -5 + i*0.5;
-		discr_state_2_bounds[i] = -5 + i*0.5;
 		for (int j=0; j<STATE_SIZE_2; J++){
+			current_policy[i][j] = 3; // set the current policy to do nothing
 		    for (int k=0; k<ACTION_SIZE_1; k++){
-		        Q[i][j][k] = 0;
+		        Q[i][j][k] = 0;  // set all the initial qvalues to 0
 		    }
 		}
 	}
@@ -159,21 +156,7 @@ void rl_soaring_start_episode(){
     action_chosen = 3;
     action_performed = 3;
 
-    // Determine exploring starts height
-    if(rl_exploring_starts){
-        rl_exploring_starts_frozen = true;
-        rl_starting_height = random_float_in_range(0.1, 0.45);
-    } else {
-        rl_exploring_starts_frozen = false;
-        rl_starting_height = 1.0;
-    }
 
-    // Print to the console
-    if(rl_exploring_starts) {
-        printf("New episode started, episode number %d, frozen till %.2fm\n", episode, rl_starting_height);
-    } else {
-        printf("New episode started, episode number %d\n", episode);
-    }
 }
 
 // Not used at all for now ///////

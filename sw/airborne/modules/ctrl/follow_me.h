@@ -53,6 +53,9 @@ extern void follow_me_init(void);
 // Starting function in order to initialsie parameters such as follow_me_height
 extern void follow_me_startup(void);
 
+// Function which is called once in each block which is not the follow me block
+extern void follow_me_stop(void);
+
 // Function called before each follow_me_call
 extern int follow_me_pre_call(void);
 
