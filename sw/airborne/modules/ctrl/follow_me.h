@@ -38,6 +38,7 @@ extern float follow_me_heading;
 extern float desired_ground_speed;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
+extern float dist_wp_follow_old;
 
 extern float ground_speed_diff_igain;
 extern float ground_speed_diff_pgain;

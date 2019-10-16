@@ -25,7 +25,7 @@
   </header>
   <init fun="rl_soaring_init()"/>
   <periodic fun="rl_soaring_periodic()" freq="512" start="rl_soaring_start()" stop="rl_soaring_stop()" autorun="FALSE"/>
-  <datalink message="RL_TRAINING_UP" fun="rl_soaring_parse_uplink()"/>
+  <!-- <datalink message="RL_TRAINING_UP" fun="rl_soaring_parse_uplink()"/> -->
   <makefile>
     <file name="rl_soaring.c"/>
   </makefile>

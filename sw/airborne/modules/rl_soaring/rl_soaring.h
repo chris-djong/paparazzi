@@ -40,17 +40,14 @@ typedef struct {
 #define DL_RL_TRAINING_UP 77
 
 typedef struct{
- // states
-
+    // states
+	int dist_wp_idx;
+	int dist_wp_idx_old;
 } rl_state;
 
 // Variables
 extern float rl_soaring_termination_dist;
-extern float rl_soaring_descend_speed;
-extern float rl_wall_heading;
-extern int rl_soaring_policy_received;
-extern int set_estimated_accel_bias;
-extern int set_estimated_k_over_m;
+
 extern float rl_exploration_rate;
 extern int rl_autostart;
 extern int rl_exploring_starts;
@@ -69,11 +66,11 @@ extern void rl_soaring_flight_status(int);
 extern int rl_soaring_fail(void);
 extern int rl_soaring_timeout(void);
 
-extern void rl_soaring_parse_uplink(void);
+// extern void rl_soaring_parse_uplink(void);
 extern void rl_soaring_start_episode(void);
 extern void rl_soaring_end_episode(void);
 
-extern void rl_soaring_request_new_policy(void);
+// extern void rl_soaring_request_new_policy(void);
 //extern void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 
 #endif

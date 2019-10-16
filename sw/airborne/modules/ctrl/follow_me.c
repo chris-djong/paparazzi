@@ -245,13 +245,11 @@ int follow_me_set_wp(void){
         dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
         dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
 
-
 		// Update STBDY HOME AND FOLLOW ME WP
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
 		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
 		nav_move_waypoint(WP_STDBY, utm.east, utm.north, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
 		nav_move_waypoint(WP_HOME, utm.east, utm.north, follow_me_height + 20);
-
 
 		// Update allowable Flying Region
 		nav_move_waypoint(WP_FR_TL, x_follow - 200, y_follow + 200, follow_me_height);

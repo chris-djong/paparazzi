@@ -44,28 +44,19 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "filters/low_pass_filter.h"
 #include "subsystems/gps/gps_datalink.h"
+#include "modules/ctrl/follow_me.h"
 
 // Include other paparazzi modules
 #include "generated/modules.h"
 #include "subsystems/datalink/datalink.h" // dl_buffer
 
-// Set pre-processor constants
-#define rl_soaring_LOG TRUE
-#define rl_soaring_TELEMETRY TRUE
 
 // Declaration of global variables
-float rl_soaring_filter_cutoff = 3.0;
-float rl_soaring_termination_dist = 0.05;
-float rl_soaring_descend_speed = -0.3;
-float rl_wall_heading = 237.0;
-int rl_soaring_policy_received = false;
-float rl_exploration_rate = 0.0;
-int rl_autostart = false;
-int rl_exploring_starts = true;
-int rl_exploring_starts_frozen = false;
+float rl_exploration_rate = 0.5;
+float rl_gamma = 0.95;
+float rl_alpha = 0.85;
 
 // Declaration of local variables
-static int32_t number_of_variables = 0;
 struct timeval currentTime;
 static int32_t start_time_seconds = 0;
 static int32_t start_time_milliseconds = 0;
@@ -81,30 +72,36 @@ static int32_t episode_time_rl = 0;
 static int32_t max_episode_length = 10000;
 
 // RL variables
-#define POLICY_SIZE_1 9
-#define POLICY_SIZE_2 3
+#define STATE_SIZE_1 30  // discretized wp_follow
+#define STATE_SIZE_2 30  // discretized old_wp_follow
+#define MIN_FOLLOW_DIST -5  // minimum allowable distance from wp follow (boat)
+#define ACTION_SIZE_1 5  // increase decrease or no change in groundspeed
 
-static uint16_t prev_action;
-static rl_state current_state;
-static uint16_t action_policy;
-static uint16_t action_chosen;
-static uint16_t action_performed;
-static float discr_state_F_ext_bounds[POLICY_SIZE_1] = {-1.05, -0.95, -0.85, -0.75, -0.65, -0.55, -0.45, -0.35, -0.25}; // Bebop 1
+static uint16_t prev_action; // not used
+static rl_state state1;
+static rl_state state2;
+static uint16_t action_policy; // not used
+static uint16_t action_chosen; // not used
+static uint16_t action_performed; // not used
 
-static uint16_t action_space[POLICY_SIZE_2] = {1, 2, 3};
-static uint16_t current_policy[POLICY_SIZE_1][POLICY_SIZE_2] = {};
+static float discr_state_1_bounds[STATE_SIZE_1]
+static float discr_state_2_bounds[STATE_SIZE_2]
+static uint16_t action_space[ACTION_SIZE_1];
+static float Q[STATE_SIZE_1][STATE_SIZE_2][ACTION_SIZE_1];
 
-static int rl_episode_fail = false;
-static int rl_episode_timeout = false;
+// Gives action to be performed based on current state
+static uint16_t current_policy[STATE_SIZE_1][STATE_SIZE_2] = {};
+static int rl_episode_timeout = false; // not used
+static int rl_episode_boatcrash;
+static int rl_episode_beyond_wp;
 
-static void rl_soaring_send_message_down(char *_request, char *_parameters);
+// static void rl_soaring_send_message_down(char *_request, char *_parameters);
 static uint16_t rl_soaring_get_action(rl_state state);
 static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static int rl_soaring_check_crash(void);
-static float randn (float mu, float sigma);
 static float random_float_in_range(float min, float max);
-static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
+// static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
@@ -121,7 +118,16 @@ void rl_soaring_init(void) {
 /** Function called when the module is started, performs the following functions:
  * */
 void rl_soaring_start(void){
-    // HERE WAS INITIAL VARIABLES OF STATES ETC
+    // Initialise discrete state space
+	for (int i=0; i<STATE_SIZE_1; i++){
+		discr_state_1_bounds[i] = -5 + i*0.5;
+		discr_state_2_bounds[i] = -5 + i*0.5;
+	}
+
+	// Initialise action space
+	for (int i=0; i<ACTION_SIZE_1; i++){
+		action_space[i] = i;
+	}
 
     // Set start time in seconds
     gettimeofday(&currentTime, NULL);
@@ -130,28 +136,13 @@ void rl_soaring_start(void){
 }
 
 
-// Updates all the mesaurements that were required to send down to the ground segment
-void rl_soaring_update_measurements(void){
-    // Update timestep
-    timestep++;
-
-    // Get time in milliseconds since the measurement has started
-    gettimeofday(&currentTime, NULL);
-    time_rl = (currentTime.tv_sec - start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 - start_time_milliseconds / 1000;
-    if( episode > 0) {
-        episode_time_rl = (currentTime.tv_sec - episode_start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 -
-                          episode_start_time_milliseconds / 1000;
-    }
-
-}
-
-
-
 /* Function called at the start of each episode
  */
 void rl_soaring_start_episode(){
     // Set intervention & fail states to false
-    rl_episode_fail = false;
+    rl_episode_beyond_wp = false; // in case we fly beyond wp2
+    rl_episode_boatcrash = false; // in case we crash the boat
+    rl_episode_timeout = false;
 
     // Increase episode counter and save start time
     episode = episode+1;
@@ -160,8 +151,8 @@ void rl_soaring_start_episode(){
     episode_start_time_milliseconds = currentTime.tv_usec;
 
     // Set action to one (no-action) (for the state prev_action)
-    action_chosen = 1;
-    action_performed = 1;
+    action_chosen = 3;
+    action_performed = 3;
 
     // Determine exploring starts height
     if(rl_exploring_starts){
@@ -180,9 +171,54 @@ void rl_soaring_start_episode(){
     }
 }
 
+// Not used at all for now ///////
+void rl_soaring_end_episode(void){
+    rl_reset_agent();
+    printf("Episode ended\n");
+}
+
+float idx_to_dist(int idx){
+    return (-5 + idx*0.5);
+}
+
+int dist_to_idx(float dist){
+    return floor(2*(dist + 5));
+}
+
+// Updates all the mesaurements that were required to send down to the ground segment
+void rl_soaring_update_measurements(void){
+    // Update timestep
+    timestep++;
+
+    // Get time in milliseconds since the measurement has started
+    gettimeofday(&currentTime, NULL);
+    time_rl = (currentTime.tv_sec - start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 - start_time_milliseconds / 1000;
+    if( episode > 0) {
+        episode_time_rl = (currentTime.tv_sec - episode_start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 -
+                          episode_start_time_milliseconds / 1000;
+    }
+
+    // Obtain state, so follow me distances
+    int location = follow_me_set_wp();
+
+    if (location == -1){
+    	rl_episode_boatcrash = true;
+    }
+
+    // Obtain index of state based on location
+    int idx_old = dist_to_idx(dist_wp_follow_old);
+    int idx = dist_to_idx(dist_wp_follow);
+    state1.dist_wp_idx_old = state2.dist_wp_idx_old;
+    state1.dist_wp_idx = state2.dist_wp_idx;
+    state2.dist_wp_idx_old = idx_old;
+    state2.dist_wp_idx = idx;
+    printf("Based on a state of (%f, %f) the following indices have been calculated (%d, %d)\n", dist_wp_follow_old, dist_wp_follow, idx_old, idx);
+}
+
+
 
 void rl_soaring_state_estimator(void){
-    // Estimates the states (required for us?)
+    // Estimates the states (maybe wind later on)
 }
 
 
@@ -198,15 +234,9 @@ void rl_soaring_periodic(void) {
     // Get state
     rl_soaring_state_estimator();
 
-    if((flight_status >= 50) && (flight_status < 60) && (rl_episode_fail == false)){
+    // Check whether we are in an episode already
 
-        // Check for episode timeout
-        if((rl_intervention_hover == false) && (rl_intervention_save == false) && (rl_episode_timeout == false)) {
-            if (episode_time_rl > max_episode_length) {
-                rl_episode_timeout = true;
-                printf("Episode timeout at %d seconds\n", (int) episode_time_rl / 1000);
-            }
-        }
+
 
         // Check for end of exploring starts freeze
 
@@ -224,98 +254,86 @@ void rl_soaring_periodic(void) {
     }
 }
 
+// Function which resets the agent to its initial position
+void rl_reset_agent(void){
 
-// Not used at all for now ///////
-void rl_soaring_end_episode(){
-    rl_episode_fail = false;
-    rl_episode_timeout = false;
-    printf("Episode ended\n");
 }
 
-
-/*
- *  Function used to check if the fixedwing is 'crashed' and the episode should be aborted
- */
-int rl_soaring_check_crash(void){
-    // Check whether we are in window
+void update_q_value(rl_state state, rl_state state2, float reward, int action, int action2){
+	float predicted_q_value = Q[state.dist_wp_idx][state.dist_wp_idx_old][action];
+    float target = reward + rl_gamma * Q[state2.dist_wp_idx][state2.dist_wp_idx_old][action2];
+    printf("Updating Q value from %f to ", Q[state.dist_wp_idx][state.dist_wp_idx_old][action]);
+    Q[state.dist_wp_idx][state.dist_wp_idx_old][action] = Q[state.dist_wp_idx][state.dist_wp_idx_old][action] + rl_alpha * (target - predicted_q_value);
+    printf("%f\n", Q[state.dist_wp_idx][state.dist_wp_idx_old][action]);
 }
 
-// Obtain a new action
-uint16_t rl_soaring_get_action(rl_state current_state){
+float calc_reward(rl_state state, rl_state state2){
+	float closer_to_wp = (idx_to_dist(state1.dist_wp_idx) - idx_to_dist(state2.dist_wp_idx));
+	return closer_to_wp;
+}
+
+void update_policy(void){
+	printf("Updating policy\n");
+	for (int i=0; i<STATE_SIZE_1; i++){ // moves through the first state
+	    for (int j=0; j<STATE_SIZE_2; j++){ // moves through the second state
+	    	// Now we need to find the maximum Q value of all the actions
+	    	int max_index = 0;
+	    	int maximum = 0;
+	    	for (int k=0; k<ACTION_SIZE_1; k++){
+	    		if (Q[i][j][k] > maximum){
+	    			maximum = Q[i][j][k];
+	    			max_index = k;
+	    		}
+	    	// Update the current policy accordingly
+	        current_policy[i][j] = max_index;
+	    	}
+	    }
+	}
+}
+
+// Get either an action from the policy or a random action depending on the current epsilon greed
+uint16_t rl_soaring_get_action(rl_state state){
     uint16_t action;
-
-   // Get action from policy
-    action = current_policy[current_state.discr_F_ext][current_state.discr_prev_action];
+    float epsilon = random_float_in_range(0,1);
+    if (epsilon<rl_exploration_rate){
+        printf("Random epsilon of %f has been chosen, random action performed.", epsilon);
+        action = action_space[rand() % ACTION_SIZE_1];
+    } else{
+        printf("Random epsilon of %f has been chosen, policy action performed.", epsilon);
+        action = current_policy[state.dist_wp_idx][state.dist_wp_idx_old];
+    }
     return action;
 }
 
+
+// Function which performs the action which is required
 void rl_soaring_perform_action(uint16_t action){
     // If conditions depending on chosen_action
+	// Action 1, increase ground speed
+	if (action == 0){
+		printf("Action 1 performed, increasing groundspeed by 0.5\n");
+		v_ctl_auto_groundspeed_setpoint += 0.5;
+	} else if (action == 2){
+		printf("Action 2 performed, increasing groundspeed by 0.1\n");
+		v_ctl_auto_groundspeed_setpoint += 0.1;
+	} else if (action == 3){	// Action 2, same ground speed
+        printf("Action 3 performed, same groundspeed\n");
+	} else if (action == 4){	// Action 3, decrease ground speed
+        printf("Action 4 performed, decrease of groundspeed by 0.1\n");
+        v_ctl_auto_groundspeed_setpoint -= 0.1;
+	} else if (action == 5){
+		printf("Action 5 performed, decrease of groundspeed by 0.5\n");
+		v_ctl_auto_groundspeed_setpoint -= 0.5;
+	}
 }
 
-// Here there were a lot of function with all the actions
 
-int rl_soaring_fail(void){
-    return rl_episode_fail;
-}
-
-int rl_soaring_timeout(void){
-    return rl_episode_timeout;
-}
-
-// Here there were function which set the start of an action to false (in case they terminate)
-void rl_soaring_turn_on(void){
-    rl_soaring_rl_soaring_periodic_status = MODULES_START;
-}
-
-void rl_soaring_turn_off(void){
-    rl_soaring_rl_soaring_periodic_status = MODULES_STOP;
-}
 
 /** Function called when the module is stopped, performs the following functions:
  * */
 void rl_soaring_stop(void){
     // Reset episode counter
     episode = 0;
-}
-
-/** Functon used to set and store the flight status:
- * */
-void rl_soaring_flight_status(int status){
-    flight_status = status;
-}
-
-
-/*
- *  FUnction used to generate a random number from normal distribution
- */
-float randn (float mu, float sigma)
-{
-  float U1, U2, W, mult;
-  static float X1, X2;
-  static int call = 0;
-
-  if (call == 1)
-    {
-      call = 0;
-      return (mu + sigma * (float) X2);
-    }
-
-  do
-    {
-      U1 = -1 + ((float) rand () / RAND_MAX) * 2;
-      U2 = -1 + ((float) rand () / RAND_MAX) * 2;
-      W = pow (U1, 2) + pow (U2, 2);
-    }
-  while (W >= 1 || W == 0);
-
-  mult = sqrt ((-2 * log (W)) / W);
-  X1 = U1 * mult;
-  X2 = U2 * mult;
-
-  call = !call;
-
-  return (mu + sigma * (float) X1);
 }
 
 
@@ -329,76 +347,3 @@ float random_float_in_range(float min, float max)
     float div = RAND_MAX / range;
     return min + (rand() / div);
 }
-
-/*
- *  Request new policy
- */
-
-void rl_soaring_request_new_policy(void){
-    char request[100] = "";
-    char parameters[100] = "";
-
-    // Start waiting for new policy
-    rl_soaring_policy_received = false;
-
-    // Send message
-    strcpy(request, "request_new_policy");
-    sprintf(parameters, "%s %d", rl_soaring_run_filename, episode);
-    rl_soaring_send_message_down(request, parameters);
-
-    printf("Waiting for new policy\n");
-}
-
-/*
- *  Function to send a message down
- */
-void rl_soaring_send_message_down(char *_request, char *_parameters){
-    uint16_t nb_request;
-    uint16_t nb_parameters;
-    struct pprzlink_msg msg;
-
-    // Calculate length of strings
-    nb_request = strlen(_request);
-    nb_parameters = strlen(_parameters);
-
-    // Setup message struct
-    msg.trans = &(DefaultChannel).trans_tx;
-    msg.dev = &(DefaultDevice).device;
-    msg.sender_id = AC_ID;
-    msg.receiver_id = 0;
-    msg.component_id = 0;
-
-    pprzlink_msg_v2_send_RL_TRAINING_DOWN(&msg, nb_request, _request, nb_parameters, _parameters);
-}
-
-/*
- * Parse the uplink messages, receive and implement new policy
- */
-void rl_soaring_parse_uplink(void){
-//    uint16_t ac_id;
-    uint16_t index_1;
-    uint16_t index_2;
-    uint16_t value;
-    uint16_t old_policy;
-
-    // Get request and parameters from datalink buffer
-//    ac_id = pprzlink_get_DL_RL_TRAINING_UP_ac_id(dl_buffer);
-    index_1 = pprzlink_get_DL_RL_TRAINING_UP_index_1(dl_buffer);
-    index_2 = pprzlink_get_DL_RL_TRAINING_UP_index_2(dl_buffer);
-    value = pprzlink_get_DL_RL_TRAINING_UP_value(dl_buffer);
-
-    // Update policy
-    old_policy = current_policy[index_1][index_2];
-    current_policy[index_1][index_2] = value;
-
-    printf("Updated policy of state [%u][%u]: %u -> %u\n", index_1, index_2, old_policy, value);
-
-    // Check if this was the last update
-    if(index_1 == (POLICY_SIZE_1-1) && index_2 == (POLICY_SIZE_2-1)){
-        printf("Policy completely updated\n");
-        rl_soaring_policy_received = true;
-    }
-
-}
-
-
