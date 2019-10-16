@@ -61,7 +61,7 @@ float safety_boat_distance = 1; // distance that the UAV should not move from th
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
-
+struct Int32Vect3 wp_follow_utm;R
 float ground_speed_diff_pgain = 0.3;
 float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
@@ -224,7 +224,6 @@ int follow_me_set_wp(void){
 		int32_t x_follow2 = utm.east + 3*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
 		int32_t y_follow2 = utm.north + 3*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
 
-		struct Int32Vect3 wp_follow_utm;
 		wp_follow_utm.x = x_follow;
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;

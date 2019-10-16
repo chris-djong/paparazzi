@@ -37,8 +37,11 @@ extern uint8_t follow_me_height;
 extern float follow_me_heading;
 extern float desired_ground_speed;
 extern float actual_ground_speed;
+
+// Required for rl module
 extern float dist_wp_follow;
 extern float dist_wp_follow_old;
+extern struct Int32Vect3 wp_follow_utm
 
 extern float ground_speed_diff_igain;
 extern float ground_speed_diff_pgain;

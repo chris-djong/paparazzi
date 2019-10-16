@@ -122,6 +122,11 @@ void rl_soaring_start(void){
 	for (int i=0; i<STATE_SIZE_1; i++){
 		discr_state_1_bounds[i] = -5 + i*0.5;
 		discr_state_2_bounds[i] = -5 + i*0.5;
+		for (int j=0; j<STATE_SIZE_2; J++){
+		    for (int k=0; k<ACTION_SIZE_1; k++){
+		        Q[i][j][k] = 0;
+		    }
+		}
 	}
 
 	// Initialise action space
@@ -173,6 +178,18 @@ void rl_soaring_start_episode(){
 
 // Not used at all for now ///////
 void rl_soaring_end_episode(void){
+	if (rl_episode_beyond_wp){
+	    printf("Episode ended because drone flew to far.\n");
+	    rl_episode_beyond_wp = false;
+	}
+	if (rl_episode_boatcrash){
+        printf("Episode ended because drone crashed into boat.\n");
+        rl_episode_boatcrash = false;
+	}
+	if (rl_episode_timeout){
+	    printf("Episode ended because of a timeout.\n");
+	    rl_episode_timeout = false;
+	}
     rl_reset_agent();
     printf("Episode ended\n");
 }
@@ -222,6 +239,12 @@ void rl_soaring_state_estimator(void){
 }
 
 
+void rl_navigation(void){
+	// Standart navigational loop
+	NavGotoWaypoint(WP_FOLLOW2);
+	NavVerticalAltitudeMode(follow_me_height, 0.);
+}
+
 /*
  * Function periodic, the heartbeat of the module
  */
@@ -238,6 +261,7 @@ void rl_soaring_periodic(void) {
 
 
 
+
         // Check for end of exploring starts freeze
 
 
@@ -251,12 +275,19 @@ void rl_soaring_periodic(void) {
             // iChose the action that was performed
 
             // Perform action
+
+
     }
 }
 
 // Function which resets the agent to its initial position
 void rl_reset_agent(void){
-
+	struct UtmCoor_f utm_pos;
+	utm_pos.east = wp_follow_utm.x;
+	utm_pos.north = wp_follow_utm.y;
+	utm_pos.alt = wp_follow_utm.z;
+	stateSetPositionUtm_f(&utm_pos);
+    printf("Agent has been reset to Waypoint location.\n");
 }
 
 void update_q_value(rl_state state, rl_state state2, float reward, int action, int action2){
