@@ -44,6 +44,7 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "filters/low_pass_filter.h"
 #include "subsystems/gps/gps_datalink.h"
+#include "generated/flight_plan.h" // for waypoint reference pointers
 #include "modules/ctrl/follow_me.h"
 
 // Include other paparazzi modules
@@ -57,7 +58,10 @@ float rl_gamma = 0.95;
 float rl_alpha = 0.85;
 
 // Declaration of local variables
-struct timeval currentTime;
+struct timeval currentTime; // can be overwritten during functions calls
+struct timeval lastcallTime; // has to stay constant for period of module
+struct timeval nowcallTime; // has to stay same for period of module
+int module_period = 5;// in seconds
 static int32_t start_time_seconds = 0;
 static int32_t start_time_milliseconds = 0;
 static int32_t episode_start_time_seconds = 0;
@@ -69,7 +73,7 @@ static int32_t time_rl = 0;
 static int32_t episode_time_rl = 0;
 
 // Episode variables
-static int32_t max_episode_length = 10000;
+static int32_t max_episode_time = 120000; // in seconds
 
 // RL variables
 #define STATE_SIZE_1 30  // discretized wp_follow
@@ -77,40 +81,40 @@ static int32_t max_episode_length = 10000;
 #define MIN_FOLLOW_DIST -5  // minimum allowable distance from wp follow (boat)
 #define ACTION_SIZE_1 5  // increase decrease or no change in groundspeed
 
-static uint16_t prev_action; // not used
 static rl_state state1;
 static rl_state state2;
-static uint16_t action_policy; // not used
-static uint16_t action_chosen; // not used
-static uint16_t action_performed; // not used
+static int action1;
+static int action2;
 
 static uint16_t action_space[ACTION_SIZE_1];
 static float Q[STATE_SIZE_1][STATE_SIZE_2][ACTION_SIZE_1];
 
 // Gives action to be performed based on current state
 static uint16_t current_policy[STATE_SIZE_1][STATE_SIZE_2] = {};
-static int rl_episode_timeout = false; // not used
+static int rl_episode_timeout; // not used
 static int rl_episode_boatcrash;
 static int rl_episode_beyond_wp;
+static int rl_episode_started;
 
 // static void rl_soaring_send_message_down(char *_request, char *_parameters);
 static uint16_t rl_soaring_get_action(rl_state state);
 static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
-static int rl_soaring_check_crash(void);
 static float random_float_in_range(float min, float max);
 // static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 
+/*
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
     // When prompted, return all the telemetry variables
     pprz_msg_send_rl_soaring(trans, dev, AC_ID,&timestep, &time_rl);
 }
+*/
 
 /** Initialization function **/
 void rl_soaring_init(void) {
     // Register telemetery function
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_rl_soaring, send_rl_variables);
+    //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_rl_soaring, send_rl_variables);
 }
 
 /** Function called when the module is started, performs the following functions:
@@ -118,7 +122,7 @@ void rl_soaring_init(void) {
 void rl_soaring_start(void){
     // Initialise discrete state space
 	for (int i=0; i<STATE_SIZE_1; i++){
-		for (int j=0; j<STATE_SIZE_2; J++){
+		for (int j=0; j<STATE_SIZE_2; j++){
 			current_policy[i][j] = 3; // set the current policy to do nothing
 		    for (int k=0; k<ACTION_SIZE_1; k++){
 		        Q[i][j][k] = 0;  // set all the initial qvalues to 0
@@ -145,6 +149,7 @@ void rl_soaring_start_episode(){
     rl_episode_beyond_wp = false; // in case we fly beyond wp2
     rl_episode_boatcrash = false; // in case we crash the boat
     rl_episode_timeout = false;
+    rl_episode_started = true;
 
     // Increase episode counter and save start time
     episode = episode+1;
@@ -153,28 +158,34 @@ void rl_soaring_start_episode(){
     episode_start_time_milliseconds = currentTime.tv_usec;
 
     // Set action to one (no-action) (for the state prev_action)
-    action_chosen = 3;
-    action_performed = 3;
+    action1 = 2;
+    action2 = 2;
+}
 
-
+// Function which resets the agent to its initial position
+void rl_reset_agent(void);
+void rl_reset_agent(void){
+	struct UtmCoor_f utm_pos;
+	utm_pos.east = wp_follow_utm.x;
+	utm_pos.north = wp_follow_utm.y;
+	utm_pos.alt = wp_follow_utm.z;
+	stateSetPositionUtm_f(&utm_pos);
+	printf("Teleporting to position is given by: (%d, %d, %d)\n", wp_follow_utm.x, wp_follow_utm.y, wp_follow_utm.z);
 }
 
 // Not used at all for now ///////
 void rl_soaring_end_episode(void){
 	if (rl_episode_beyond_wp){
-	    printf("Episode ended because drone flew to far.\n");
 	    rl_episode_beyond_wp = false;
 	}
 	if (rl_episode_boatcrash){
-        printf("Episode ended because drone crashed into boat.\n");
         rl_episode_boatcrash = false;
 	}
 	if (rl_episode_timeout){
-	    printf("Episode ended because of a timeout.\n");
 	    rl_episode_timeout = false;
 	}
+	rl_episode_started = false;
     rl_reset_agent();
-    printf("Episode ended\n");
 }
 
 float idx_to_dist(int idx){
@@ -196,6 +207,9 @@ void rl_soaring_update_measurements(void){
     if( episode > 0) {
         episode_time_rl = (currentTime.tv_sec - episode_start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 -
                           episode_start_time_milliseconds / 1000;
+        if (episode_time_rl > max_episode_time){
+        	rl_episode_timeout = true;
+        }
     }
 
     // Obtain state, so follow me distances
@@ -203,6 +217,8 @@ void rl_soaring_update_measurements(void){
 
     if (location == -1){
     	rl_episode_boatcrash = true;
+    } else if (location == 2){
+    	rl_episode_beyond_wp = true;
     }
 
     // Obtain index of state based on location
@@ -212,7 +228,7 @@ void rl_soaring_update_measurements(void){
     state1.dist_wp_idx = state2.dist_wp_idx;
     state2.dist_wp_idx_old = idx_old;
     state2.dist_wp_idx = idx;
-    printf("Based on a state of (%f, %f) the following indices have been calculated (%d, %d)\n", dist_wp_follow_old, dist_wp_follow, idx_old, idx);
+    printf("Measurements have been updated\n State 1: (%f, %f) and State 2: (%f, %f)\n", idx_to_dist(state1.dist_wp_idx), idx_to_dist(state1.dist_wp_idx_old), idx_to_dist(state2.dist_wp_idx), idx_to_dist(state2.dist_wp_idx_old));
 }
 
 
@@ -228,66 +244,33 @@ void rl_navigation(void){
 	NavVerticalAltitudeMode(follow_me_height, 0.);
 }
 
-/*
- * Function periodic, the heartbeat of the module
- */
-void rl_soaring_periodic(void) {
-    double random_double;
 
-    // Update measurements
-    rl_soaring_update_measurements();
-
-    // Get state
-    rl_soaring_state_estimator();
-
-    // Check whether we are in an episode already
-
-
-
-
-        // Check for end of exploring starts freeze
-
-
-        // Only pick and perform an action if we're not yet in another action (check with booleans)
-            // Prepare next timestep, get next action from policy
-
-            // Check whether we explore or not
-            // Chose action based on exploration or exploitation
-
-            // Check safety of action and need to abort
-            // iChose the action that was performed
-
-            // Perform action
-
-
-    }
+int rl_episode_stop_condition(){
+	if (rl_episode_timeout || rl_episode_boatcrash || rl_episode_beyond_wp){
+		return 1;
+	}
+	else{
+		return 0;
+	}
 }
 
-// Function which resets the agent to its initial position
-void rl_reset_agent(void){
-	struct UtmCoor_f utm_pos;
-	utm_pos.east = wp_follow_utm.x;
-	utm_pos.north = wp_follow_utm.y;
-	utm_pos.alt = wp_follow_utm.z;
-	stateSetPositionUtm_f(&utm_pos);
-    printf("Agent has been reset to Waypoint location.\n");
-}
-
-void update_q_value(rl_state state, rl_state state2, float reward, int action, int action2){
-	float predicted_q_value = Q[state.dist_wp_idx][state.dist_wp_idx_old][action];
-    float target = reward + rl_gamma * Q[state2.dist_wp_idx][state2.dist_wp_idx_old][action2];
-    printf("Updating Q value from %f to ", Q[state.dist_wp_idx][state.dist_wp_idx_old][action]);
-    Q[state.dist_wp_idx][state.dist_wp_idx_old][action] = Q[state.dist_wp_idx][state.dist_wp_idx_old][action] + rl_alpha * (target - predicted_q_value);
-    printf("%f\n", Q[state.dist_wp_idx][state.dist_wp_idx_old][action]);
-}
-
-float calc_reward(rl_state state, rl_state state2){
-	float closer_to_wp = (idx_to_dist(state1.dist_wp_idx) - idx_to_dist(state2.dist_wp_idx));
+float calc_reward(rl_state state1, rl_state state2);
+float calc_reward(rl_state state1, rl_state state2){
+	float closer_to_wp = fabs(idx_to_dist(state1.dist_wp_idx)) - fabs(idx_to_dist(state2.dist_wp_idx));
+	printf("The reward is given by %f with state 1 %f and state 2 %f.\n", closer_to_wp, fabs((idx_to_dist(state1.dist_wp_idx))), fabs(idx_to_dist(state2.dist_wp_idx)));
 	return closer_to_wp;
 }
 
+void update_q_value(rl_state state1, rl_state state2, float reward, int action1, int action2);
+void update_q_value(rl_state state1, rl_state state2, float reward, int action1, int action2){
+	float predicted_q_value = Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1];
+    float target = reward + rl_gamma * Q[state2.dist_wp_idx][state2.dist_wp_idx_old][action2];
+    Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1] = Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1] + rl_alpha * (target - predicted_q_value);
+}
+
+
+void update_policy(void);
 void update_policy(void){
-	printf("Updating policy\n");
 	for (int i=0; i<STATE_SIZE_1; i++){ // moves through the first state
 	    for (int j=0; j<STATE_SIZE_2; j++){ // moves through the second state
 	    	// Now we need to find the maximum Q value of all the actions
@@ -305,15 +288,62 @@ void update_policy(void){
 	}
 }
 
+
+/*
+ * Function periodic, the heartbeat of the module
+ */
+int rl_soaring_call(void) {
+    gettimeofday(&nowcallTime, NULL);
+    if ((nowcallTime.tv_sec - lastcallTime.tv_sec) > module_period){
+    	lastcallTime = nowcallTime;
+		// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
+		// Update measurements
+		rl_soaring_update_measurements();
+
+		// Get state
+		rl_soaring_state_estimator();
+
+		// Check whether we are in an episode already
+		if (rl_episode_started){
+
+			action2 = rl_soaring_get_action(state2);
+			float reward = calc_reward(state1, state2);
+			update_q_value(state1, state2, reward, action1, action2);
+			update_policy();
+			printf("Q value and policy have been updated.\n\n");
+			action1 = action2;
+			rl_soaring_perform_action(action1);
+
+			// Check whether the episode has ended
+			if (rl_episode_stop_condition()){
+				 rl_episode_started = false;
+				 rl_soaring_end_episode();
+			}
+		}
+		else{
+		   // If the episode has not been then start a new episode
+		   printf("\n\n\nStarting a new episode.. \n");
+		   rl_soaring_start_episode();
+		}
+    }
+	// Standart navigational loop
+    rl_navigation();
+    return 1;
+}
+
+
+
+
+
+
+
 // Get either an action from the policy or a random action depending on the current epsilon greed
 uint16_t rl_soaring_get_action(rl_state state){
     uint16_t action;
     float epsilon = random_float_in_range(0,1);
     if (epsilon<rl_exploration_rate){
-        printf("Random epsilon of %f has been chosen, random action performed.", epsilon);
         action = action_space[rand() % ACTION_SIZE_1];
     } else{
-        printf("Random epsilon of %f has been chosen, policy action performed.", epsilon);
         action = current_policy[state.dist_wp_idx][state.dist_wp_idx_old];
     }
     return action;
@@ -325,18 +355,18 @@ void rl_soaring_perform_action(uint16_t action){
     // If conditions depending on chosen_action
 	// Action 1, increase ground speed
 	if (action == 0){
-		printf("Action 1 performed, increasing groundspeed by 0.5\n");
+		printf("Action chosen: ++\n");
 		v_ctl_auto_groundspeed_setpoint += 0.5;
-	} else if (action == 2){
-		printf("Action 2 performed, increasing groundspeed by 0.1\n");
+	} else if (action == 1){
+		printf("Action chosen: +\n");
 		v_ctl_auto_groundspeed_setpoint += 0.1;
-	} else if (action == 3){	// Action 2, same ground speed
-        printf("Action 3 performed, same groundspeed\n");
-	} else if (action == 4){	// Action 3, decrease ground speed
-        printf("Action 4 performed, decrease of groundspeed by 0.1\n");
-        v_ctl_auto_groundspeed_setpoint -= 0.1;
-	} else if (action == 5){
-		printf("Action 5 performed, decrease of groundspeed by 0.5\n");
+	} else if (action == 2){	// Action 2, same ground speed
+		printf("Action chosen: 0\n");
+	} else if (action == 3){	// Action 3, decrease ground speed
+		printf("Action chosen: -\n");
+		v_ctl_auto_groundspeed_setpoint -= 0.1;
+	} else if (action == 4){
+		printf("Action chosen: --\n");
 		v_ctl_auto_groundspeed_setpoint -= 0.5;
 	}
 }

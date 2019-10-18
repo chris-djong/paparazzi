@@ -263,15 +263,16 @@ int follow_me_set_wp(void){
 		// Reset the ground boolean
 	    ground_set = false;
 
-	    // If the follow me waypoint is behind the UAV then use backwards approach
-		if (wp_follow_body.y < 1 && wp_follow_body.y > -30){
+		if (wp_follow_body.y < -1.9*follow_me_distance){ // beyond wp 2
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
+			return 2;
+		} else if (wp_follow_body.y < -1){ // beyond wp
 			return 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
 			dist_wp_follow = -dist_wp_follow;
 			return 0;
-		}
-		else{ // if the UAV is behind the boat
+		} else{ // if the UAV is behind the boat
+
 			dist_wp_follow = -dist_wp_follow;
 			return -1;
 		}

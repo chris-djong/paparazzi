@@ -28,50 +28,25 @@
 
 #include "std.h"
 
-// Define data structures
-typedef struct {
-    char name[30];
-    char type[10];
-    char format[5];
-    void *pointer;
-} rl_variable;
-
-#define RL_ROLLING_WINDOW_SIZE 25
-#define DL_RL_TRAINING_UP 77
-
 typedef struct{
     // states
 	int dist_wp_idx;
 	int dist_wp_idx_old;
 } rl_state;
 
-// Variables
-extern float rl_soaring_termination_dist;
 
-extern float rl_exploration_rate;
-extern int rl_autostart;
-extern int rl_exploring_starts;
 
 // Functions
 extern void rl_soaring_init(void);
 extern void rl_soaring_start(void);
-extern void rl_soaring_periodic(void);
+extern int rl_soaring_call(void);
 extern void rl_soaring_stop(void);
-extern void rl_soaring_turn_on(void);
-extern void rl_soaring_turn_off(void);
 
 extern void rl_soaring_update_measurements(void);
-extern void rl_soaring_flight_status(int);
 
-extern int rl_soaring_fail(void);
-extern int rl_soaring_timeout(void);
 
-// extern void rl_soaring_parse_uplink(void);
 extern void rl_soaring_start_episode(void);
 extern void rl_soaring_end_episode(void);
-
-// extern void rl_soaring_request_new_policy(void);
-//extern void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 
 #endif
 

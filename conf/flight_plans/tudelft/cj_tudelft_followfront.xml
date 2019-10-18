@@ -75,6 +75,7 @@
     <!--  After the height of 25 m is obtained we deroute to the standby waypoint for 1 minute-->
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="flight">
       <call_once fun="follow_me_stop()"/>
+      <call_once fun="rl_soaring_stop()"/>
       <circle radius="nav_radius" wp="STDBY" pre_call="follow_me_set_wp()"/>    
     </block>
     
@@ -82,17 +83,18 @@
 
     <!--  Initiate follow_me module  -->
     <block name="follow_me" strip_button="Follow me" group="flight">
+      <call_once fun="rl_soaring_stop()"/>
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>
     
-  <!--   <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
+    <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
       <call_once fun="rl_soaring_start()"/>
-      <call fun=""
+      <call fun="rl_soaring_call()"/>
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>
-   -->
+ 
     
   <!-- *********** Land *********** -->
     <block name="follow_module_land" strip_button="Follow Land" group="land">
