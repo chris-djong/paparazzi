@@ -41,6 +41,7 @@
 #include "subsystems/imu.h"
 #include "subsystems/actuators.h"
 #include "boards/bebop/actuators.h"
+#include "subsystems/gps.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "filters/low_pass_filter.h"
 #include "subsystems/gps/gps_datalink.h"
@@ -76,10 +77,11 @@ static int32_t episode_time_rl = 0;
 static int32_t max_episode_time = 120000; // in seconds
 
 // RL variables
-#define STATE_SIZE_1 30  // discretized wp_follow
-#define STATE_SIZE_2 30  // discretized old_wp_follow
-#define MIN_FOLLOW_DIST -5  // minimum allowable distance from wp follow (boat)
+float min_follow_dist = -5;
+float desired_accuracy = 0.5; // accuracy at which the discretised states are created
 #define ACTION_SIZE_1 5  // increase decrease or no change in groundspeed
+#define STATE_SIZE_1 32
+#define STATE_SIZE_2 32
 
 static rl_state state1;
 static rl_state state2;
@@ -101,21 +103,47 @@ static uint16_t rl_soaring_get_action(rl_state state);
 static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static float random_float_in_range(float min, float max);
-// static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
+static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 
-/*
+void print_pos(void){
+	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
+	printf("Current utm position before is given by: %f %f\n", po_Utm->east, po_Utm->north);
+}
+
+float idx_to_dist(int idx){
+	if (idx > STATE_SIZE_1 || idx < 0){
+		printf("Unknown idx of %d has been asked for in idx_to_dist()\n\n", idx);
+	}
+    return (min_follow_dist + idx*desired_accuracy);
+}
+
+int dist_to_idx(float dist){
+	int idx = floor((dist - min_follow_dist)/desired_accuracy);
+	if (idx > STATE_SIZE_1 || idx < 0){
+	    idx = -1;
+	    printf("Unknown idx has been calculated in dist_to_idx using dist of %f\n\n", dist);
+	}
+	return idx;
+}
+
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
     // When prompted, return all the telemetry variables
-    pprz_msg_send_rl_soaring(trans, dev, AC_ID,&timestep, &time_rl);
+	float old_dist = idx_to_dist(state1.dist_wp_idx_old);
+	float curr_dist = idx_to_dist(state1.dist_wp_idx);
+    pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestep, &episode, &old_dist, &curr_dist);
 }
-*/
 
 /** Initialization function **/
 void rl_soaring_init(void) {
+	//
+
     // Register telemetery function
-    //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_rl_soaring, send_rl_variables);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_SOARING, send_rl_variables);
+
 }
+
+
 
 /** Function called when the module is started, performs the following functions:
  * */
@@ -152,10 +180,31 @@ void rl_soaring_start_episode(){
     rl_episode_started = true;
 
     // Increase episode counter and save start time
-    episode = episode+1;
+    episode++;
     gettimeofday(&currentTime, NULL);
     episode_start_time_seconds = currentTime.tv_sec;
     episode_start_time_milliseconds = currentTime.tv_usec;
+
+
+    // Reset state as well to current position
+    // Obtain state, so follow me distances
+    int location = follow_me_set_wp();
+    if (location == -1){
+    	rl_episode_boatcrash = true;
+    } else if (location == 2){
+    	rl_episode_beyond_wp = true;
+    }
+
+    // Obtain index of state based on location
+    int idx_old = dist_to_idx(dist_wp_follow_old);
+    int idx = dist_to_idx(dist_wp_follow);
+    state1.dist_wp_idx_old = state2.dist_wp_idx_old;
+    state1.dist_wp_idx = state2.dist_wp_idx;
+    state2.dist_wp_idx_old = idx_old;
+    state2.dist_wp_idx = idx;
+    printf("Measurements have been updated\n State 1: (%f, %f) and State 2: (%f, %f)\n", idx_to_dist(state1.dist_wp_idx), idx_to_dist(state1.dist_wp_idx_old), idx_to_dist(state2.dist_wp_idx), idx_to_dist(state2.dist_wp_idx_old));
+
+
 
     // Set action to one (no-action) (for the state prev_action)
     action1 = 2;
@@ -169,32 +218,31 @@ void rl_reset_agent(void){
 	utm_pos.east = wp_follow_utm.x;
 	utm_pos.north = wp_follow_utm.y;
 	utm_pos.alt = wp_follow_utm.z;
+
 	stateSetPositionUtm_f(&utm_pos);
-	printf("Teleporting to position is given by: (%d, %d, %d)\n", wp_follow_utm.x, wp_follow_utm.y, wp_follow_utm.z);
+
+
 }
 
 // Not used at all for now ///////
 void rl_soaring_end_episode(void){
 	if (rl_episode_beyond_wp){
+		printf("Ended because beyond wp\n");
 	    rl_episode_beyond_wp = false;
 	}
 	if (rl_episode_boatcrash){
+		printf("ENded because boatcrash\n");
         rl_episode_boatcrash = false;
 	}
 	if (rl_episode_timeout){
+		printf("ENded because of timeout\n");
 	    rl_episode_timeout = false;
 	}
 	rl_episode_started = false;
     rl_reset_agent();
 }
 
-float idx_to_dist(int idx){
-    return (-5 + idx*0.5);
-}
 
-int dist_to_idx(float dist){
-    return floor(2*(dist + 5));
-}
 
 // Updates all the mesaurements that were required to send down to the ground segment
 void rl_soaring_update_measurements(void){
@@ -204,7 +252,7 @@ void rl_soaring_update_measurements(void){
     // Get time in milliseconds since the measurement has started
     gettimeofday(&currentTime, NULL);
     time_rl = (currentTime.tv_sec - start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 - start_time_milliseconds / 1000;
-    if( episode > 0) {
+    if(episode > 0) {
         episode_time_rl = (currentTime.tv_sec - episode_start_time_seconds) * 1000 + (currentTime.tv_usec) / 1000 -
                           episode_start_time_milliseconds / 1000;
         if (episode_time_rl > max_episode_time){
@@ -294,6 +342,7 @@ void update_policy(void){
  */
 int rl_soaring_call(void) {
     gettimeofday(&nowcallTime, NULL);
+    print_pos();
     if ((nowcallTime.tv_sec - lastcallTime.tv_sec) > module_period){
     	lastcallTime = nowcallTime;
 		// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
@@ -330,11 +379,6 @@ int rl_soaring_call(void) {
     rl_navigation();
     return 1;
 }
-
-
-
-
-
 
 
 // Get either an action from the policy or a random action depending on the current epsilon greed

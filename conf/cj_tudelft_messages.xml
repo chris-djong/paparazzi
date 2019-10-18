@@ -640,7 +640,12 @@
       <field name="Distance_WP_max" type="float"/>
     </message>
 
-    <!-- 76 is free -->
+    <message name="RL_SOARING" id="76">
+      <field name="Timestep" type="int32"/>
+      <field name="Amount_episode" type="int32"/>
+      <field name="Old_distance" type="float"/>
+      <field name="Current_distance" type="float"/>
+    </message>
     <!-- 77 is free -->
 
     <!--message for Invariant filter with position-->

@@ -239,13 +239,13 @@ int follow_me_set_wp(void){
 
 		struct FloatVect3 wp_follow_body = UTM_to_ENU(&wp_follow_utm);
 		struct FloatVect3 wp_ground_body = UTM_to_ENU(&wp_ground_utm);
-		printf("WP is given by (%f %f) in body frame\n", wp_follow_body.x, wp_follow_body.y);
 
 		// Obtain current Utm position and calculate distance towards wp
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
 		dist_wp_follow_old = dist_wp_follow;
 		dist_wp_follow = sqrt((x_follow - pos_Utm->east)*(x_follow - pos_Utm->east) + (y_follow - pos_Utm->north)*(y_follow - pos_Utm->north));
+		dist_wp_follow = sqrt(wp_follow_body.x*wp_follow_body.x + wp_follow_body.y*wp_follow_body.y);
         dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
         dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
 
@@ -264,7 +264,7 @@ int follow_me_set_wp(void){
 		// Reset the ground boolean
 	    ground_set = false;
 
-		if (wp_follow_body.y < -1.9*follow_me_distance){ // beyond wp 2
+		if (wp_follow_body.y < -1.8*follow_me_distance){ // beyond wp 2
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
 			return 2;
 		} else if (wp_follow_body.y < -1){ // beyond wp
@@ -273,7 +273,6 @@ int follow_me_set_wp(void){
 			dist_wp_follow = -dist_wp_follow;
 			return 0;
 		} else{ // if the UAV is behind the boat
-
 			dist_wp_follow = -dist_wp_follow;
 			return -1;
 		}

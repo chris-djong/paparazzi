@@ -250,6 +250,7 @@ void ins_alt_float_update_gps(struct GpsState *gps_s __attribute__((unused)))
   // set position
   stateSetPositionUtm_f(&utm);
 
+
   struct NedCoor_f ned_vel = {
     gps_s->ned_vel.x / 100.0f,
     gps_s->ned_vel.y / 100.0f,
