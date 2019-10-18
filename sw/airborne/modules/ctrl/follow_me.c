@@ -61,7 +61,7 @@ float safety_boat_distance = 1; // distance that the UAV should not move from th
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 
-struct Int32Vect3 wp_follow_utm;
+struct FloatVect3 wp_follow_utm;
 float ground_speed_diff_pgain = 0.3;
 float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
@@ -94,10 +94,10 @@ void follow_me_init(void){
 
 /*Translate frame to a new point
  * The frame is moved from its origin to the new point (transx, transy, transz)*/
-struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int trans_y, int trans_z);
-struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int trans_y, int trans_z){
+struct FloatVect3 translate_frame(struct FloatVect3 *point, int trans_x, int trans_y, int trans_z);
+struct FloatVect3 translate_frame(struct FloatVect3 *point, int trans_x, int trans_y, int trans_z){
 	// Create return vectore for function
-	struct Int32Vect3 transformation;
+	struct FloatVect3 transformation;
 
 	// Move frame
 	transformation.x = point->x - trans_x;
@@ -108,10 +108,10 @@ struct Int32Vect3 translate_frame(struct Int32Vect3 *point, int trans_x, int tra
 }
 
 /*Rotate a point in a frame by an angle theta (clockwise positive)*/
-struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta);
-struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta){
+struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta);
+struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	// Create return Vector for function
-	struct Int32Vect3 transformation;
+	struct FloatVect3 transformation;
 
     // Rotate point
 	transformation.x = cosf(theta)*point->x - sinf(theta)*point->y;
@@ -124,10 +124,10 @@ struct Int32Vect3 rotate_frame(struct Int32Vect3 *point, float theta){
 /*Transformation from UTM coordinate system to the Body system
  * Pos UTM is used as input so that during a whole function execution it stays constant for all the transforms
  * Same for heading */
-struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point);
-struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point){
+struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point);
+struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	// Create return vector for the function
-	struct Int32Vect3 transformation;
+	struct FloatVect3 transformation;
 
 	// Obtain current UTM position
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
@@ -142,10 +142,10 @@ struct Int32Vect3 UTM_to_ENU(struct Int32Vect3 *point){
 }
 
 /*Transformation from the Body system to the UTM coordinate system */
-struct Int32Vect3 ENU_to_UTM(struct Int32Vect3 *point);
-struct Int32Vect3 ENU_to_UTM(struct Int32Vect3 *point){
+struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point);
+struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	// Create return vector for the function
-	struct Int32Vect3 transformation;
+	struct FloatVect3 transformation;
 
 	// Obtain current ENU position and Euler Angles in order to calculate the heading
 	// struct EnuCoor_i *pos             = stateGetPositionEnu_i();
@@ -232,13 +232,14 @@ int follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-		struct Int32Vect3 wp_ground_utm;
+		struct FloatVect3 wp_ground_utm;
 		wp_ground_utm.x = utm.east;
 		wp_ground_utm.y = utm.north;
 		wp_ground_utm.z = utm.alt;
 
-		struct Int32Vect3 wp_follow_body = UTM_to_ENU(&wp_follow_utm);
-		struct Int32Vect3 wp_ground_body = UTM_to_ENU(&wp_ground_utm);
+		struct FloatVect3 wp_follow_body = UTM_to_ENU(&wp_follow_utm);
+		struct FloatVect3 wp_ground_body = UTM_to_ENU(&wp_ground_utm);
+		printf("WP is given by (%f %f) in body frame\n", wp_follow_body.x, wp_follow_body.y);
 
 		// Obtain current Utm position and calculate distance towards wp
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
