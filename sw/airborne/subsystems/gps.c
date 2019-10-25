@@ -45,6 +45,7 @@
 #include "math/pprz_geodetic_wgs84.h"
 #include "math/pprz_geodetic.h"
 
+
 #ifndef PRIMARY_GPS
 #error "PRIMARY_GPS not set!"
 #else
@@ -124,6 +125,7 @@ static inline void send_svinfo_available(struct transport_tx *trans, struct link
 
 static void send_gps(struct transport_tx *trans, struct link_device *dev)
 {
+  printf("Sending GPS with pos: %d %d\n", gps.utm_pos.east, gps.utm_pos.north);
   uint8_t zero = 0;
   int16_t climb = -gps.ned_vel.z;
   int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
@@ -138,6 +140,7 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
   msg.component_id = 0;
   pprzlink_msg_send_GPS(&msg,
 #else
+
   pprz_msg_send_GPS(trans, dev, AC_ID,
 #endif
                     &gps.fix,
@@ -263,6 +266,7 @@ static uint8_t gps_multi_switch(struct GpsState *gps_s) {
 
 void gps_periodic_check(struct GpsState *gps_s)
 {
+	printf("Performing periodic check %d, %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north);
   if (sys_time.nb_sec - gps_s->last_msg_time > GPS_TIMEOUT) {
     gps_s->fix = GPS_FIX_NONE;
   }
@@ -283,6 +287,22 @@ static void gps_cb(uint8_t sender_id,
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
+  // We have to modify the data that is send through the abi and not this data
+  if (rl_teleported){
+	// Utm position
+	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+	// Set gps position to current position
+	gps_s->utm_pos.east = pos_Utm->east*100;
+	gps_s->utm_pos.north = pos_Utm->north*100;
+	// gps_s->utm_pos.alt = pos_Utm->alt; altitude can not be changed because the gps altitude has a different format
+    rl_teleported = false;
+	printf("GPS data has been manipulated and is given by: %d %d %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north, gps_s->utm_pos.alt);
+  }
+  else {
+	printf("GPS data has NOT been manipulated and is given by: %d %d %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north, gps_s->utm_pos.alt);
+  }
+
   /* ignore callback from own AbiSendMsgGPS */
   if (sender_id == GPS_MULTI_ID) {
     return;
@@ -355,6 +375,7 @@ void gps_init(void)
 
 uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
 {
+	printf("gps_tow_from_sys_ticks\n");
   uint32_t clock_delta;
   uint32_t time_delta;
   uint32_t itow_now;
@@ -379,7 +400,7 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
  * Default parser for GPS injected data
  */
 void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t length __attribute__((unused)), uint8_t *data __attribute__((unused))){
-
+printf("weak gps inject data\n");
 }
 
 /**
@@ -388,27 +409,26 @@ void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t len
 #include "state.h"
 struct UtmCoor_f utm_float_from_gps(struct GpsState *gps_s, uint8_t zone)
 {
+  printf("Performing utm_float_from_gps with %d %d\n",gps_s->utm_pos.east, gps_s->utm_pos.north);
   struct UtmCoor_f utm = {.east = 0., .north=0., .alt=0., .zone=zone};
-
   if (bit_is_set(gps_s->valid_fields, GPS_VALID_POS_UTM_BIT)) {
-    /* A real UTM position is available, use the correct zone */
-    UTM_FLOAT_OF_BFP(utm, gps_s->utm_pos);
+	/* A real UTM position is available, use the correct zone */
+	UTM_FLOAT_OF_BFP(utm, gps_s->utm_pos);
   } else if (bit_is_set(gps_s->valid_fields, GPS_VALID_POS_LLA_BIT))
   {
-    /* Recompute UTM coordinates in this zone */
-    struct UtmCoor_i utm_i;
-    utm_i.zone = zone;
-    utm_of_lla_i(&utm_i, &gps_s->lla_pos);
-    UTM_FLOAT_OF_BFP(utm, utm_i);
+	/* Recompute UTM coordinates in this zone */
+	struct UtmCoor_i utm_i;
+	utm_i.zone = zone;
+	utm_of_lla_i(&utm_i, &gps_s->lla_pos);
+	UTM_FLOAT_OF_BFP(utm, utm_i);
 
-    /* set utm.alt in hsml */
-    if (bit_is_set(gps_s->valid_fields, GPS_VALID_HMSL_BIT)) {
-      utm.alt = gps_s->hmsl/1000.;
-    } else {
-      utm.alt = wgs84_ellipsoid_to_geoid_i(gps_s->lla_pos.lat, gps_s->lla_pos.lon)/1000.;
-    }
+	/* set utm.alt in hsml */
+	if (bit_is_set(gps_s->valid_fields, GPS_VALID_HMSL_BIT)) {
+	  utm.alt = gps_s->hmsl/1000.;
+	} else {
+	  utm.alt = wgs84_ellipsoid_to_geoid_i(gps_s->lla_pos.lat, gps_s->lla_pos.lon)/1000.;
+	}
   }
-
   return utm;
 }
 

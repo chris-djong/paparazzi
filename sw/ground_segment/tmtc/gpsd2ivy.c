@@ -96,7 +96,7 @@ static void update_gps(struct gps_data_t *gpsdata,
 	if (simulate){
 		// Increase time step
 	    sim_time += 1;
-
+	    // Simulate heading change
 		gpsdata->fix.latitude = sim_initial_lat + sim_time*sim_lat_speed;
 		gpsdata->fix.longitude = sim_initial_lon + sim_time*sim_lon_speed;
 	    gpsdata->fix.track = sim_course;

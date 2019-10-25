@@ -28,6 +28,8 @@
 
 #include "std.h"
 
+extern int rl_teleported;
+
 typedef struct{
     // states
 	int dist_wp_idx;

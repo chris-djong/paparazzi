@@ -62,11 +62,13 @@ float rl_alpha = 0.85;
 struct timeval currentTime; // can be overwritten during functions calls
 struct timeval lastcallTime; // has to stay constant for period of module
 struct timeval nowcallTime; // has to stay same for period of module
-int module_period = 5;// in seconds
+int module_period = 1;// in seconds
 static int32_t start_time_seconds = 0;
 static int32_t start_time_milliseconds = 0;
 static int32_t episode_start_time_seconds = 0;
 static int32_t episode_start_time_milliseconds = 0;
+
+int rl_teleported;
 
 static int32_t episode = 0;
 static int32_t timestep = 0;
@@ -107,12 +109,11 @@ static void send_rl_variables(struct transport_tx *trans, struct link_device *de
 
 void print_pos(void){
 	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
-	printf("Current utm position before is given by: %f %f\n", po_Utm->east, po_Utm->north);
+	printf("Current utm position is given by: %f %f %f\n", po_Utm->east, po_Utm->north, po_Utm->alt);
 }
 
 float idx_to_dist(int idx){
 	if (idx > STATE_SIZE_1 || idx < 0){
-		printf("Unknown idx of %d has been asked for in idx_to_dist()\n\n", idx);
 	}
     return (min_follow_dist + idx*desired_accuracy);
 }
@@ -121,7 +122,6 @@ int dist_to_idx(float dist){
 	int idx = floor((dist - min_follow_dist)/desired_accuracy);
 	if (idx > STATE_SIZE_1 || idx < 0){
 	    idx = -1;
-	    printf("Unknown idx has been calculated in dist_to_idx using dist of %f\n\n", dist);
 	}
 	return idx;
 }
@@ -151,8 +151,13 @@ void rl_soaring_start(void){
     // Initialise discrete state space
 	for (int i=0; i<STATE_SIZE_1; i++){
 		for (int j=0; j<STATE_SIZE_2; j++){
-			current_policy[i][j] = 3; // set the current policy to do nothing
-		    for (int k=0; k<ACTION_SIZE_1; k++){
+			if (idx_to_dist(i)>0){
+			    current_policy[i][j] = 0; // set the current policy to do nothing
+			}
+			else{
+			    current_policy[i][j] = 4;
+			}
+			for (int k=0; k<ACTION_SIZE_1; k++){
 		        Q[i][j][k] = 0;  // set all the initial qvalues to 0
 		    }
 		}
@@ -202,9 +207,6 @@ void rl_soaring_start_episode(){
     state1.dist_wp_idx = state2.dist_wp_idx;
     state2.dist_wp_idx_old = idx_old;
     state2.dist_wp_idx = idx;
-    printf("Measurements have been updated\n State 1: (%f, %f) and State 2: (%f, %f)\n", idx_to_dist(state1.dist_wp_idx), idx_to_dist(state1.dist_wp_idx_old), idx_to_dist(state2.dist_wp_idx), idx_to_dist(state2.dist_wp_idx_old));
-
-
 
     // Set action to one (no-action) (for the state prev_action)
     action1 = 2;
@@ -214,12 +216,18 @@ void rl_soaring_start_episode(){
 // Function which resets the agent to its initial position
 void rl_reset_agent(void);
 void rl_reset_agent(void){
+
+    follow_me_set_wp();
+
 	struct UtmCoor_f utm_pos;
 	utm_pos.east = wp_follow_utm.x;
 	utm_pos.north = wp_follow_utm.y;
 	utm_pos.alt = wp_follow_utm.z;
 
 	stateSetPositionUtm_f(&utm_pos);
+
+	printf("Teleport initiated, changing location\n");
+	rl_teleported = true;
 
 
 }
@@ -231,11 +239,11 @@ void rl_soaring_end_episode(void){
 	    rl_episode_beyond_wp = false;
 	}
 	if (rl_episode_boatcrash){
-		printf("ENded because boatcrash\n");
+		printf("Ended because boatcrash\n");
         rl_episode_boatcrash = false;
 	}
 	if (rl_episode_timeout){
-		printf("ENded because of timeout\n");
+		printf("Ended because of timeout\n");
 	    rl_episode_timeout = false;
 	}
 	rl_episode_started = false;
@@ -276,7 +284,6 @@ void rl_soaring_update_measurements(void){
     state1.dist_wp_idx = state2.dist_wp_idx;
     state2.dist_wp_idx_old = idx_old;
     state2.dist_wp_idx = idx;
-    printf("Measurements have been updated\n State 1: (%f, %f) and State 2: (%f, %f)\n", idx_to_dist(state1.dist_wp_idx), idx_to_dist(state1.dist_wp_idx_old), idx_to_dist(state2.dist_wp_idx), idx_to_dist(state2.dist_wp_idx_old));
 }
 
 
@@ -305,7 +312,6 @@ int rl_episode_stop_condition(){
 float calc_reward(rl_state state1, rl_state state2);
 float calc_reward(rl_state state1, rl_state state2){
 	float closer_to_wp = fabs(idx_to_dist(state1.dist_wp_idx)) - fabs(idx_to_dist(state2.dist_wp_idx));
-	printf("The reward is given by %f with state 1 %f and state 2 %f.\n", closer_to_wp, fabs((idx_to_dist(state1.dist_wp_idx))), fabs(idx_to_dist(state2.dist_wp_idx)));
 	return closer_to_wp;
 }
 
@@ -342,39 +348,37 @@ void update_policy(void){
  */
 int rl_soaring_call(void) {
     gettimeofday(&nowcallTime, NULL);
-    print_pos();
-    if ((nowcallTime.tv_sec - lastcallTime.tv_sec) > module_period){
-    	lastcallTime = nowcallTime;
-		// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
-		// Update measurements
-		rl_soaring_update_measurements();
+	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
+	// Update measurements
+	rl_soaring_update_measurements();
 
-		// Get state
-		rl_soaring_state_estimator();
+	// Get state
+	rl_soaring_state_estimator();
+
+	// Check whether the episode has ended
+	if (rl_episode_stop_condition()){
+		 rl_episode_started = false;
+		 rl_soaring_end_episode();
+	}
+	if ((nowcallTime.tv_sec - lastcallTime.tv_sec) > module_period){
+		lastcallTime = nowcallTime;
+
 
 		// Check whether we are in an episode already
 		if (rl_episode_started){
-
 			action2 = rl_soaring_get_action(state2);
 			float reward = calc_reward(state1, state2);
 			update_q_value(state1, state2, reward, action1, action2);
 			update_policy();
-			printf("Q value and policy have been updated.\n\n");
 			action1 = action2;
 			rl_soaring_perform_action(action1);
-
-			// Check whether the episode has ended
-			if (rl_episode_stop_condition()){
-				 rl_episode_started = false;
-				 rl_soaring_end_episode();
-			}
 		}
 		else{
 		   // If the episode has not been then start a new episode
 		   printf("\n\n\nStarting a new episode.. \n");
 		   rl_soaring_start_episode();
 		}
-    }
+	}
 	// Standart navigational loop
     rl_navigation();
     return 1;
@@ -399,18 +403,13 @@ void rl_soaring_perform_action(uint16_t action){
     // If conditions depending on chosen_action
 	// Action 1, increase ground speed
 	if (action == 0){
-		printf("Action chosen: ++\n");
 		v_ctl_auto_groundspeed_setpoint += 0.5;
 	} else if (action == 1){
-		printf("Action chosen: +\n");
 		v_ctl_auto_groundspeed_setpoint += 0.1;
 	} else if (action == 2){	// Action 2, same ground speed
-		printf("Action chosen: 0\n");
 	} else if (action == 3){	// Action 3, decrease ground speed
-		printf("Action chosen: -\n");
 		v_ctl_auto_groundspeed_setpoint -= 0.1;
 	} else if (action == 4){
-		printf("Action chosen: --\n");
 		v_ctl_auto_groundspeed_setpoint -= 0.5;
 	}
 }

@@ -41,8 +41,6 @@
 
 #include "subsystems/datalink/telemetry.h"
 
-
-
 // Parameters for follow_me module
 uint8_t follow_me_distance = 5; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
@@ -78,6 +76,40 @@ static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
 static float old_ground_timestamp;
+
+
+
+//Calculate the average gps heading in order to predict where the boat is going
+#define MAXSIZE 10
+float average_heading[MAXSIZE]={0};
+int8_t front=-1,rear=-1, count=0;
+float AverageHeading(float);
+//function definition
+float AverageHeading(float item)
+{
+	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
+	// Count = int8_t
+	if (count<MAXSIZE){
+		count += 1;
+	}
+    static float Sum=0;
+    if(front ==(rear+1)%MAXSIZE)
+    {
+        if(front==rear)
+            front=rear=-1;
+        else
+            front = (front+1)%MAXSIZE;
+        Sum=Sum-average_heading[front];
+    }
+    if(front==-1)
+        front=rear=0;
+    else
+        rear=(rear+1)%MAXSIZE;
+    average_heading[rear]=item;
+    Sum=Sum+average_heading[rear];
+    return ((float)Sum/fmin(MAXSIZE, count));
+}
+
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
@@ -141,6 +173,7 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	return transformation;
 }
 
+
 /*Transformation from the Body system to the UTM coordinate system */
 struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point);
 struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
@@ -188,7 +221,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
-	follow_me_heading = ground_course;
+	follow_me_heading = AverageHeading(ground_course);
 	ground_set = true;
 }
 
@@ -207,7 +240,6 @@ void follow_me_set_groundspeed(void){
 // Sets the WP_FOLLOW based on GPS coordinates received by ground segment
 // Returns 0 if the waypoint is in front of the UAV and 1 otherwise
 int follow_me_set_wp(void){
-
 	if(ground_set) {
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
@@ -267,7 +299,7 @@ int follow_me_set_wp(void){
 		if (wp_follow_body.y < -1.8*follow_me_distance){ // beyond wp 2
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
 			return 2;
-		} else if (wp_follow_body.y < -1){ // beyond wp
+		} else if (wp_follow_body.y < 0){ // beyond wp
 			return 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
 			dist_wp_follow = -dist_wp_follow;
@@ -300,7 +332,6 @@ void follow_me_go(float location){
 // It calculates the difference in groundspeed between the UAV and the system
 // This ground speed diff is used in order to propagate errors in case the GPS speed error is not reliable
 int follow_me_call(void){
-
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_location = follow_me_set_wp();
@@ -309,7 +340,6 @@ int follow_me_call(void){
     ground_speed_diff_sum_err += dist_wp_follow;
     BoundAbs(ground_speed_diff_sum_err, 20);
     ground_speed_diff = -ground_speed_diff_pgain*dist_wp_follow - ground_speed_diff_igain*ground_speed_diff_sum_err - (dist_wp_follow-dist_wp_follow_old)*ground_speed_diff_igain;
-
 	if (follow_me_location == 0 && old_location == -1){
 		ground_speed_diff = 0;
 	// In case we are behind the boat

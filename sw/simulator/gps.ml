@@ -48,7 +48,6 @@ let state = fun pos0 alt0 ->
 
   fun (x, y, z) t ->
     let dt = t -. !last_t in
-
     if dt > 0. then begin (** Compute derivatives *)
       let dx = x -. !last_x
       and dy = y -. !last_y in
@@ -56,7 +55,6 @@ let state = fun pos0 alt0 ->
       last_course := norm_angle (pi/.2. -. atan2 dy dx);
       last_climb := (z -. !last_z) /. dt
     end; (** Else use previous derivatives *)
-
     let utm0 = utm_of WGS84 !pos0 in
     let utm = utm_add utm0 (x, y) in
     let wgs84 = of_utm WGS84 utm
@@ -78,4 +76,3 @@ let state = fun pos0 alt0 ->
      course = course;
      availability = true;
    }
-
