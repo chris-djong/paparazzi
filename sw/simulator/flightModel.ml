@@ -272,8 +272,8 @@ module Make(A:Data.MISSION) = struct
       (* FIXME: wind effect should be in the forces *)
       let x_dot = state.air_speed *. cos state.psi +. wx
       and y_dot = state.air_speed *. sin state.psi +. wy in
-      state.x <- state.x +. x_dot *. dt;
-      state.y <- state.y +. y_dot *. dt;
+      state.x <- state.x (*+. x_dot *. dt*);
+      state.y <- state.y (*+. y_dot *. dt*);
       state.z <- state.z +. wz *. dt
     end;
     state.t <- now

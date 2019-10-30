@@ -125,7 +125,7 @@ static inline void send_svinfo_available(struct transport_tx *trans, struct link
 
 static void send_gps(struct transport_tx *trans, struct link_device *dev)
 {
-  printf("Sending GPS with pos: %d %d\n", gps.utm_pos.east, gps.utm_pos.north);
+
   uint8_t zero = 0;
   int16_t climb = -gps.ned_vel.z;
   int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
@@ -266,7 +266,6 @@ static uint8_t gps_multi_switch(struct GpsState *gps_s) {
 
 void gps_periodic_check(struct GpsState *gps_s)
 {
-	printf("Performing periodic check %d, %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north);
   if (sys_time.nb_sec - gps_s->last_msg_time > GPS_TIMEOUT) {
     gps_s->fix = GPS_FIX_NONE;
   }
@@ -375,7 +374,6 @@ void gps_init(void)
 
 uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
 {
-	printf("gps_tow_from_sys_ticks\n");
   uint32_t clock_delta;
   uint32_t time_delta;
   uint32_t itow_now;
@@ -400,7 +398,6 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
  * Default parser for GPS injected data
  */
 void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t length __attribute__((unused)), uint8_t *data __attribute__((unused))){
-printf("weak gps inject data\n");
 }
 
 /**
@@ -409,7 +406,7 @@ printf("weak gps inject data\n");
 #include "state.h"
 struct UtmCoor_f utm_float_from_gps(struct GpsState *gps_s, uint8_t zone)
 {
-  printf("Performing utm_float_from_gps with %d %d\n",gps_s->utm_pos.east, gps_s->utm_pos.north);
+
   struct UtmCoor_f utm = {.east = 0., .north=0., .alt=0., .zone=zone};
   if (bit_is_set(gps_s->valid_fields, GPS_VALID_POS_UTM_BIT)) {
 	/* A real UTM position is available, use the correct zone */

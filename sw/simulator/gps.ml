@@ -59,7 +59,7 @@ let state = fun pos0 alt0 ->
     let utm = utm_add utm0 (x, y) in
     let wgs84 = of_utm WGS84 utm
     and alt = !alt0 +. z in
-
+    
     last_x := x;
     last_y := y;
     last_z := z;
