@@ -116,9 +116,9 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 }
 
 
+
 // Called at compiling of module
 void follow_me_init(void){
-
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
     ground_set = false;
 }

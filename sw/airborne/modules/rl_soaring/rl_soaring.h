@@ -28,7 +28,7 @@
 
 #include "std.h"
 
-extern int rl_teleported;
+extern int16_t rl_teleported;
 
 typedef struct{
     // states

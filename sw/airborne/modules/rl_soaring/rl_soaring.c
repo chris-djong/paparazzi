@@ -68,7 +68,12 @@ static int32_t start_time_milliseconds = 0;
 static int32_t episode_start_time_seconds = 0;
 static int32_t episode_start_time_milliseconds = 0;
 
-int rl_teleported;
+int16_t rl_teleported;
+struct UtmCoor_f teleport_pos;
+// teleport_pos.east = 0;
+// teleport_pos.north = 0;
+// teleport_pos.alt = 0;
+
 
 static int32_t episode = 0;
 static int32_t timestep = 0;
@@ -106,6 +111,7 @@ static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static float random_float_in_range(float min, float max);
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
+static void send_teleport_me(struct transport_tx *trans, struct link_device *dev);
 
 void print_pos(void){
 	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
@@ -134,13 +140,22 @@ static void send_rl_variables(struct transport_tx *trans, struct link_device *de
     pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestep, &episode, &old_dist, &curr_dist);
 }
 
+// Function to send teleport message so that the ocaml simulation can reset the position
+static void send_teleport_me(struct transport_tx *trans, struct link_device *dev){
+	int16_t teleported;
+	if (rl_teleported){
+		teleported = 1;
+	} else {
+		teleported = 0;
+	}
+	pprz_msg_send_RL_TELEPORT(trans, dev, AC_ID, &teleported, &teleport_pos.east, &teleport_pos.north, &teleport_pos.alt);
+}
+
 /** Initialization function **/
 void rl_soaring_init(void) {
-	//
-
     // Register telemetery function
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_SOARING, send_rl_variables);
-
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_TELEPORT, send_teleport_me);
 }
 
 
@@ -219,12 +234,11 @@ void rl_reset_agent(void){
 
     follow_me_set_wp();
 
-	struct UtmCoor_f utm_pos;
-	utm_pos.east = wp_follow_utm.x;
-	utm_pos.north = wp_follow_utm.y;
-	utm_pos.alt = wp_follow_utm.z;
+	teleport_pos.east = wp_follow_utm.x;
+	teleport_pos.north = wp_follow_utm.y;
+	teleport_pos.alt = wp_follow_utm.z;
 
-	stateSetPositionUtm_f(&utm_pos);
+	stateSetPositionUtm_f(&teleport_pos);
 
 	printf("Teleport initiated, changing location\n");
 	rl_teleported = true;

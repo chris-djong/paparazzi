@@ -442,7 +442,13 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- 55 is free -->
+    <!-- Message in case the UAV needs to be teleported during the simulation -->
+    <message name="RL_TELEPORT" id="55">
+      <field name="teleport" type="int16"/>
+      <field name="utm_x" type="float"/>
+      <field name="utm_y" type="float"/>
+      <field name="utm_z" type="float"/>
+    </message>
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -640,6 +646,7 @@
       <field name="Distance_WP_max" type="float"/>
     </message>
 
+    <!-- Message for RL soaring module --> 
     <message name="RL_SOARING" id="76">
       <field name="Timestep" type="int32"/>
       <field name="Amount_episode" type="int32"/>
