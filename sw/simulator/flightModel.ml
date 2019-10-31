@@ -268,12 +268,20 @@ module Make(A:Data.MISSION) = struct
       let air_speed_dot = max_power /. state.air_speed *. (state.thrust -. drag) /. weight -. g *. sin gamma in
       state.air_speed <- state.air_speed +. air_speed_dot *. dt;
       state.air_speed <- max state.air_speed 10.; (* Avoid stall *)
-
+    
+			(* Create datalink message submodule in order to bind to datalink class messages *)
+			let message = "GROUND_GPS" in 
+  		  let module Dl_Pprz = PprzLink.Messages (struct let name = "datalink" end) in 
+			    let cb = fun () -> Printf.printf "%s message has been succesfully received in OCAML\n" message in
+            cb ();
+						
+						// WE WERE HERE WITH MAKING THE MESSAGES 
+			
       (* FIXME: wind effect should be in the forces *)
       let x_dot = state.air_speed *. cos state.psi +. wx
       and y_dot = state.air_speed *. sin state.psi +. wy in
-      state.x <- state.x (*+. x_dot *. dt*);
-      state.y <- state.y (*+. y_dot *. dt*);
+      state.x <- state.x +. x_dot *. dt;
+      state.y <- state.y +. y_dot *. dt;
       state.z <- state.z +. wz *. dt
     end;
     state.t <- now
