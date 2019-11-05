@@ -145,11 +145,6 @@ struct Int32Vect3 ENU_to_UTM(struct Int32Vect3 *point){
 	// Create return vector for the function
 	struct Int32Vect3 transformation;
 
-	// Obtain current ENU position and Euler Angles in order to calculate the heading
-	// struct EnuCoor_i *pos             = stateGetPositionEnu_i();
-	// struct Int32Eulers *eulerAngles   = stateGetNedToBodyEulers_i();
-	// float heading = ANGLE_FLOAT_OF_BFP(eulerAngles->psi);
-
 	// Obtain current Utm position for translationg
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
