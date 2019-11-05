@@ -80,7 +80,6 @@ char *ivy_bus                   = "224.255.255.255";
 #else
 char *ivy_bus                   = "127.255.255.255"; // 192.168.1.255   127.255.255.255
 #endif
-
 /*
  * Read bytes from the uBlox UART connection
  * This is a wrapper functions used in the librtcm3 library

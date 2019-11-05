@@ -346,11 +346,12 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
       s->state    = READ_LENGTH;
       break;
     case READ_LENGTH:
-      rd_msg_len  = (rd_msg_len1 << 8) + ((int) buff) ;
+      rd_msg_len  = (rd_msg_len1 << 8) + ((int) buff);
       s->state    = READ_MESSAGE;
       break;
     case READ_MESSAGE:
-      if (byteIndex == (rd_msg_len - 1)) { s->state = READ_CHECKSUM; }
+      if (byteIndex == (rd_msg_len - 1) || rd_msg_len == 0) {
+    	  s->state = READ_CHECKSUM; }
       byteIndex++;
       break;
     case READ_CHECKSUM:
@@ -360,12 +361,14 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
         printf("\n\n");
 #endif
         s->state = UNINIT;
+
         // Check what message type it is
-        switch (RTCMgetbitu(s->msg_buff, 24 + 0, 12)) {
+        int rcv_msg_type = RTCMgetbitu(s->msg_buff, 24 + 0, 12);
+        switch (rcv_msg_type) {
           case 1005: s->msg_type = RTCM3_MSG_1005; break;
           case 1077: s->msg_type = RTCM3_MSG_1077; break;
           case 1087: s->msg_type = RTCM3_MSG_1087; break;
-          default  : printf("Unknown message type\n"); return RTCM_OK_CALLBACK_UNDEFINED;
+          default  : printf("Unknown message type %d\n", rcv_msg_type); return RTCM_OK_CALLBACK_UNDEFINED;
         }
         s->n_read++;
         s->msg_len   = s->n_read;
