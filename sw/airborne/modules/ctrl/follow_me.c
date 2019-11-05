@@ -47,12 +47,12 @@
 uint8_t follow_me_distance = 5; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
-int8_t follow_me_location;
 
 // Variables that are send to the ground station for real time plotting or logging
 int8_t old_location;
 float desired_ground_speed_max; // for the real time plotting
 float desired_ground_speed_min; // for the real time plotting
+float desired_ground_speed;
 float actual_ground_speed;
 float dist_wp_follow; // distance to follow me wp
 float dist_wp_follow_min; // for the real time plotting
@@ -73,7 +73,6 @@ float dist_wp_follow_old; // old distance to follow me wp
 // Variables initialised in functions themselves
 static bool ground_set;
 static struct LlaCoor_i ground_lla;
-static float ground_speed;
 static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
@@ -179,9 +178,9 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
-	ground_speed = DL_GROUND_GPS_speed(buf);
-	desired_ground_speed_min = ground_speed - ground_speed_diff_limit;
-	desired_ground_speed_max = ground_speed + ground_speed_diff_limit;
+	desired_ground_speed = DL_GROUND_GPS_speed(buf);
+	desired_ground_speed_min = desired_ground_speed - ground_speed_diff_limit;
+	desired_ground_speed_max = desired_ground_speed + ground_speed_diff_limit;
 	ground_climb = DL_GROUND_GPS_climb(buf);
 	ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
@@ -194,7 +193,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 // Manage the throttle so that the groundspeed of both the boat and the uav are equivalent
 void follow_me_set_groundspeed(void);
 void follow_me_set_groundspeed(void){
-	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
+	v_ctl_auto_groundspeed_setpoint = desired_ground_speed + ground_speed_diff;
 	actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 	if (v_ctl_auto_groundspeed_setpoint < 0){
 		v_ctl_auto_groundspeed_setpoint = 0;
@@ -229,7 +228,6 @@ int follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-		struct Int32Vect3 wp_ground_utm;
 		wp_ground_utm.x = utm.east;
 		wp_ground_utm.y = utm.north;
 		wp_ground_utm.z = utm.alt;

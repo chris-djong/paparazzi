@@ -39,6 +39,9 @@ extern float desired_ground_speed;
 extern float actual_ground_speed;
 extern float dist_wp_follow;
 extern float dist_wp_follow_old;
+int8_t follow_me_location;
+struct Int32Vect3 wp_ground_utm;
+
 
 extern float ground_speed_diff_igain;
 extern float ground_speed_diff_pgain;
