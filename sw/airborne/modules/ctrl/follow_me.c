@@ -50,7 +50,7 @@ uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 int8_t follow_me_location;
 float average_follow_me_distance;
-#define HAND_RL_SIZE 10 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
+#define HAND_RL_SIZE 20 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
 int8_t hand_rl[HAND_RL_SIZE] = {0};
 float hand_rl_threshold = 1;
 int8_t hand_rl_idx = 0; // the index value that needs to be modified

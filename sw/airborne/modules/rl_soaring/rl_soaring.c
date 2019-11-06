@@ -104,12 +104,15 @@ static int rl_episode_beyond_wp;
 static int rl_episode_started;
 int rl_started = false;
 
+
 // static void rl_soaring_send_message_down(char *_request, char *_parameters);
 static uint16_t rl_soaring_get_action(rl_state state);
 static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static float random_float_in_range(float min, float max);
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
+void update_policy(void);
+
 
 void print_pos(void){
 	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
@@ -131,35 +134,68 @@ int dist_to_idx(float dist){
 	return idx;
 }
 
+
+static void rl_load_Q_file(void){
+	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "r");
+	if (f == NULL){
+	    printf("Error opening Q table file for reading!\n");
+	    return;
+	}
+	char line[1024]; // assumption that we have a maximum of 1024 characters per line which should be sufficient
+	fgets(line, 1024, f); // remove first line which is only header
+	char *token;
+	printf("The first line is given by: %s\n",line);
+	token = strtok(line, ",");
+	episode = atoll(token);
+	for (int i=0; i<STATE_SIZE_1; i++){
+		// Obtain the first line which is under format State1.1 Q1.1.1, Q1.1.2, Q 1.1.3, Q 1.1.4, Q1.1.15, Q 1.2.1
+	    fgets(line, 1024, f);
+	    token = strtok(line, ",");  // This takes the first cell of the current line which is simply the state
+	    int j = 0;
+	    int k = 0;
+	    while (j<STATE_SIZE_2){
+	        token = strtok(NULL, ",");  // this gives the next cell
+	        Q[i][j][k] = atof(token);
+	        k++;
+	        if (k==ACTION_SIZE_1){
+	        	k=0;
+	        	j++;
+	        }
+	    }
+	}
+
+}
+
 static void rl_write_Q_file(void){
-	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.txt", "w");
+	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "w");
 	if (f == NULL){
 	    printf("Error opening Q table file for writing!\n");
 	    return;
 	}
 
 	// First print the header consisting of only the possible states2
-	fprintf(f, "//");
-	for (int i=0; i<STATE_SIZE_2; i++){
-		fprintf(f, " %i", i);
+	fprintf(f, "%d", episode);
+	for (int i=0; i<STATE_SIZE_2*ACTION_SIZE_1; i++){
+		fprintf(f, ",%i", i/ACTION_SIZE_1);
 	}
     // Then loop through all the columns (state2)
 	for (int i=0; i<STATE_SIZE_1; i++){
-		fprintf(f, "\n %i", i); // new column to go to that state and write the state1 idx
+		fprintf(f, "\n%i", i); // new column to go to that state and write the state1 idx
 		// Then loop through all the values of STATE_SIZE_2 and write the corresponding Q values
 		for (int j=0; j<STATE_SIZE_2; j++){
-			fprintf(f, " [");
 			// Loop through all the actions and write their value
 			for (int k=0; k<ACTION_SIZE_1; k++){
-				fprintf(f," %f", Q[i][j][k]);
+				fprintf(f,",%f", Q[i][j][k]);
 			}
-			fprintf(f, "]");
 		}
 	}
 
 	// Close the file
 	fclose(f);
 }
+
+
+
 
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
@@ -182,20 +218,11 @@ void rl_soaring_init(void) {
  * */
 void rl_soaring_start(void){
 	if (!rl_started){
-		// Initialise discrete state space
-		for (int i=0; i<STATE_SIZE_1; i++){
-			for (int j=0; j<STATE_SIZE_2; j++){
-				if (idx_to_dist(i)>0){
-					current_policy[i][j] = 0; // set the current policy to do nothing
-				}
-				else{
-					current_policy[i][j] = 4;
-				}
-				for (int k=0; k<ACTION_SIZE_1; k++){
-					Q[i][j][k] = 0;  // set all the initial qvalues to 0
-				}
-			}
-		}
+        // Load Q values and generate current policy
+		rl_load_Q_file();
+
+		// Update policy based on these Q values
+		update_policy();
 
 		// Initialise action space
 		for (int i=0; i<ACTION_SIZE_1; i++){
@@ -336,7 +363,6 @@ void update_q_value(rl_state state1, rl_state state2, float reward, int action1,
 }
 
 
-void update_policy(void);
 void update_policy(void){
 	for (int i=0; i<STATE_SIZE_1; i++){ // moves through the first state
 	    for (int j=0; j<STATE_SIZE_2; j++){ // moves through the second state
@@ -364,7 +390,7 @@ int rl_soaring_call(void) {
 		rl_soaring_start();
 	}
 	// Backup Q file after 10 episodes
-	if (episode % 10 == 0){
+	if ((episode % 2 == 0) && (episode != 0)){
 		 rl_write_Q_file();
 	}
 
@@ -412,10 +438,8 @@ uint16_t rl_soaring_get_action(rl_state state){
     float epsilon = random_float_in_range(0,1);
     if (epsilon<rl_exploration_rate){
         action = action_space[rand() % ACTION_SIZE_1];
-    	printf("Random action has been chosen\n");
     } else{
         action = current_policy[state.dist_wp_idx][state.dist_wp_idx_old];
-    	printf("Policy action has been chosen\n State (%d %d) action %d\n\n", state.dist_wp_idx, state.dist_wp_idx_old, action);
     }
     return action;
 }
