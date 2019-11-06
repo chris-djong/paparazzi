@@ -219,7 +219,6 @@ void ins_alt_float_update_gps(struct GpsState *gps_s __attribute__((unused)))
   }
 
   struct UtmCoor_f utm = utm_float_from_gps(gps_s, nav_utm_zone0);
-
 #if !USE_BAROMETER
 #ifdef GPS_DT
   const float dt = GPS_DT;
@@ -249,6 +248,7 @@ void ins_alt_float_update_gps(struct GpsState *gps_s __attribute__((unused)))
   utm.alt = ins_altf.alt;
   // set position
   stateSetPositionUtm_f(&utm);
+
 
   struct NedCoor_f ned_vel = {
     gps_s->ned_vel.x / 100.0f,
@@ -360,7 +360,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((un
   ins_alt_float_update_baro(pressure);
 }
 #endif
-
+int teleport_count = 0;
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)

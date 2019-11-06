@@ -16,7 +16,6 @@
     <!--  AUTOPILOT TARGET -->
     <target name="ap" board="disco">
       <module name="radio_control" type="sbus"/>
-      <module name="follow_me"/> 
       <module name="airspeed" type="ms45xx_i2c">
         <define name="MS45XX_I2C_DEV" value="i2c1"/>
         <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
@@ -32,7 +31,6 @@
     <!--  SIMULATION TARGET -->
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
-      <module name="follow_me"/> 
       <!--  <module name="ahrs" type="float_dcm"/> -->
       <module name="ahrs" type="int_cmpl_quat"/>
       <define name="AIRSPEED_ADC_SCALE" value="1"/>
@@ -40,7 +38,8 @@
       <module name="airspeed" type="adc"/>
     </target>
 
-    
+    <module name="follow_me"/> 
+    <module name="rl_soaring"/>
     <module name="telemetry" type="transparent_udp"/>
     <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>

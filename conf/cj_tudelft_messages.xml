@@ -442,7 +442,7 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- 55 is free -->
+    <!-- ID 55 is free -->
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -631,6 +631,7 @@
 
     <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
+      <field name="Average_distance" type="float"/>
       <field name="Desired_groundspeed" type="float"/>
       <field name="Desired_groundspeed_min" type="float"/>
       <field name="Desired_groundspeed_max" type="float"/>
@@ -640,8 +641,13 @@
       <field name="Distance_WP_max" type="float"/>
     </message>
 
-    <!-- 76 is free -->
-    <!-- 77 is free -->
+    <!-- Message for RL soaring module --> 
+    <message name="RL_SOARING" id="76">
+      <field name="Timestep" type="int32"/>
+      <field name="Amount_episode" type="int32"/>
+      <field name="Old_distance" type="float"/>
+      <field name="Current_distance" type="float"/>
+    </message>
 
     <!--message for Invariant filter with position-->
     <message name="INV_FILTER" id="78">

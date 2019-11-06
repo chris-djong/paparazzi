@@ -55,7 +55,6 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
   // set position
   stateSetPositionUtm_f(&utm);
-
   struct NedCoor_f ned_vel = {
     gps_s->ned_vel.x / 100.0f,
     gps_s->ned_vel.y / 100.0f,
@@ -71,7 +70,7 @@ void ins_gps_passthrough_init(void)
   struct UtmCoor_f utm0 = { nav_utm_north0, nav_utm_east0, 0., nav_utm_zone0 };
   stateSetLocalUtmOrigin_f(&utm0);
   stateSetPositionUtm_f(&utm0);
-
+   printf("Pos has been set init\n");
   AbiBindMsgGPS(INS_PT_GPS_ID, &gps_ev, gps_cb);
 }
 
