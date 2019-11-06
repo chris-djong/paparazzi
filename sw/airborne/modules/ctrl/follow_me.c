@@ -45,7 +45,7 @@
 #include "modules/rl_soaring/rl_soaring.h"
 
 // Parameters for follow_me module
-uint8_t follow_me_distance = 5; // distance from which the follow me points are created
+uint8_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 int8_t follow_me_location;

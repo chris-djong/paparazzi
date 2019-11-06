@@ -131,27 +131,33 @@ int dist_to_idx(float dist){
 	return idx;
 }
 
-static void rl_write_file(){
-	FILE *f = fopen("file.txt", "w");
-	if (f == NULL)
-	{
-	    printf("Error opening file!\n");
-	    exit(1);
+static void rl_write_Q_file(void){
+	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.txt", "w");
+	if (f == NULL){
+	    printf("Error opening Q table file for writing!\n");
+	    return;
 	}
 
-	/* print some text */
-	const char *text = "Write this to the file";
-	fprintf(f, "Some text: %s\n", text);
+	// First print the header consisting of only the possible states2
+	fprintf(f, "//");
+	for (int i=0; i<STATE_SIZE_2; i++){
+		fprintf(f, " %i", i);
+	}
+    // Then loop through all the columns (state2)
+	for (int i=0; i<STATE_SIZE_1; i++){
+		fprintf(f, "\n %i", i); // new column to go to that state and write the state1 idx
+		// Then loop through all the values of STATE_SIZE_2 and write the corresponding Q values
+		for (int j=0; j<STATE_SIZE_2; j++){
+			fprintf(f, " [");
+			// Loop through all the actions and write their value
+			for (int k=0; k<ACTION_SIZE_1; k++){
+				fprintf(f," %f", Q[i][j][k]);
+			}
+			fprintf(f, "]");
+		}
+	}
 
-	/* print integers and floats */
-	int i = 1;
-	float py = 3.1415927;
-	fprintf(f, "Integer: %d, float: %f\n", i, py);
-
-	/* printing single chatacters */
-	char c = 'A';
-	fprintf(f, "A character: %c\n", c);
-
+	// Close the file
 	fclose(f);
 }
 
@@ -357,6 +363,11 @@ int rl_soaring_call(void) {
 	if (!rl_started){
 		rl_soaring_start();
 	}
+	// Backup Q file after 10 episodes
+	if (episode % 10 == 0){
+		 rl_write_Q_file();
+	}
+
     gettimeofday(&nowcallTime, NULL);
 	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
 	// Update measurements
@@ -401,8 +412,10 @@ uint16_t rl_soaring_get_action(rl_state state){
     float epsilon = random_float_in_range(0,1);
     if (epsilon<rl_exploration_rate){
         action = action_space[rand() % ACTION_SIZE_1];
+    	printf("Random action has been chosen\n");
     } else{
         action = current_policy[state.dist_wp_idx][state.dist_wp_idx_old];
+    	printf("Policy action has been chosen\n State (%d %d) action %d\n\n", state.dist_wp_idx, state.dist_wp_idx_old, action);
     }
     return action;
 }
@@ -413,14 +426,14 @@ void rl_soaring_perform_action(uint16_t action){
     // If conditions depending on chosen_action
 	// Action 1, increase ground speed
 	if (action == 0){
-		v_ctl_auto_groundspeed_setpoint += 0.5;
+		v_ctl_auto_groundspeed_setpoint += 0.2;
 	} else if (action == 1){
 		v_ctl_auto_groundspeed_setpoint += 0.1;
 	} else if (action == 2){	// Action 2, same ground speed
 	} else if (action == 3){	// Action 3, decrease ground speed
 		v_ctl_auto_groundspeed_setpoint -= 0.1;
 	} else if (action == 4){
-		v_ctl_auto_groundspeed_setpoint -= 0.5;
+		v_ctl_auto_groundspeed_setpoint -= 0.2;
 	}
 }
 
