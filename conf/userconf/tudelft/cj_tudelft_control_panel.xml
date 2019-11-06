@@ -68,6 +68,7 @@
   </section>
   <section name="sessions">
     <session name="Soaring Sim">
+      <program name="Messages"/>
       <program name="Simulator">
         <arg flag="-a" constant="Disco"/>
         <arg flag="-t" constant="sim"/>
@@ -101,6 +102,7 @@
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Average_distance:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
       </program>
@@ -131,6 +133,7 @@
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Average_distance:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
       </program>
@@ -162,6 +165,7 @@
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Average_distance:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
       </program>

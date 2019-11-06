@@ -96,7 +96,7 @@ static void update_gps(struct gps_data_t *gpsdata,
 	if (simulate){
 		// Increase time step
 	    sim_time += 1;
-
+	    // Simulate heading change
 		gpsdata->fix.latitude = sim_initial_lat + sim_time*sim_lat_speed;
 		gpsdata->fix.longitude = sim_initial_lon + sim_time*sim_lon_speed;
 	    gpsdata->fix.track = sim_course;
@@ -138,8 +138,8 @@ static void update_gps(struct gps_data_t *gpsdata,
 
         // Send data used for displaying the position in GCS
         IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",
-                MSG_DEST,
-                MSG_NAME,
+                MSG_DEST, // destination of receiver
+                MSG_NAME, // destination name
                 MSG_ID, // ac_id
                 0.0, // roll,
                 0.0, // pitch,

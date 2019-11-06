@@ -181,7 +181,7 @@ def main():
 
     if options.verbose:
         print("Launching "+options.simtype+" simulator with arguments: "+' '.join(simargs))
-
+    print(simsitl, simargs)
     # start the simulator, replacing this process
     os.execv(simsitl, [simsitl] + simargs)
 

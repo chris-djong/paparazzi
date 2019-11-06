@@ -4,27 +4,10 @@
   <doc>
     <description>Soaring method using RL</description>
   </doc>
-
-  <settings>
-    <dl_settings>
-      <dl_settings name="RL settings">
-        <dl_setting min="0.0" max="1.0" step="0.01" var="rl_soaring_termination_dist"
-                    shortname="Termination height" module="rl_soaring/rl_soaring"/>
-        <dl_setting min="0.0" max="1.0" step="0.0001" var="rl_exploration_rate"
-                    shortname="Exploration rate" module="rl_soaring/rl_soaring"/>
-        <dl_setting type="uint8" values="FALSE|TRUE" min="0" step="1" max="1" var="rl_autostart"
-                    shortname="Autostart episodes" module="rl_soaring/rl_soaring"/>
-        <dl_setting type="uint8" values="FALSE|TRUE" min="0" step="1" max="1" var="rl_exploring_starts"
-                    shortname="Exploring starts" module="rl_soaring/rl_soaring"/>
-      </dl_settings>
-    </dl_settings>
-  </settings>
-
   <header>
     <file name="rl_soaring.h"/>
   </header>
   <init fun="rl_soaring_init()"/>
-  <periodic fun="rl_soaring_periodic()" freq="512" start="rl_soaring_start()" stop="rl_soaring_stop()" autorun="FALSE"/>
   <!-- <datalink message="RL_TRAINING_UP" fun="rl_soaring_parse_uplink()"/> -->
   <makefile>
     <file name="rl_soaring.c"/>

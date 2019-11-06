@@ -433,7 +433,6 @@ void v_ctl_climb_loop(void)
     + v_ctl_auto_pitch_of_airspeed_dgain * vdot
     + v_ctl_energy_diff_pgain * en_dis_err
     + v_ctl_auto_throttle_nominal_cruise_pitch;
-
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
