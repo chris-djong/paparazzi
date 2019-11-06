@@ -50,6 +50,10 @@ uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 int8_t follow_me_location;
 float average_follow_me_distance;
+#define HAND_RL_SIZE 10 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
+int8_t hand_rl[HAND_RL_SIZE] = {0};
+float hand_rl_threshold = 1;
+int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Variables that are send to the ground station for real time plotting or logging
 int8_t old_location;
@@ -81,6 +85,7 @@ static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
 static float old_ground_timestamp;
+
 
 
 
@@ -117,7 +122,7 @@ float AverageHeading(float item)
 
 
 //Calculate the average gps heading in order to predict where the boat is going
-#define MAX_DISTANCE_SIZE 100
+#define MAX_DISTANCE_SIZE 30
 float average_distance[MAX_DISTANCE_SIZE]={0};
 int8_t front_distance=-1,rear_distance=-1, count_distance=0;
 float AverageDistance(int8_t);
@@ -189,6 +194,18 @@ struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	transformation.z = point->z;
 	// Return
 	return transformation;
+}
+
+// Function to check whether we can hand control over to reinforcement learning again
+int8_t check_handover_rl(void){
+	for (int i=0; i<HAND_RL_SIZE; i++){
+		// In case we have only one incorrect value return false
+		if (hand_rl[i] == 0){
+			return 0;
+		}
+	}
+	// In case we loop through the whole array return true
+	return 1;
 }
 
 /*Transformation from UTM coordinate system to the Body system
@@ -335,26 +352,30 @@ int follow_me_set_wp(void){
 		// Reset the ground boolean
 	    ground_set = false;
 
+	    int location;
 		if (wp_follow_body.y < -1.8*follow_me_distance){ // beyond wp 2
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
-	        average_follow_me_distance = AverageDistance(dist_wp_follow);
-
-			return 2;
+			location =  2;
 		} else if (wp_follow_body.y < 0){ // beyond wp
-	        average_follow_me_distance = AverageDistance(dist_wp_follow);
-
-			return 1;
+			location = 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
 			dist_wp_follow = -dist_wp_follow;
-	        average_follow_me_distance = AverageDistance(dist_wp_follow);
-
-			return 0;
+			location = 0;
 		} else{ // if the UAV is behind the boat
 			dist_wp_follow = -dist_wp_follow;
-	        average_follow_me_distance = AverageDistance(dist_wp_follow);
-
-			return -1;
+			location = -1;
 		}
+        average_follow_me_distance = AverageDistance(dist_wp_follow);
+        if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
+        	hand_rl[hand_rl_idx] = 1;
+        } else {
+        	hand_rl[hand_rl_idx] = 0;
+        }
+        hand_rl_idx++;
+		if (hand_rl_idx>HAND_RL_SIZE-1){
+			hand_rl_idx = 0;
+		}
+        return location;
 	}
 
 	return 0;
@@ -407,7 +428,7 @@ int follow_me_call(void){
 	follow_me_go(follow_me_location);
 	follow_me_set_groundspeed();
 
-	if ((average_follow_me_distance < 0.1) && (average_follow_me_distance > -0.1) && rl_started){
+	if (check_handover_rl()){
 		GotoBlock(7);
 	}
 

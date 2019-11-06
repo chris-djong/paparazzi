@@ -131,6 +131,30 @@ int dist_to_idx(float dist){
 	return idx;
 }
 
+static void rl_write_file(){
+	FILE *f = fopen("file.txt", "w");
+	if (f == NULL)
+	{
+	    printf("Error opening file!\n");
+	    exit(1);
+	}
+
+	/* print some text */
+	const char *text = "Write this to the file";
+	fprintf(f, "Some text: %s\n", text);
+
+	/* print integers and floats */
+	int i = 1;
+	float py = 3.1415927;
+	fprintf(f, "Integer: %d, float: %f\n", i, py);
+
+	/* printing single chatacters */
+	char c = 'A';
+	fprintf(f, "A character: %c\n", c);
+
+	fclose(f);
+}
+
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
     // When prompted, return all the telemetry variables
@@ -331,10 +355,7 @@ void update_policy(void){
  */
 int rl_soaring_call(void) {
 	if (!rl_started){
-		printf("RL has not been started..\nStarting instance..\n");
 		rl_soaring_start();
-	} else {
-		printf("Previous RL instance has been found..\nContinuing here..\n");
 	}
     gettimeofday(&nowcallTime, NULL);
 	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
