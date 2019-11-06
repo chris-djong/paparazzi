@@ -38,14 +38,18 @@
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/guidance/guidance_v_n.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
+#include <Ivy/ivy.h> // for go to block
+
 
 #include "subsystems/datalink/telemetry.h"
+#include "modules/rl_soaring/rl_soaring.h"
 
 // Parameters for follow_me module
 uint8_t follow_me_distance = 5; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 int8_t follow_me_location;
+float average_follow_me_distance;
 
 // Variables that are send to the ground station for real time plotting or logging
 int8_t old_location;
@@ -65,6 +69,7 @@ float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_sum_err = 0.0;
 
+
 // Old location to reset sum error
 float dist_wp_follow_old; // old distance to follow me wp
 
@@ -80,39 +85,72 @@ static float old_ground_timestamp;
 
 
 //Calculate the average gps heading in order to predict where the boat is going
-#define MAXSIZE 10
-float average_heading[MAXSIZE]={0};
-int8_t front=-1,rear=-1, count=0;
+#define MAX_HEADING_SIZE 10
+float average_heading[MAX_HEADING_SIZE]={0};
+int8_t front_heading=-1,rear_heading=-1, count_heading=0;
 float AverageHeading(float);
 //function definition
 float AverageHeading(float item)
 {
 	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
 	// Count = int8_t
-	if (count<MAXSIZE){
-		count += 1;
+	if (count_heading<MAX_HEADING_SIZE){
+		count_heading += 1;
 	}
     static float Sum=0;
-    if(front ==(rear+1)%MAXSIZE)
+    if(front_heading ==(rear_heading+1)%MAX_HEADING_SIZE)
     {
-        if(front==rear)
-            front=rear=-1;
+        if(front_heading==rear_heading)
+            front_heading=rear_heading=-1;
         else
-            front = (front+1)%MAXSIZE;
-        Sum=Sum-average_heading[front];
+            front_heading = (front_heading+1)%MAX_HEADING_SIZE;
+        Sum=Sum-average_heading[front_heading];
     }
-    if(front==-1)
-        front=rear=0;
+    if(front_heading==-1)
+        front_heading=rear_heading=0;
     else
-        rear=(rear+1)%MAXSIZE;
-    average_heading[rear]=item;
-    Sum=Sum+average_heading[rear];
-    return ((float)Sum/fmin(MAXSIZE, count));
+        rear_heading=(rear_heading+1)%MAX_HEADING_SIZE;
+    average_heading[rear_heading]=item;
+    Sum=Sum+average_heading[rear_heading];
+    return ((float)Sum/fmin(MAX_HEADING_SIZE, count_heading));
 }
 
 
+//Calculate the average gps heading in order to predict where the boat is going
+#define MAX_DISTANCE_SIZE 100
+float average_distance[MAX_DISTANCE_SIZE]={0};
+int8_t front_distance=-1,rear_distance=-1, count_distance=0;
+float AverageDistance(int8_t);
+//function definition
+float AverageDistance(int8_t item)
+{
+	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
+	// Count = int8_t
+	if (count_distance<MAX_DISTANCE_SIZE){
+		count_distance += 1;
+	}
+    static float Sum=0;
+    if(front_distance ==(rear_distance+1)%MAX_DISTANCE_SIZE)
+    {
+        if(front_distance==rear_distance)
+            front_distance=rear_distance=-1;
+        else
+            front_distance = (front_distance+1)%MAX_DISTANCE_SIZE;
+        Sum=Sum-average_distance[front_distance];
+    }
+    if(front_distance==-1)
+        front_distance=rear_distance=0;
+    else
+        rear_distance=(rear_distance+1)%MAX_DISTANCE_SIZE;
+    average_distance[rear_distance]=item;
+    Sum=Sum+average_distance[rear_distance];
+    return ((float)Sum/fmin(MAX_DISTANCE_SIZE, count_distance));
+}
+
+
+
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
 }
 
 
@@ -199,11 +237,12 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 
 // Called each time the follow me block is started
 void follow_me_startup(void){
-    // Set the default altitude of waypoints to the current height so that the drone keeps the height
-    struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-    follow_me_height = pos_Utm->alt;
+	if (!rl_started){
+        // Set the default altitude of waypoints to the current height so that the drone keeps the height
+        struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+        follow_me_height = pos_Utm->alt;
+    }
 }
-
 
 void follow_me_parse_ground_gps(uint8_t *buf){
 
@@ -298,19 +337,29 @@ int follow_me_set_wp(void){
 
 		if (wp_follow_body.y < -1.8*follow_me_distance){ // beyond wp 2
 			// Obtain current ENU position and Euler Angles in order to calculate the heading
+	        average_follow_me_distance = AverageDistance(dist_wp_follow);
+
 			return 2;
 		} else if (wp_follow_body.y < 0){ // beyond wp
+	        average_follow_me_distance = AverageDistance(dist_wp_follow);
+
 			return 1;
 		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
 			dist_wp_follow = -dist_wp_follow;
+	        average_follow_me_distance = AverageDistance(dist_wp_follow);
+
 			return 0;
 		} else{ // if the UAV is behind the boat
 			dist_wp_follow = -dist_wp_follow;
+	        average_follow_me_distance = AverageDistance(dist_wp_follow);
+
 			return -1;
 		}
 	}
+
 	return 0;
 }
+
 
 // Which navigational procedure to use
 // 3 possible location: -1 is behind the boat
@@ -357,6 +406,10 @@ int follow_me_call(void){
 
 	follow_me_go(follow_me_location);
 	follow_me_set_groundspeed();
+
+	if ((average_follow_me_distance < 0.1) && (average_follow_me_distance > -0.1) && rl_started){
+		GotoBlock(7);
+	}
 
 	return 1;
 }

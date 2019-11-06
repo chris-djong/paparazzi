@@ -269,11 +269,11 @@ module Make(A:Data.MISSION) = struct
       state.air_speed <- state.air_speed +. air_speed_dot *. dt;
       state.air_speed <- max state.air_speed 10.; (* Avoid stall *)
    
-			(*Create datalink message submodule in order to bind to datalink class messages *)
-			let message = "RL_TELEPORT" in 
+			(*Create datalink message submodule in order to bind to datalink class messages 
+			let message = "" in 
   		let module Dl_Pprz = PprzLink.Messages (struct let name = "datalink" end) in 
 			let cb = fun value1 value2 -> Printf.printf "%s message has been successfully received.\n" message in
-      let binding = Dl_Pprz.message_bind message cb in 
+      let binding = Dl_Pprz.message_bind message cb in *)
 		
 									
       (* FIXME: wind effect should be in the forces *)

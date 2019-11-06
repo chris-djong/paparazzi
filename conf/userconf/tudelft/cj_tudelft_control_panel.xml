@@ -68,6 +68,7 @@
   </section>
   <section name="sessions">
     <session name="Soaring Sim">
+      <program name="Messages"/>
       <program name="Simulator">
         <arg flag="-a" constant="Disco"/>
         <arg flag="-t" constant="sim"/>

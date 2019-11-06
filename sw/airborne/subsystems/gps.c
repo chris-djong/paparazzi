@@ -286,22 +286,6 @@ static void gps_cb(uint8_t sender_id,
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
-  // We have to modify the data that is send through the abi and not this data
-  if (rl_teleported){
-	// Utm position
-	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-
-	// Set gps position to current position
-	gps_s->utm_pos.east = pos_Utm->east*100;
-	gps_s->utm_pos.north = pos_Utm->north*100;
-	// gps_s->utm_pos.alt = pos_Utm->alt; altitude can not be changed because the gps altitude has a different format
-    rl_teleported = false;
-	printf("GPS data has been manipulated and is given by: %d %d %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north, gps_s->utm_pos.alt);
-  }
-  else {
-	printf("GPS data has NOT been manipulated and is given by: %d %d %d\n", gps_s->utm_pos.east, gps_s->utm_pos.north, gps_s->utm_pos.alt);
-  }
-
   /* ignore callback from own AbiSendMsgGPS */
   if (sender_id == GPS_MULTI_ID) {
     return;

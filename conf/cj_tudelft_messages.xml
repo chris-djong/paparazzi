@@ -442,13 +442,7 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- Message in case the UAV needs to be teleported during the simulation -->
-    <message name="RL_TELEPORT" id="55">
-      <field name="teleport" type="int16"/>
-      <field name="utm_x" type="float"/>
-      <field name="utm_y" type="float"/>
-      <field name="utm_z" type="float"/>
-    </message>
+    <!-- ID 55 is free -->
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -637,6 +631,7 @@
 
     <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
+      <field name="Average_distance" type="float"/>
       <field name="Desired_groundspeed" type="float"/>
       <field name="Desired_groundspeed_min" type="float"/>
       <field name="Desired_groundspeed_max" type="float"/>
@@ -653,7 +648,6 @@
       <field name="Old_distance" type="float"/>
       <field name="Current_distance" type="float"/>
     </message>
-    <!-- 77 is free -->
 
     <!--message for Invariant filter with position-->
     <message name="INV_FILTER" id="78">

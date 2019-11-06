@@ -138,8 +138,8 @@ static void update_gps(struct gps_data_t *gpsdata,
 
         // Send data used for displaying the position in GCS
         IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",
-                MSG_DEST,
-                MSG_NAME,
+                MSG_DEST, // destination of receiver
+                MSG_NAME, // destination name
                 MSG_ID, // ac_id
                 0.0, // roll,
                 0.0, // pitch,

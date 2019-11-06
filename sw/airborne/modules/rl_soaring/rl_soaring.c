@@ -47,6 +47,8 @@
 #include "subsystems/gps/gps_datalink.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include "modules/ctrl/follow_me.h"
+#include <Ivy/ivy.h>
+//#include <Ivy/ivyglibloop.h>
 
 // Include other paparazzi modules
 #include "generated/modules.h"
@@ -68,17 +70,13 @@ static int32_t start_time_milliseconds = 0;
 static int32_t episode_start_time_seconds = 0;
 static int32_t episode_start_time_milliseconds = 0;
 
-int16_t rl_teleported;
-struct UtmCoor_f teleport_pos;
-// teleport_pos.east = 0;
-// teleport_pos.north = 0;
-// teleport_pos.alt = 0;
-
 
 static int32_t episode = 0;
 static int32_t timestep = 0;
 static int32_t time_rl = 0;
 static int32_t episode_time_rl = 0;
+
+
 
 // Episode variables
 static int32_t max_episode_time = 120000; // in seconds
@@ -86,9 +84,9 @@ static int32_t max_episode_time = 120000; // in seconds
 // RL variables
 float min_follow_dist = -5;
 float desired_accuracy = 0.5; // accuracy at which the discretised states are created
-#define ACTION_SIZE_1 5  // increase decrease or no change in groundspeed
-#define STATE_SIZE_1 32
-#define STATE_SIZE_2 32
+#define ACTION_SIZE_1 5  // ++ + 0 - --
+#define STATE_SIZE_1 20  // so 5 meter in front of wp allowed and 5 meters behind
+#define STATE_SIZE_2 20
 
 static rl_state state1;
 static rl_state state2;
@@ -104,6 +102,7 @@ static int rl_episode_timeout; // not used
 static int rl_episode_boatcrash;
 static int rl_episode_beyond_wp;
 static int rl_episode_started;
+int rl_started = false;
 
 // static void rl_soaring_send_message_down(char *_request, char *_parameters);
 static uint16_t rl_soaring_get_action(rl_state state);
@@ -111,7 +110,6 @@ static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static float random_float_in_range(float min, float max);
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
-static void send_teleport_me(struct transport_tx *trans, struct link_device *dev);
 
 void print_pos(void){
 	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
@@ -119,15 +117,16 @@ void print_pos(void){
 }
 
 float idx_to_dist(int idx){
-	if (idx > STATE_SIZE_1 || idx < 0){
-	}
     return (min_follow_dist + idx*desired_accuracy);
 }
 
 int dist_to_idx(float dist){
 	int idx = floor((dist - min_follow_dist)/desired_accuracy);
-	if (idx > STATE_SIZE_1 || idx < 0){
+	if (idx > STATE_SIZE_1){
 	    idx = -1;
+    	rl_episode_beyond_wp = true;
+	} else if (idx<0){
+	    rl_episode_boatcrash = true;
 	}
 	return idx;
 }
@@ -140,22 +139,11 @@ static void send_rl_variables(struct transport_tx *trans, struct link_device *de
     pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestep, &episode, &old_dist, &curr_dist);
 }
 
-// Function to send teleport message so that the ocaml simulation can reset the position
-static void send_teleport_me(struct transport_tx *trans, struct link_device *dev){
-	int16_t teleported;
-	if (rl_teleported){
-		teleported = 1;
-	} else {
-		teleported = 0;
-	}
-	pprz_msg_send_RL_TELEPORT(trans, dev, AC_ID, &teleported, &teleport_pos.east, &teleport_pos.north, &teleport_pos.alt);
-}
 
 /** Initialization function **/
 void rl_soaring_init(void) {
     // Register telemetery function
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_SOARING, send_rl_variables);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_TELEPORT, send_teleport_me);
 }
 
 
@@ -163,30 +151,33 @@ void rl_soaring_init(void) {
 /** Function called when the module is started, performs the following functions:
  * */
 void rl_soaring_start(void){
-    // Initialise discrete state space
-	for (int i=0; i<STATE_SIZE_1; i++){
-		for (int j=0; j<STATE_SIZE_2; j++){
-			if (idx_to_dist(i)>0){
-			    current_policy[i][j] = 0; // set the current policy to do nothing
+	if (!rl_started){
+		// Initialise discrete state space
+		for (int i=0; i<STATE_SIZE_1; i++){
+			for (int j=0; j<STATE_SIZE_2; j++){
+				if (idx_to_dist(i)>0){
+					current_policy[i][j] = 0; // set the current policy to do nothing
+				}
+				else{
+					current_policy[i][j] = 4;
+				}
+				for (int k=0; k<ACTION_SIZE_1; k++){
+					Q[i][j][k] = 0;  // set all the initial qvalues to 0
+				}
 			}
-			else{
-			    current_policy[i][j] = 4;
-			}
-			for (int k=0; k<ACTION_SIZE_1; k++){
-		        Q[i][j][k] = 0;  // set all the initial qvalues to 0
-		    }
 		}
-	}
 
-	// Initialise action space
-	for (int i=0; i<ACTION_SIZE_1; i++){
-		action_space[i] = i;
-	}
+		// Initialise action space
+		for (int i=0; i<ACTION_SIZE_1; i++){
+			action_space[i] = i;
+		}
 
-    // Set start time in seconds
-    gettimeofday(&currentTime, NULL);
-    start_time_seconds = currentTime.tv_sec;
-    start_time_milliseconds = currentTime.tv_usec;
+		// Set start time in seconds
+		gettimeofday(&currentTime, NULL);
+		start_time_seconds = currentTime.tv_sec;
+		start_time_milliseconds = currentTime.tv_usec;
+		rl_started = true;
+	}
 }
 
 
@@ -208,12 +199,7 @@ void rl_soaring_start_episode(){
 
     // Reset state as well to current position
     // Obtain state, so follow me distances
-    int location = follow_me_set_wp();
-    if (location == -1){
-    	rl_episode_boatcrash = true;
-    } else if (location == 2){
-    	rl_episode_beyond_wp = true;
-    }
+    follow_me_set_wp();
 
     // Obtain index of state based on location
     int idx_old = dist_to_idx(dist_wp_follow_old);
@@ -231,19 +217,7 @@ void rl_soaring_start_episode(){
 // Function which resets the agent to its initial position
 void rl_reset_agent(void);
 void rl_reset_agent(void){
-
-    follow_me_set_wp();
-
-	teleport_pos.east = wp_follow_utm.x;
-	teleport_pos.north = wp_follow_utm.y;
-	teleport_pos.alt = wp_follow_utm.z;
-
-	stateSetPositionUtm_f(&teleport_pos);
-
-	printf("Teleport initiated, changing location\n");
-	rl_teleported = true;
-
-
+    GotoBlock(6);
 }
 
 // Not used at all for now ///////
@@ -260,6 +234,7 @@ void rl_soaring_end_episode(void){
 		printf("Ended because of timeout\n");
 	    rl_episode_timeout = false;
 	}
+	printf("Episode %d ended. Total flying time: %d.\n", episode, episode_time_rl);
 	rl_episode_started = false;
     rl_reset_agent();
 }
@@ -283,13 +258,7 @@ void rl_soaring_update_measurements(void){
     }
 
     // Obtain state, so follow me distances
-    int location = follow_me_set_wp();
-
-    if (location == -1){
-    	rl_episode_boatcrash = true;
-    } else if (location == 2){
-    	rl_episode_beyond_wp = true;
-    }
+    follow_me_set_wp();
 
     // Obtain index of state based on location
     int idx_old = dist_to_idx(dist_wp_follow_old);
@@ -361,6 +330,12 @@ void update_policy(void){
  * Function periodic, the heartbeat of the module
  */
 int rl_soaring_call(void) {
+	if (!rl_started){
+		printf("RL has not been started..\nStarting instance..\n");
+		rl_soaring_start();
+	} else {
+		printf("Previous RL instance has been found..\nContinuing here..\n");
+	}
     gettimeofday(&nowcallTime, NULL);
 	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
 	// Update measurements
@@ -434,7 +409,8 @@ void rl_soaring_perform_action(uint16_t action){
  * */
 void rl_soaring_stop(void){
     // Reset episode counter
-    episode = 0;
+    // episode = 0;
+    // rl_started = false;
 }
 
 

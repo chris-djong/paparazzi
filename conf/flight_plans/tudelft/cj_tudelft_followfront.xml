@@ -83,7 +83,6 @@
 
     <!--  Initiate follow_me module  -->
     <block name="follow_me" strip_button="Follow me" group="flight">
-      <call_once fun="rl_soaring_stop()"/>
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>

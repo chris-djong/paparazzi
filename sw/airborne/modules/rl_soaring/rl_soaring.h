@@ -28,8 +28,6 @@
 
 #include "std.h"
 
-extern int16_t rl_teleported;
-
 typedef struct{
     // states
 	int dist_wp_idx;
@@ -43,6 +41,7 @@ extern void rl_soaring_init(void);
 extern void rl_soaring_start(void);
 extern int rl_soaring_call(void);
 extern void rl_soaring_stop(void);
+extern int rl_started;
 
 extern void rl_soaring_update_measurements(void);
 
