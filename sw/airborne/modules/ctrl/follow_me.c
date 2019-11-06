@@ -287,7 +287,6 @@ void follow_me_set_groundspeed(void);
 void follow_me_set_groundspeed(void){
 
 	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
-	actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 	if (v_ctl_auto_groundspeed_setpoint < 0){
 		v_ctl_auto_groundspeed_setpoint = 0;
 	}
@@ -297,6 +296,8 @@ void follow_me_set_groundspeed(void){
 // Returns 0 if the waypoint is in front of the UAV and 1 otherwise
 int follow_me_set_wp(void){
 	if(ground_set) {
+		actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
+
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
 		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
