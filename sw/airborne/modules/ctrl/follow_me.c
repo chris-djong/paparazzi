@@ -59,7 +59,6 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 int8_t old_location;
 float desired_ground_speed_max; // for the real time plotting
 float desired_ground_speed_min; // for the real time plotting
-float desired_ground_speed;
 float actual_ground_speed;
 float dist_wp_follow; // distance to follow me wp
 float dist_wp_follow_min; // for the real time plotting
@@ -81,6 +80,7 @@ float dist_wp_follow_old; // old distance to follow me wp
 // Variables initialised in functions themselves
 static bool ground_set;
 static struct LlaCoor_i ground_lla;
+static float ground_speed;
 static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
@@ -265,9 +265,9 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
-	desired_ground_speed = DL_GROUND_GPS_speed(buf);
-	desired_ground_speed_min = desired_ground_speed - ground_speed_diff_limit;
-	desired_ground_speed_max = desired_ground_speed + ground_speed_diff_limit;
+	ground_speed = DL_GROUND_GPS_speed(buf);
+	desired_ground_speed_min = ground_speed - ground_speed_diff_limit;
+	desired_ground_speed_max = ground_speed + ground_speed_diff_limit;
 	ground_climb = DL_GROUND_GPS_climb(buf);
 	ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
