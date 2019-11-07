@@ -269,7 +269,8 @@ module Make(A:Data.MISSION) = struct
       state.air_speed <- state.air_speed +. air_speed_dot *. dt;
       state.air_speed <- max state.air_speed 10.; (* Avoid stall *)
    
-			(*Create datalink message submodule in order to bind to datalink class messages 
+			(*Create datalink message submodule in order to bind to datalink class messages  *)
+			(* NOTE WORKS FOR GROUND_GPS MESSAGE BUT NOT FOR SELF CREATED MESSAGES 
 			let message = "" in 
   		let module Dl_Pprz = PprzLink.Messages (struct let name = "datalink" end) in 
 			let cb = fun value1 value2 -> Printf.printf "%s message has been successfully received.\n" message in

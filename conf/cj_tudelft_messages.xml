@@ -647,6 +647,7 @@
       <field name="Amount_episode" type="int32"/>
       <field name="Old_distance" type="float"/>
       <field name="Current_distance" type="float"/>
+      <field name="Current_reward" type="float"/>
     </message>
 
     <!--message for Invariant filter with position-->

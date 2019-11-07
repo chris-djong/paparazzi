@@ -91,6 +91,7 @@ float desired_accuracy = 0.5; // accuracy at which the discretised states are cr
 static rl_state state1;
 static rl_state state2;
 static int action1;
+float reward;
 static int action2;
 
 static uint16_t action_space[ACTION_SIZE_1];
@@ -144,7 +145,6 @@ static void rl_load_Q_file(void){
 	char line[1024]; // assumption that we have a maximum of 1024 characters per line which should be sufficient
 	fgets(line, 1024, f); // remove first line which is only header
 	char *token;
-	printf("The first line is given by: %s\n",line);
 	token = strtok(line, ",");
 	episode = atoll(token);
 	for (int i=0; i<STATE_SIZE_1; i++){
@@ -202,7 +202,7 @@ static void send_rl_variables(struct transport_tx *trans, struct link_device *de
     // When prompted, return all the telemetry variables
 	float old_dist = idx_to_dist(state1.dist_wp_idx_old);
 	float curr_dist = idx_to_dist(state1.dist_wp_idx);
-    pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestep, &episode, &old_dist, &curr_dist);
+    pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestep, &episode, &old_dist, &curr_dist, &reward);
 }
 
 
@@ -351,7 +351,7 @@ int rl_episode_stop_condition(){
 
 float calc_reward(rl_state state1, rl_state state2);
 float calc_reward(rl_state state1, rl_state state2){
-	float closer_to_wp = fabs(idx_to_dist(state1.dist_wp_idx)) - fabs(idx_to_dist(state2.dist_wp_idx));
+	float closer_to_wp = fabs(idx_to_dist(state1.dist_wp_idx)) - fabs(idx_to_dist(state2.dist_wp_idx)); // negative reward if the new state (state2) is further away then the old state (state1)
 	return closer_to_wp;
 }
 
@@ -414,7 +414,7 @@ int rl_soaring_call(void) {
 		// Check whether we are in an episode already
 		if (rl_episode_started){
 			action2 = rl_soaring_get_action(state2);
-			float reward = calc_reward(state1, state2);
+			reward = calc_reward(state1, state2);
 			update_q_value(state1, state2, reward, action1, action2);
 			update_policy();
 			action1 = action2;
@@ -450,14 +450,14 @@ void rl_soaring_perform_action(uint16_t action){
     // If conditions depending on chosen_action
 	// Action 1, increase ground speed
 	if (action == 0){
-		v_ctl_auto_groundspeed_setpoint += 0.2;
+		v_ctl_auto_groundspeed_setpoint += 0.4;
 	} else if (action == 1){
-		v_ctl_auto_groundspeed_setpoint += 0.1;
+		v_ctl_auto_groundspeed_setpoint += 0.2;
 	} else if (action == 2){	// Action 2, same ground speed
 	} else if (action == 3){	// Action 3, decrease ground speed
-		v_ctl_auto_groundspeed_setpoint -= 0.1;
-	} else if (action == 4){
 		v_ctl_auto_groundspeed_setpoint -= 0.2;
+	} else if (action == 4){
+		v_ctl_auto_groundspeed_setpoint -= 0.4;
 	}
 }
 

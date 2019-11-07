@@ -223,7 +223,6 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	transformation = translate_frame(point, pos_Utm->east, pos_Utm->north, pos_Utm->alt);
 	// Then rotate frame
 	transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
-
 	// Return
 	return transformation;
 }
@@ -291,7 +290,6 @@ void follow_me_set_groundspeed(void){
 int follow_me_set_wp(void){
 	if(ground_set) {
 		actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
-
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
 		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
@@ -328,9 +326,9 @@ int follow_me_set_wp(void){
 
 		dist_wp_follow_old = dist_wp_follow;
 		dist_wp_follow = sqrt((x_follow - pos_Utm->east)*(x_follow - pos_Utm->east) + (y_follow - pos_Utm->north)*(y_follow - pos_Utm->north));
-		dist_wp_follow = sqrt(wp_follow_body.x*wp_follow_body.x + wp_follow_body.y*wp_follow_body.y);
-                dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
-                dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
+		dist_wp_follow = fabs(wp_follow_body.y);
+        dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
+        dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
 
 		// Update STBDY HOME AND FOLLOW ME WP
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
