@@ -34,7 +34,7 @@
 // Variables required for settings and file logger
 extern uint8_t follow_me_distance;
 extern uint8_t follow_me_height;
-extern float desired_ground_speed;
+extern float ground_speed;
 extern float follow_me_heading;
 extern float actual_ground_speed;
 

@@ -80,7 +80,7 @@ float dist_wp_follow_old; // old distance to follow me wp
 // Variables initialised in functions themselves
 static bool ground_set;
 static struct LlaCoor_i ground_lla;
-static float ground_speed;
+float ground_speed;
 static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
