@@ -39,8 +39,8 @@ extern float follow_me_heading;
 extern float actual_ground_speed;
 
 // Required for rl module
-extern float dist_wp_follow;
-extern float dist_wp_follow_old;
+extern struct FloatVect3 dist_wp_follow;
+extern struct FloatVect3 dist_wp_follow_old;
 int8_t follow_me_location;
 struct Int32Vect3 wp_ground_utm;
 extern struct FloatVect3 wp_follow_utm;
@@ -68,7 +68,7 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
 // run function
 extern int follow_me_call(void);
 
-extern int follow_me_set_wp(void);
+extern void follow_me_set_wp(void);
 
 #endif
 
