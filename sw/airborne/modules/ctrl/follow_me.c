@@ -425,7 +425,6 @@ int follow_me_call(void){
 	}
 
 	h_ctl_roll_setpoint_follow_me = roll_diff;
-	printf("The h_ctl_roll_setpoint has been set to %f in the follow_me_module.\n", h_ctl_roll_setpoint_follow_me);
 
 	follow_me_go();
 	follow_me_set_groundspeed();

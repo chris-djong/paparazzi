@@ -336,9 +336,7 @@ void h_ctl_attitude_loop(void)
 #ifdef H_CTL_ROLL_ATTITUDE_GAIN
 inline static void h_ctl_roll_loop(void)
 {
-  printf("Hctl roll setpoint has been changed from %f", h_ctl_roll_setpoint);
   h_ctl_roll_setpoint += h_ctl_roll_setpoint_follow_me;
-  printf("to %f\n", h_ctl_roll_setpoint);
   float err = stateGetNedToBodyEulers_f()->phi - h_ctl_roll_setpoint;
   struct FloatRates *body_rate = stateGetBodyRates_f();
 #ifdef SITL
