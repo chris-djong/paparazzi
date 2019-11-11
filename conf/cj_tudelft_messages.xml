@@ -636,9 +636,16 @@
       <field name="Desired_groundspeed_min" type="float"/>
       <field name="Desired_groundspeed_max" type="float"/>
       <field name="Actual_groundspeed" type="float"/>
-      <field name="Distance_WP" type="float"/>
-      <field name="Distance_WP_min" type="float"/>
-      <field name="Distance_WP_max" type="float"/>
+      <field name="Distance_WP_y" type="float"/>
+      <field name="Distance_WP_y_min" type="float"/>
+      <field name="Distance_WP_y_max" type="float"/>
+      <field name="Desired_roll_angle" type="float"/>
+      <field name="Desired_roll_angle_min" type="float"/>
+      <field name="Desired_roll_angle_max" type="float"/>
+      <field name="Actual_roll_angle" type="float"/>    
+      <field name="Distance_WP_x" type="float"/>
+      <field name="Distance_WP_x_min" type="float"/>
+      <field name="Distance_WP_x_max" type="float"/>
     </message>
 
     <!-- Message for RL soaring module --> 

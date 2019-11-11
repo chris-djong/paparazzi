@@ -45,9 +45,15 @@ int8_t follow_me_location;
 struct Int32Vect3 wp_ground_utm;
 extern struct FloatVect3 wp_follow_utm;
 
+
+// For settings
 extern float ground_speed_diff_igain;
 extern float ground_speed_diff_pgain;
 extern float ground_speed_diff_dgain;
+
+extern float roll_diff_igain;
+extern float roll_diff_pgain;
+extern float roll_diff_dgain;
 
 /** init function */
 extern void follow_me_init(void);

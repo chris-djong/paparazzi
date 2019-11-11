@@ -37,6 +37,7 @@
 #include "generated/modules.h"
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/guidance/guidance_v_n.h"
+#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include <Ivy/ivy.h> // for go to block
 
@@ -61,15 +62,26 @@ float actual_ground_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
 float dist_wp_follow_y_min; // for the real time plotting
 float dist_wp_follow_y_max; // for the real time plotting
+float dist_wp_follow_x_min;
+float dist_wp_follow_x_max;
 float safety_boat_distance = 1; // distance that the UAV should not move from the boat
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
+float roll_diff = 0;
+float roll_diff_limit = 100; // maximum and minimum allowable change in roll rate compared to the desired value by the controller
+
 
 struct FloatVect3 wp_follow_utm;
 float ground_speed_diff_pgain = 0.3;
 float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_sum_err = 0.0;
+
+float roll_diff_pgain = 0.0006;
+float roll_diff_dgain = 0.0003;
+float roll_diff_igain = 0.00006;
+float roll_diff_sum_err = 0.0;
+
 
 
 // Old location to reset sum error
@@ -83,8 +95,6 @@ static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
 static float old_ground_timestamp;
-
-
 
 
 //Calculate the average gps heading in order to predict where the boat is going
@@ -153,7 +163,10 @@ float AverageDistance(int8_t item)
 
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max);
+	float roll_angle_min = 0; //-roll_diff_limit;
+	float roll_angle_max = 0; // roll_diff_limit;
+	float roll_angle = stateGetNedToBodyEulers_f()->phi;
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
 }
 
 
@@ -331,6 +344,8 @@ void follow_me_set_wp(void){
 		// these values are only for plotting for now
         dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
         dist_wp_follow_y_min = -2*follow_me_distance + 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
+        dist_wp_follow_x_min = 0;
+        dist_wp_follow_x_max = 0;
 
 
         // Update STBDY HOME AND FOLLOW ME WPS
@@ -373,6 +388,7 @@ void follow_me_go(void);
 void follow_me_go(void){
 	NavGotoWaypoint(WP_FOLLOW2);
     NavVerticalAltitudeMode(follow_me_height, 0.);
+
 }
 
 // This function is executed each time before the follow_me_block is called
@@ -397,8 +413,19 @@ int follow_me_call(void){
 	}
 
 	// Roll rate controller
-	//roll_sum_err += dist_wp_follow.x;
-	//BoundAbs(roll_sum_err, 5);
+    roll_diff_sum_err += dist_wp_follow.x;
+    BoundAbs(roll_diff_sum_err, 5);
+    roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_igain;
+	// Bound groundspeed diff by limits
+	if (roll_diff > roll_diff_limit){
+		roll_diff = roll_diff_limit;
+	}
+	else if (roll_diff < -roll_diff_limit){
+		roll_diff = -roll_diff_limit;
+	}
+
+	h_ctl_roll_setpoint_follow_me = roll_diff;
+	printf("The h_ctl_roll_setpoint has been set to %f in the follow_me_module.\n", h_ctl_roll_setpoint_follow_me);
 
 	follow_me_go();
 	follow_me_set_groundspeed();

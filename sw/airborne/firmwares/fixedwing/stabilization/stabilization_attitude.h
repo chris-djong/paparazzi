@@ -55,6 +55,7 @@ extern bool h_ctl_auto1_rate;
 
 /* inner roll loop parameters */
 extern float  h_ctl_roll_setpoint;
+extern float h_ctl_roll_setpoint_follow_me;
 extern float  h_ctl_roll_pgain;
 extern pprz_t h_ctl_aileron_setpoint;
 extern float  h_ctl_roll_slew;
