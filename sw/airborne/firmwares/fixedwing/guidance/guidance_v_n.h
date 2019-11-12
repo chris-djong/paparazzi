@@ -44,7 +44,7 @@ extern float v_ctl_auto_airspeed_pitch_dgain;
 extern float v_ctl_auto_airspeed_pitch_igain;
 extern float v_ctl_auto_airspeed_pitch_sum_err;
 
-extern uint8_t v_ctl_speed_mode;
+// extern uint8_t v_ctl_speed_mode;
 
 extern float v_ctl_pitch_loiter_trim;
 extern float v_ctl_pitch_dash_trim;

@@ -114,16 +114,18 @@ static float random_float_in_range(float min, float max);
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev);
 void update_policy(void);
 
-
+void print_pos(void);
 void print_pos(void){
 	struct UtmCoor_f *po_Utm = stateGetPositionUtm_f();
 	printf("Current utm position is given by: %f %f %f\n", po_Utm->east, po_Utm->north, po_Utm->alt);
 }
 
+float idx_to_dist(int);
 float idx_to_dist(int idx){
     return (min_follow_dist + idx*desired_accuracy);
 }
 
+int dist_to_idx(float);
 int dist_to_idx(float dist){
 	int idx = floor((dist - min_follow_dist)/desired_accuracy);
 	if (idx > STATE_SIZE_1){
@@ -333,6 +335,7 @@ void rl_soaring_state_estimator(void){
 }
 
 
+void rl_navigation(void);
 void rl_navigation(void){
 	// Standart navigational loop
 	NavGotoWaypoint(WP_FOLLOW2);
@@ -340,7 +343,8 @@ void rl_navigation(void){
 }
 
 
-int rl_episode_stop_condition(){
+int rl_episode_stop_condition(void);
+int rl_episode_stop_condition(void){
 	if (rl_episode_timeout || rl_episode_boatcrash || rl_episode_beyond_wp){
 		return 1;
 	}
@@ -349,17 +353,17 @@ int rl_episode_stop_condition(){
 	}
 }
 
-float calc_reward(rl_state state1, rl_state state2);
-float calc_reward(rl_state state1, rl_state state2){
-	float closer_to_wp = fabs(idx_to_dist(state1.dist_wp_idx)) - fabs(idx_to_dist(state2.dist_wp_idx)); // negative reward if the new state (state2) is further away then the old state (state1)
+float calc_reward(rl_state, rl_state);
+float calc_reward(rl_state s1, rl_state s2){
+	float closer_to_wp = fabs(idx_to_dist(s1.dist_wp_idx)) - fabs(idx_to_dist(s2.dist_wp_idx)); // negative reward if the new state (state2) is further away then the old state (state1)
 	return closer_to_wp;
 }
 
-void update_q_value(rl_state state1, rl_state state2, float reward, int action1, int action2);
-void update_q_value(rl_state state1, rl_state state2, float reward, int action1, int action2){
-	float predicted_q_value = Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1];
-    float target = reward + rl_gamma * Q[state2.dist_wp_idx][state2.dist_wp_idx_old][action2];
-    Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1] = Q[state1.dist_wp_idx][state1.dist_wp_idx_old][action1] + rl_alpha * (target - predicted_q_value);
+void update_q_value(rl_state, rl_state, float, int, int);
+void update_q_value(rl_state s1, rl_state s2, float r, int a1, int a2){
+	float predicted_q_value = Q[s1.dist_wp_idx][s1.dist_wp_idx_old][a1];
+    float target = r + rl_gamma * Q[s2.dist_wp_idx][s2.dist_wp_idx_old][a2];
+    Q[s1.dist_wp_idx][s1.dist_wp_idx_old][a1] = Q[s1.dist_wp_idx][s1.dist_wp_idx_old][a1] + rl_alpha * (target - predicted_q_value);
 }
 
 
