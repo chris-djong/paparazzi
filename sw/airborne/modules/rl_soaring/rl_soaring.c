@@ -107,7 +107,7 @@ int rl_started = false;
 
 
 // static void rl_soaring_send_message_down(char *_request, char *_parameters);
-static uint16_t rl_soaring_get_action(rl_state state);
+static uint16_t rl_soaring_get_action(rl_state);
 static void rl_soaring_state_estimator(void);
 static void rl_soaring_perform_action(uint16_t action);
 static float random_float_in_range(float min, float max);
@@ -145,13 +145,17 @@ static void rl_load_Q_file(void){
 	    return;
 	}
 	char line[1024]; // assumption that we have a maximum of 1024 characters per line which should be sufficient
-	fgets(line, 1024, f); // remove first line which is only header
+	if (fgets(line, 1024, f) == NULL){
+		printf("Error obtaining first line in load Qfile\n"); // remove first line which is only header
+	}
 	char *token;
 	token = strtok(line, ",");
 	episode = atoll(token);
 	for (int i=0; i<STATE_SIZE_1; i++){
 		// Obtain the first line which is under format State1.1 Q1.1.1, Q1.1.2, Q 1.1.3, Q 1.1.4, Q1.1.15, Q 1.2.1
-	    fgets(line, 1024, f);
+	    if (fgets(line, 1024, f) == NULL){
+	    	printf("Error obtaining line in load Qfile\n");
+	    }
 	    token = strtok(line, ",");  // This takes the first cell of the current line which is simply the state
 	    int j = 0;
 	    int k = 0;
@@ -437,13 +441,13 @@ int rl_soaring_call(void) {
 
 
 // Get either an action from the policy or a random action depending on the current epsilon greed
-uint16_t rl_soaring_get_action(rl_state state){
+uint16_t rl_soaring_get_action(rl_state s){
     uint16_t action;
     float epsilon = random_float_in_range(0,1);
     if (epsilon<rl_exploration_rate){
         action = action_space[rand() % ACTION_SIZE_1];
     } else{
-        action = current_policy[state.dist_wp_idx][state.dist_wp_idx_old];
+        action = current_policy[s.dist_wp_idx][s.dist_wp_idx_old];
     }
     return action;
 }

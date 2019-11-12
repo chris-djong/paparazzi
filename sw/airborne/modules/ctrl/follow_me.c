@@ -209,6 +209,7 @@ struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 }
 
 // Function to check whether we can hand control over to reinforcement learning again
+int8_t check_handover_rl(void);
 int8_t check_handover_rl(void){
 	for (int i=0; i<HAND_RL_SIZE; i++){
 		// In case we have only one incorrect value return false
