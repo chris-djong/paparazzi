@@ -47,6 +47,7 @@
 
 // Parameters for follow_me module
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
+uint8_t stdby_distance = 20;
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 float average_follow_me_distance;
@@ -331,6 +332,10 @@ void follow_me_set_wp(void){
 		int32_t x_follow2 = utm.east + 3*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
 		int32_t y_follow2 = utm.north + 3*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
 
+		// Move stdby waypoint in front of the boat at the given distance
+		int32_t x_stdby = utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_stdby = utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
+
 		wp_follow_utm.x = x_follow;
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
@@ -353,7 +358,7 @@ void follow_me_set_wp(void){
         // Update STBDY HOME AND FOLLOW ME WPS
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
 		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
-		nav_move_waypoint(WP_STDBY, utm.east, utm.north, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
+		nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
 		nav_move_waypoint(WP_HOME, utm.east, utm.north, follow_me_height + 20);
 
 		// Update allowable Flying Region
