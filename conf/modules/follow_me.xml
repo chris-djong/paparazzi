@@ -19,7 +19,7 @@
         <dl_setting var="ground_speed_diff_dgain" min="0" max="0.3" step="0.01" shortname="Speed dgain"/>
         <dl_setting var="roll_diff_pgain" min="0" max="0.0012" step="0.00001" shortname="Roll pgain"/>
         <dl_setting var="roll_diff_igain" min="0" max="0.00012" step="0.000001" shortname="Roll igain"/>
-        <dl_setting var="roll_diff_dgain" min="0" max="0.0006" step="0.00001" shortname="Roll dgain"/>
+        <dl_setting var="roll_diff_dgain" min="0" max="0.0012" step="0.00001" shortname="Roll dgain"/>
       </dl_settings>
     </dl_settings>
   </settings>

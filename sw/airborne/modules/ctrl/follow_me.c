@@ -72,13 +72,14 @@ float roll_diff_limit = 100; // maximum and minimum allowable change in roll rat
 
 
 struct FloatVect3 wp_follow_utm;
+struct FloatVect3 wp_follow_enu;
 float ground_speed_diff_pgain = 0.3;
 float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_sum_err = 0.0;
 
 float roll_diff_pgain = 0.0006;
-float roll_diff_dgain = 0.0003;
+float roll_diff_dgain = 0.0006;
 float roll_diff_igain = 0.00006;
 float roll_diff_sum_err = 0.0;
 
@@ -333,7 +334,7 @@ void follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-		struct FloatVect3 wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
+		wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
 		// Dist wp follows using ENU system
 		dist_wp_follow_old = dist_wp_follow;

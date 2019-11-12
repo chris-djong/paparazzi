@@ -41,9 +41,10 @@ extern float actual_ground_speed;
 // Required for rl module
 extern struct FloatVect3 dist_wp_follow;
 extern struct FloatVect3 dist_wp_follow_old;
-int8_t follow_me_location;
 struct Int32Vect3 wp_ground_utm;
 extern struct FloatVect3 wp_follow_utm;
+extern struct FloatVect3 wp_follow_enu;
+
 
 
 // For settings
