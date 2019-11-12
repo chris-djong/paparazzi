@@ -259,8 +259,8 @@ void rl_soaring_start_episode(){
     follow_me_set_wp();
 
     // Obtain index of state based on location
-    int idx_old = dist_to_idx(dist_wp_follow_old);
-    int idx = dist_to_idx(dist_wp_follow);
+    int idx_old = dist_to_idx(dist_wp_follow_old.y);
+    int idx = dist_to_idx(dist_wp_follow.y);
     state1.dist_wp_idx_old = state2.dist_wp_idx_old;
     state1.dist_wp_idx = state2.dist_wp_idx;
     state2.dist_wp_idx_old = idx_old;
@@ -318,8 +318,8 @@ void rl_soaring_update_measurements(void){
     follow_me_set_wp();
 
     // Obtain index of state based on location
-    int idx_old = dist_to_idx(dist_wp_follow_old);
-    int idx = dist_to_idx(dist_wp_follow);
+    int idx_old = dist_to_idx(dist_wp_follow_old.y);
+    int idx = dist_to_idx(dist_wp_follow.y);
     state1.dist_wp_idx_old = state2.dist_wp_idx_old;
     state1.dist_wp_idx = state2.dist_wp_idx;
     state2.dist_wp_idx_old = idx_old;

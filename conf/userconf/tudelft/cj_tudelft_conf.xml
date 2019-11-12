@@ -3,7 +3,7 @@
    name="Disco"
    ac_id="1"
    airframe="airframes/tudelft/cj_tudelft_disco.xml"
-   radio="radios/eric_DX7wAR6110e.xml"
+   radio="radios/cj_tudelft_sbus_out_radio.xml"
    telemetry="telemetry/tudelft/cj_tudelft_telemetry.xml"
    flight_plan="flight_plans/tudelft/cj_tudelft_followfront.xml"
    settings="settings/fixedwing_basic.xml"

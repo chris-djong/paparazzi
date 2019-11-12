@@ -156,7 +156,7 @@ void file_logger_periodic(void)
 		  h_ctl_aileron_setpoint, // float
 		  h_ctl_elevator_setpoint, // float
 		  follow_me_location, // int
-		  desired_ground_speed, // float
+		  ground_speed, // float
 		  actual_ground_speed, // float
 		  v_ctl_auto_throttle_cruise_throttle, // float
 		  dist_wp_follow, // float

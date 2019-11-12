@@ -37,6 +37,7 @@
 #include "generated/modules.h"
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/guidance/guidance_v_n.h"
+#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include <Ivy/ivy.h> // for go to block
 
@@ -48,7 +49,6 @@
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
-int8_t follow_me_location;
 float average_follow_me_distance;
 #define HAND_RL_SIZE 20 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
 int8_t hand_rl[HAND_RL_SIZE] = {0};
@@ -56,16 +56,20 @@ float hand_rl_threshold = 1;
 int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Variables that are send to the ground station for real time plotting or logging
-int8_t old_location;
 float desired_ground_speed_max; // for the real time plotting
 float desired_ground_speed_min; // for the real time plotting
 float actual_ground_speed;
-float dist_wp_follow; // distance to follow me wp
-float dist_wp_follow_min; // for the real time plotting
-float dist_wp_follow_max; // for the real time plotting
+struct FloatVect3 dist_wp_follow; // distance to follow me wp
+float dist_wp_follow_y_min; // for the real time plotting
+float dist_wp_follow_y_max; // for the real time plotting
+float dist_wp_follow_x_min;
+float dist_wp_follow_x_max;
 float safety_boat_distance = 1; // distance that the UAV should not move from the boat
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
+float roll_diff = 0;
+float roll_diff_limit = 100; // maximum and minimum allowable change in roll rate compared to the desired value by the controller
+
 
 struct FloatVect3 wp_follow_utm;
 float ground_speed_diff_pgain = 0.3;
@@ -73,20 +77,24 @@ float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_sum_err = 0.0;
 
+float roll_diff_pgain = 0.0006;
+float roll_diff_dgain = 0.0003;
+float roll_diff_igain = 0.00006;
+float roll_diff_sum_err = 0.0;
+
+
 
 // Old location to reset sum error
-float dist_wp_follow_old; // old distance to follow me wp
+struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
 
 // Variables initialised in functions themselves
 static bool ground_set;
 static struct LlaCoor_i ground_lla;
-static float ground_speed;
+float ground_speed;
 static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
 static float old_ground_timestamp;
-
-
 
 
 //Calculate the average gps heading in order to predict where the boat is going
@@ -155,7 +163,10 @@ float AverageDistance(int8_t item)
 
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow, &dist_wp_follow_min, &dist_wp_follow_max);
+	float roll_angle_min = 0; //-roll_diff_limit;
+	float roll_angle_max = 0; // roll_diff_limit;
+	float roll_angle = stateGetNedToBodyEulers_f()->phi;
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
 }
 
 
@@ -208,6 +219,7 @@ int8_t check_handover_rl(void){
 	return 1;
 }
 
+
 /*Transformation from UTM coordinate system to the Body system
  * Pos UTM is used as input so that during a whole function execution it stays constant for all the transforms
  * Same for heading */
@@ -221,8 +233,10 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 
     // Translate frame
 	transformation = translate_frame(point, pos_Utm->east, pos_Utm->north, pos_Utm->alt);
+
 	// Then rotate frame
-	transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
+	float heading = stateGetNedToBodyEulers_f()->psi;
+	transformation = rotate_frame(&transformation, heading);
 	// Return
 	return transformation;
 }
@@ -237,14 +251,20 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	// Obtain current Utm position for translationg
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
+
+	float heading = stateGetNedToBodyEulers_f()->psi;
+
     // Rotate frame back
-	transformation = rotate_frame(point, -follow_me_heading);
+	transformation = rotate_frame(point, -heading);
 
 	// Translate frame back
 	transformation = translate_frame(&transformation, -pos_Utm->east, -pos_Utm->north, -pos_Utm->alt);
 	//Return
 	return transformation;
 }
+
+
+
 
 // Called each time the follow me block is started
 void follow_me_startup(void){
@@ -287,7 +307,7 @@ void follow_me_set_groundspeed(void){
 
 // Sets the WP_FOLLOW based on GPS coordinates received by ground segment
 // Returns 0 if the waypoint is in front of the UAV and 1 otherwise
-int follow_me_set_wp(void){
+void follow_me_set_wp(void){
 	if(ground_set) {
 		actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 		// Obtain lat lon coordinates for conversion
@@ -296,7 +316,7 @@ int follow_me_set_wp(void){
 		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 		lla.alt = ((float)(ground_lla.alt))/1000.;
 
-		// Convert LLA to UTM
+		// Convert LLA to UTM in oder to set watpoint in UTM system
 		struct UtmCoor_f utm;
 		utm.zone = nav_utm_zone0;
 		utm_of_lla_f(&utm, &lla);
@@ -313,24 +333,22 @@ int follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-		struct FloatVect3 wp_ground_utm;
-		wp_ground_utm.x = utm.east;
-		wp_ground_utm.y = utm.north;
-		wp_ground_utm.z = utm.alt;
+		struct FloatVect3 wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
-		struct FloatVect3 wp_follow_body = UTM_to_ENU(&wp_follow_utm);
-		struct FloatVect3 wp_ground_body = UTM_to_ENU(&wp_ground_utm);
-
-		// Obtain current Utm position and calculate distance towards wp
-		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-
+		// Dist wp follows using ENU system
 		dist_wp_follow_old = dist_wp_follow;
-		dist_wp_follow = sqrt((x_follow - pos_Utm->east)*(x_follow - pos_Utm->east) + (y_follow - pos_Utm->north)*(y_follow - pos_Utm->north));
-		dist_wp_follow = fabs(wp_follow_body.y);
-        dist_wp_follow_min = -follow_me_distance + safety_boat_distance;
-        dist_wp_follow_max = 2*follow_me_distance - 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
+		dist_wp_follow.x = wp_follow_enu.x;
+		dist_wp_follow.y = wp_follow_enu.y;
+		dist_wp_follow.z = wp_follow_enu.z;
 
-		// Update STBDY HOME AND FOLLOW ME WP
+		// these values are only for plotting for now
+        dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
+        dist_wp_follow_y_min = -2*follow_me_distance + 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
+        dist_wp_follow_x_min = 0;
+        dist_wp_follow_x_max = 0;
+
+
+        // Update STBDY HOME AND FOLLOW ME WPS
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
 		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
 		nav_move_waypoint(WP_STDBY, utm.east, utm.north, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
@@ -345,33 +363,20 @@ int follow_me_set_wp(void){
 		// Reset the ground boolean
 	    ground_set = false;
 
-	    int location;
-		if (wp_follow_body.y < -1.8*follow_me_distance){ // beyond wp 2
-			// Obtain current ENU position and Euler Angles in order to calculate the heading
-			location =  2;
-		} else if (wp_follow_body.y < 0){ // beyond wp
-			location = 1;
-		} else if (wp_ground_body.y < -0.5){ // if the UAV is between the ship and the waypoint
-			dist_wp_follow = -dist_wp_follow;
-			location = 0;
-		} else{ // if the UAV is behind the boat
-			dist_wp_follow = -dist_wp_follow;
-			location = -1;
-		}
-        average_follow_me_distance = AverageDistance(dist_wp_follow);
-        if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
-        	hand_rl[hand_rl_idx] = 1;
-        } else {
-        	hand_rl[hand_rl_idx] = 0;
-        }
-        hand_rl_idx++;
-		if (hand_rl_idx>HAND_RL_SIZE-1){
-			hand_rl_idx = 0;
-		}
-        return location;
+	    if (rl_started){
+			average_follow_me_distance = AverageDistance(dist_wp_follow.y);
+			if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
+				hand_rl[hand_rl_idx] = 1;
+			} else {
+				hand_rl[hand_rl_idx] = 0;
+			}
+			hand_rl_idx++;
+			if (hand_rl_idx>HAND_RL_SIZE-1){
+				hand_rl_idx = 0;
+			}
+	    }
 	}
-
-	return 0;
+	return;
 }
 
 
@@ -379,16 +384,11 @@ int follow_me_set_wp(void){
 // 3 possible location: -1 is behind the boat
 //                       0 is between the boat and the Follow me waypoint
 //                       1 is in front of the follow me waypoint
-void follow_me_go(float location);
-void follow_me_go(float location){
-
-	if (old_location == -1 && location != -1){
-		v_ctl_auto_groundspeed_sum_err = 0;
-	}
+void follow_me_go(void);
+void follow_me_go(void){
 	NavGotoWaypoint(WP_FOLLOW2);
     NavVerticalAltitudeMode(follow_me_height, 0.);
 
-	old_location = location;
 }
 
 // This function is executed each time before the follow_me_block is called
@@ -397,28 +397,36 @@ void follow_me_go(float location){
 int follow_me_call(void){
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
 	if (ground_timestamp > old_ground_timestamp){
-		follow_me_location = follow_me_set_wp();
+		follow_me_set_wp();
 	}
 
-    ground_speed_diff_sum_err += dist_wp_follow;
+	// Ground speed controller
+    ground_speed_diff_sum_err += dist_wp_follow.y;
     BoundAbs(ground_speed_diff_sum_err, 20);
-    ground_speed_diff = -ground_speed_diff_pgain*dist_wp_follow - ground_speed_diff_igain*ground_speed_diff_sum_err - (dist_wp_follow-dist_wp_follow_old)*ground_speed_diff_igain;
-	if (follow_me_location == 0 && old_location == -1){
-		ground_speed_diff = 0;
-	// In case we are behind the boat
-	}  else if (follow_me_location == -1){
-		ground_speed_diff = ground_speed_diff_limit;
-	}
+    ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
 	// Bound groundspeed diff by limits
 	if (ground_speed_diff > ground_speed_diff_limit){
 		ground_speed_diff = ground_speed_diff_limit;
 	}
 	else if (ground_speed_diff < -ground_speed_diff_limit){
 		ground_speed_diff = -ground_speed_diff_limit;
-
 	}
 
-	follow_me_go(follow_me_location);
+	// Roll rate controller
+    roll_diff_sum_err += dist_wp_follow.x;
+    BoundAbs(roll_diff_sum_err, 5);
+    roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_igain;
+	// Bound groundspeed diff by limits
+	if (roll_diff > roll_diff_limit){
+		roll_diff = roll_diff_limit;
+	}
+	else if (roll_diff < -roll_diff_limit){
+		roll_diff = -roll_diff_limit;
+	}
+
+	h_ctl_roll_setpoint_follow_me = roll_diff;
+
+	follow_me_go();
 	follow_me_set_groundspeed();
 
 	if (check_handover_rl()){

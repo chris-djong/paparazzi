@@ -374,7 +374,6 @@ void h_ctl_init(void)
 void h_ctl_course_loop(void)
 {
   static float last_err;
-
   // Ground path error
   float err = h_ctl_course_setpoint - stateGetHorizontalSpeedDir_f();
   NormRadAngle(err);

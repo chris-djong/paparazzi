@@ -52,6 +52,7 @@ bool h_ctl_auto1_rate;
 
 /* inner roll loop parameters */
 float  h_ctl_roll_setpoint;
+float h_ctl_roll_setpoint_follow_me;
 float  h_ctl_roll_pgain;
 pprz_t h_ctl_aileron_setpoint;
 float  h_ctl_roll_slew;
@@ -118,6 +119,7 @@ static inline void h_ctl_roll_rate_loop(void);
 
 float h_ctl_roll_attitude_gain;
 float h_ctl_roll_rate_gain;
+
 
 #ifdef AGR_CLIMB
 static float nav_ratio;
@@ -201,7 +203,6 @@ void h_ctl_init(void)
 void h_ctl_course_loop(void)
 {
   static float last_err;
-
   // Ground path error
   float err = stateGetHorizontalSpeedDir_f() - h_ctl_course_setpoint;
   NormRadAngle(err);
@@ -335,6 +336,7 @@ void h_ctl_attitude_loop(void)
 #ifdef H_CTL_ROLL_ATTITUDE_GAIN
 inline static void h_ctl_roll_loop(void)
 {
+  h_ctl_roll_setpoint += h_ctl_roll_setpoint_follow_me;
   float err = stateGetNedToBodyEulers_f()->phi - h_ctl_roll_setpoint;
   struct FloatRates *body_rate = stateGetBodyRates_f();
 #ifdef SITL
