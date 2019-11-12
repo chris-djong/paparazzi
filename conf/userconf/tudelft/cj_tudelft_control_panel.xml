@@ -136,7 +136,7 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-g" constant="1980x500-0+0"/>
+        <arg flag="-g" constant="2000x500-0+0"/>
         <arg flag="-t" constant="Ground Speed"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed:1"/>
@@ -145,12 +145,27 @@
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_groundspeed:1"/>
         <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP"/>
+        <arg flag="-t" constant="Distance WP Y"/>
         <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Average_distance:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_max:1"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-t" constant="Distance WP X"/>
+        <arg flag="-u" constant="0.1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x_max:1"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="2000x500-0+0"/>
+        <arg flag="-t" constant="Roll angle"/>
+        <arg flag="-u" constant="0.1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle_max:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_roll_angle:1"/>
       </program>
       
     </session>
@@ -168,7 +183,7 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-g" constant="1980x500-0+0"/>
+        <arg flag="-g" constant="2000x500-0+0"/>
         <arg flag="-t" constant="Ground Speed"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_groundspeed:1"/>
@@ -177,12 +192,27 @@
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_groundspeed:1"/>
         <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP"/>
+        <arg flag="-t" constant="Distance WP Y"/>
         <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Average_distance:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_min:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_max:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_max:1"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-t" constant="Distance WP X"/>
+        <arg flag="-u" constant="0.1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x_max:1"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="2000x500-0+0"/>
+        <arg flag="-t" constant="Roll angle"/>
+        <arg flag="-u" constant="0.1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle_min:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Desired_roll_angle_max:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Actual_roll_angle:1"/>
       </program>
       
     </session>
