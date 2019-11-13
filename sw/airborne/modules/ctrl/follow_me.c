@@ -69,19 +69,20 @@ float safety_boat_distance = 1; // distance that the UAV should not move from th
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 float roll_diff = 0;
-float roll_diff_limit = 100; // maximum and minimum allowable change in roll rate compared to the desired value by the controller
+float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 
 struct FloatVect3 wp_follow_utm;
 struct FloatVect3 wp_follow_enu;
 float ground_speed_diff_pgain = 0.3;
-float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
+float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_sum_err = 0.0;
 
 float roll_diff_pgain = 0.0012;
-float roll_diff_dgain = 0.0006;
-float roll_diff_igain = 0.00006;
+float roll_diff_igain = 0.000077;
+float roll_diff_dgain = 0.0003;
 float roll_diff_sum_err = 0.0;
 
 
@@ -165,8 +166,8 @@ float AverageDistance(int8_t item)
 
 
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	float roll_angle_min = 0; //-roll_diff_limit;
-	float roll_angle_max = 0; // roll_diff_limit;
+	float roll_angle_min = -roll_diff_limit;
+	float roll_angle_max =  roll_diff_limit;
 	float roll_angle = stateGetNedToBodyEulers_f()->phi;
 	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
 }
@@ -325,12 +326,12 @@ void follow_me_set_wp(void){
 		utm_of_lla_f(&utm, &lla);
 
 		// Follow waypoint
-		int32_t x_follow = utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow = utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_follow = utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + x_diff*cosf(-follow_me_heading/180.*M_PI);
+		int32_t y_follow = utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + x_diff*sinf(-follow_me_heading/180.*M_PI);
 
 		// Follow 2 waypoint at twice the distance
-		int32_t x_follow2 = utm.east + 3*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = utm.north + 3*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_follow2 = utm.east + 10*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = utm.north + 10*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
 		int32_t x_stdby = utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
@@ -350,9 +351,9 @@ void follow_me_set_wp(void){
 
 		// these values are only for plotting for now
         dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
-        dist_wp_follow_y_min = -2*follow_me_distance + 1; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
-        dist_wp_follow_x_min = 0;
-        dist_wp_follow_x_max = 0;
+        dist_wp_follow_y_min = -3; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
+        dist_wp_follow_x_min = -2;
+        dist_wp_follow_x_max = 2;
 
 
         // Update STBDY HOME AND FOLLOW ME WPS
@@ -421,7 +422,7 @@ int follow_me_call(void){
 
 	// Roll rate controller
     roll_diff_sum_err += dist_wp_follow.x;
-    BoundAbs(roll_diff_sum_err, 5);
+    BoundAbs(roll_diff_sum_err, 20);
     roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_igain;
 	// Bound groundspeed diff by limits
 	if (roll_diff > roll_diff_limit){

@@ -46,6 +46,7 @@ extern struct FloatVect3 wp_follow_utm;
 extern struct FloatVect3 wp_follow_enu;
 
 
+extern float x_diff;
 
 // For settings
 extern float ground_speed_diff_igain;
