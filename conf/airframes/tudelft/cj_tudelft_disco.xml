@@ -171,7 +171,6 @@
     <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/>
-
   </section>
 
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">

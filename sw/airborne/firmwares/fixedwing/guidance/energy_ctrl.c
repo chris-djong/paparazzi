@@ -345,27 +345,27 @@ void v_ctl_climb_loop(void)
   BoundAbs(airspeed_incr, AIRSPEED_SETPOINT_SLEW * dt_attidude);
   v_ctl_auto_airspeed_setpoint_slew += airspeed_incr;
 
-#ifdef V_CTL_AUTO_GROUNDSPEED_SETPOINT
-// Ground speed control loop (input: groundspeed error, output: airspeed controlled)
-  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
-  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
-  v_ctl_auto_groundspeed_last_err = err_groundspeed;
-  v_ctl_auto_groundspeed_sum_err += err_groundspeed;
-  BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
+  // Set it to less than if enabled. As soon as we leave the follow me module it will be set to 25 so that this loop will not be executed anymore
+  // This ensure that the groundspeed loop does not induce the pitching moment in case the desired airspeed is increased to much (and we have too much wind)
+  if (v_ctl_auto_groundspeed_setpoint < 20){
+	  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
+	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
+	  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
+	  v_ctl_auto_groundspeed_last_err = err_groundspeed;
+	  v_ctl_auto_groundspeed_sum_err += err_groundspeed;
+	  BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
 
-  v_ctl_auto_airspeed_setpoint += v_ctl_auto_groundspeed_pgain*err_groundspeed + v_ctl_auto_groundspeed_igain*v_ctl_auto_groundspeed_sum_err + d_err*v_ctl_auto_groundspeed_dgain;
-  if (v_ctl_auto_airspeed_setpoint < STALL_AIRSPEED*1.23){
-	  v_ctl_auto_airspeed_setpoint = STALL_AIRSPEED*1.23;
+	  v_ctl_auto_airspeed_setpoint += v_ctl_auto_groundspeed_pgain*err_groundspeed + v_ctl_auto_groundspeed_igain*v_ctl_auto_groundspeed_sum_err + d_err*v_ctl_auto_groundspeed_dgain;
+	  if (v_ctl_auto_airspeed_setpoint < STALL_AIRSPEED*1.23){
+		  v_ctl_auto_airspeed_setpoint = STALL_AIRSPEED*1.23;
+	  }
+	  if (v_ctl_auto_airspeed_setpoint_slew < STALL_AIRSPEED*1.23){
+		  v_ctl_auto_airspeed_setpoint_slew = STALL_AIRSPEED*1.23;
+	  }
+	  v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
+  } else {
+	  v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
   }
-  if (v_ctl_auto_airspeed_setpoint_slew < STALL_AIRSPEED*1.23){
-	  v_ctl_auto_airspeed_setpoint_slew = STALL_AIRSPEED*1.23;
-  }
-  v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
-
-#else
-  v_ctl_auto_airspeed_controlled = v_ctl_auto_airspeed_setpoint_slew;
-#endif
-
   // Airspeed outerloop: positive means we need to accelerate
   float speed_error = v_ctl_auto_airspeed_controlled - stateGetAirspeed_f();
   //printf("The desired airspeed is given by %f and the actual airspeed by %f\n", v_ctl_auto_airspeed_controlled, stateGetAirspeed_f());

@@ -47,7 +47,7 @@
 
 // Parameters for follow_me module
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t stdby_distance = 20;
+uint8_t stdby_distance = 40; // based on nav_radius + 10
 uint8_t follow_me_height = 10;
 float follow_me_heading = 0;
 float average_follow_me_distance;
@@ -79,7 +79,7 @@ float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_sum_err = 0.0;
 
-float roll_diff_pgain = 0.0006;
+float roll_diff_pgain = 0.0012;
 float roll_diff_dgain = 0.0006;
 float roll_diff_igain = 0.00006;
 float roll_diff_sum_err = 0.0;
@@ -445,6 +445,6 @@ int follow_me_call(void){
 
 void follow_me_stop(void){
 	ground_speed_diff = 0;
-	v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
+	v_ctl_auto_groundspeed_setpoint = 100; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
 }
 

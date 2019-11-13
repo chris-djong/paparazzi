@@ -76,7 +76,7 @@
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="flight">
       <call_once fun="follow_me_stop()"/>
       <call_once fun="rl_soaring_stop()"/>
-      <circle radius="nav_radius" wp="STDBY" pre_call="follow_me_set_wp()"/>    
+      <circle radius="30" wp="STDBY" pre_call="follow_me_set_wp()"/>    
     </block>
     
   <!-- *********** Flight *********** -->
