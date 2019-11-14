@@ -72,7 +72,7 @@ float roll_diff = 0;
 float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
-
+int counter;
 struct FloatVect3 wp_follow_utm;
 struct FloatVect3 wp_follow_enu;
 float ground_speed_diff_pgain = 0.3;
@@ -80,10 +80,14 @@ float ground_speed_diff_igain = 0.03;
 float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_sum_err = 0.0;
 
-float roll_diff_pgain = 0.0012;
-float roll_diff_igain = 0.000077;
-float roll_diff_dgain = 0.0003;
+float roll_diff_pgain = 0.006;
+float roll_diff_igain = 0.00005;
+float roll_diff_dgain = 0.0009;
 float roll_diff_sum_err = 0.0;
+
+struct UtmCoor_f ground_utm;
+struct UtmCoor_f ground_utm_old;
+struct UtmCoor_f ground_utm_new;
 
 
 
@@ -295,7 +299,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
-	follow_me_heading = AverageHeading(ground_course);
+	// follow_me_heading = AverageHeading(ground_course);
+	// follow_me_heading = ground_course;
 	ground_set = true;
 }
 
@@ -321,21 +326,49 @@ void follow_me_set_wp(void){
 		lla.alt = ((float)(ground_lla.alt))/1000.;
 
 		// Convert LLA to UTM in oder to set watpoint in UTM system
-		struct UtmCoor_f utm;
-		utm.zone = nav_utm_zone0;
-		utm_of_lla_f(&utm, &lla);
+		ground_utm.zone = nav_utm_zone0;
+		utm_of_lla_f(&ground_utm, &lla);
+        ground_utm_new = ground_utm;
+
+		// Obtain follow me heading based on position
+        counter++;
+        if (counter == 10){
+        	counter = 0;
+			float diff_y = ground_utm_new.north - ground_utm_old.north;
+			float diff_x = ground_utm_new.east - ground_utm_old.east;
+			printf("Diff x = %f, diff_y = %f \n", diff_x, diff_y);
+			if (diff_y == 0){
+				if (diff_x > 0){
+					printf("If with 90 \n");
+					follow_me_heading = AverageHeading(90);
+				}
+				else if (diff_y < 0){
+					printf("else if with 270 \n");
+					follow_me_heading = AverageHeading(270);
+				}
+				else if (diff_x == 0){
+					printf("Something went wrong \n");
+				}
+			} else {
+				printf("Else loop with added heading of %f \n", atan(diff_x/diff_y)*180/M_PI);
+				follow_me_heading = AverageHeading(atan(diff_x/diff_y)*180/M_PI);
+			}
+			printf("The average heading is given by %f with a ground course of 30\n\n", follow_me_heading);
+			ground_utm_old = ground_utm_new;
+        }
+
 
 		// Follow waypoint
-		int32_t x_follow = utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + x_diff*cosf(-follow_me_heading/180.*M_PI);
-		int32_t y_follow = utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + x_diff*sinf(-follow_me_heading/180.*M_PI);
+		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + x_diff*cosf(-follow_me_heading/180.*M_PI);
+		int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + x_diff*sinf(-follow_me_heading/180.*M_PI);
 
 		// Follow 2 waypoint at twice the distance
-		int32_t x_follow2 = utm.east + 10*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = utm.north + 10*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_follow2 = ground_utm.east + 10*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = ground_utm.north + 10*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
-		int32_t x_stdby = utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_stdby = utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
 		wp_follow_utm.x = x_follow;
 		wp_follow_utm.y = y_follow;
@@ -352,15 +385,15 @@ void follow_me_set_wp(void){
 		// these values are only for plotting for now
         dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
         dist_wp_follow_y_min = -3; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
-        dist_wp_follow_x_min = -2;
-        dist_wp_follow_x_max = 2;
+        dist_wp_follow_x_min = -1;
+        dist_wp_follow_x_max = 1;
 
 
         // Update STBDY HOME AND FOLLOW ME WPS
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
 		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
 		nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
-		nav_move_waypoint(WP_HOME, utm.east, utm.north, follow_me_height + 20);
+		nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_height + 20);
 
 		// Update allowable Flying Region
 		nav_move_waypoint(WP_FR_TL, x_follow - 200, y_follow + 200, follow_me_height);
@@ -422,11 +455,9 @@ int follow_me_call(void){
 
 	// Roll rate controller
 	// first disable nav_mode_course so that there are no 2 counteracting roll modes
-	if (fabs(dist_wp_follow.x) > 2){
+	if ((dist_wp_follow.x > dist_wp_follow_x_max) || (dist_wp_follow.x < dist_wp_follow_x_min)){
 		nav_mode = NAV_MODE_FOLLOW;
 	    lateral_mode = LATERAL_MODE_FOLLOW;
-	    printf("H_ctl_roll_setpoint is given by: %f\n", h_ctl_roll_setpoint);
-	    printf("H_ctl_roll_setpoint has been set to 0\n");
 	}
 	else {
 		nav_mode = NAV_MODE_COURSE;

@@ -364,7 +364,6 @@ void fly_to_xy(float x, float y)
     }
     lateral_mode = LATERAL_MODE_COURSE;
   } else if (nav_mode == NAV_MODE_FOLLOW){
-	printf("Executing NAV_MODE_FOLLOW\n");
   } else {
     float diff = atan2f(x - pos->x, y - pos->y) - stateGetHorizontalSpeedDir_f();
     NormRadAngle(diff);
