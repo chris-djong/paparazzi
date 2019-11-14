@@ -336,7 +336,12 @@ void h_ctl_attitude_loop(void)
 #ifdef H_CTL_ROLL_ATTITUDE_GAIN
 inline static void h_ctl_roll_loop(void)
 {
-  h_ctl_roll_setpoint += h_ctl_roll_setpoint_follow_me;
+  if (nav_mode == NAV_MODE_FOLLOW){
+	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+  } else {
+	  h_ctl_roll_setpoint += h_ctl_roll_setpoint_follow_me;
+  }
+  printf("H_ctl_roll_setpoint is given by %f and the follow me part by %f\n", h_ctl_roll_setpoint, h_ctl_roll_setpoint_follow_me);
   float err = stateGetNedToBodyEulers_f()->phi - h_ctl_roll_setpoint;
   struct FloatRates *body_rate = stateGetBodyRates_f();
 #ifdef SITL

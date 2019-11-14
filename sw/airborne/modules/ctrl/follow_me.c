@@ -421,6 +421,17 @@ int follow_me_call(void){
 	}
 
 	// Roll rate controller
+	// first disable nav_mode_course so that there are no 2 counteracting roll modes
+	if (fabs(dist_wp_follow.x) > 2){
+		nav_mode = NAV_MODE_FOLLOW;
+	    lateral_mode = LATERAL_MODE_FOLLOW;
+	    printf("H_ctl_roll_setpoint is given by: %f\n", h_ctl_roll_setpoint);
+	    printf("H_ctl_roll_setpoint has been set to 0\n");
+	}
+	else {
+		nav_mode = NAV_MODE_COURSE;
+	    lateral_mode = LATERAL_MODE_COURSE;
+	}
     roll_diff_sum_err += dist_wp_follow.x;
     BoundAbs(roll_diff_sum_err, 20);
     roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_igain;

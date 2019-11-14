@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2003-2009  ENAC, Pascal Brisset, Antoine Drouin
  *
@@ -79,6 +80,7 @@ extern uint8_t last_wp __attribute__((unused));
 extern int nav_mode;
 #define NAV_MODE_ROLL 1
 #define NAV_MODE_COURSE 2
+#define NAV_MODE_FOLLOW 3 // Mode used by follow me module in order to change lateral position
 
 extern uint8_t horizontal_mode;
 
