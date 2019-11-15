@@ -631,6 +631,9 @@
 
     <!-- Message for follow_me_module -->
     <message name="FOLLOW_ME" id ="75">
+      <field name="First_term" type="float"/>
+      <field name="Second_term" type="float"/>
+      <field name="Third_term" type="float"/>
       <field name="Average_distance" type="float"/>
       <field name="Desired_groundspeed" type="float"/>
       <field name="Desired_groundspeed_min" type="float"/>

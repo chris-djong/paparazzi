@@ -347,9 +347,11 @@ void v_ctl_climb_loop(void)
 
   // Set it to less than if enabled. As soon as we leave the follow me module it will be set to 25 so that this loop will not be executed anymore
   // This ensure that the groundspeed loop does not induce the pitching moment in case the desired airspeed is increased to much (and we have too much wind)
-  if (v_ctl_auto_groundspeed_setpoint < 20){
+  if (v_ctl_auto_groundspeed_setpoint < 30){
 	  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
-	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
+	  // Base it on enu speed for the follow me module (throttle only increases forward speed not sideways)
+	  struct EnuCoor_f *enu_speed = stateGetSpeedEnu_f();
+	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - enu_speed->y);
 	  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
 	  v_ctl_auto_groundspeed_last_err = err_groundspeed;
 	  v_ctl_auto_groundspeed_sum_err += err_groundspeed;

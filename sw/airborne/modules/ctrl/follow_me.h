@@ -36,7 +36,7 @@ extern uint8_t follow_me_distance;
 extern uint8_t follow_me_height;
 extern float ground_speed;
 extern float follow_me_heading;
-extern float actual_ground_speed;
+extern float actual_enu_speed;
 
 // Required for rl module
 extern struct FloatVect3 dist_wp_follow;

@@ -5,10 +5,7 @@
       <arg flag="-d" constant="/dev/ttyUSB0"/>
     </program>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
-    <program name="GCS" command="sw/ground_segment/cockpit/gcs">
-      <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
-      <arg flag="-center_ac_id" constant="@AC_ID"/>
-    </program>
+    <program name="GCS" command="sw/ground_segment/cockpit/gcs"/>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
     </program>
@@ -76,7 +73,10 @@
         <arg flag="--boot"/>
         <arg flag="--norc"/>
       </program>
-      <program name="GCS"/>
+      <program name="GCS">
+        <arg flag="-center_ac_id" constant="1"/>
+        <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
+      </program>
       <program name="Server">
         <arg flag="-n"/>
       </program> 
@@ -105,6 +105,13 @@
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_min:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y_max:1"/>
         <arg flag="-n"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-t" constant="Roll controller"/>
+        <arg flag="-u" constant="0.1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:First_term:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Second_term:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Third_term:1"/>
+        <arg flag="-n"/>
         <arg flag="-g" constant="2000x500-0+1040"/>
         <arg flag="-t" constant="Roll angle"/>
         <arg flag="-u" constant="0.1"/>
@@ -129,7 +136,9 @@
       </program>
       <program name="Server"/>
       <program name="GCS">
+        <arg flag="-center_ac_id" constant="1"/>
         <arg flag="-speech"/>
+        <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
       <program name="GPSd position display">
         <arg flag="--ac" constant="1"/>
@@ -175,7 +184,9 @@
       </program>
       <program name="Server"/>
       <program name="GCS">
+        <arg flag="-center_ac_id" constant="1"/>
         <arg flag="-speech"/>
+        <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
       <program name="GPSd position display">
         <arg flag="--ac" constant="1"/>

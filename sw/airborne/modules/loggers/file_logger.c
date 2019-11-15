@@ -91,7 +91,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, follow_me_location, desired_ground_speed, actual_ground_speed, v_ctl_auto_cruise_throttle, dist_wp_follow, ground_pos_utm_x, ground_pos_utm_y, ground_pos_utm_z, uav_pos_utm_x, uav_pos_utm_y, uav_pos_utm_z, wind_x, wind_y, wind_z,airspeed,angle_attack,sideslip\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, desired_ground_speed, actual_enu_speed, v_ctl_auto_cruise_throttle, dist_wp_follow, ground_pos_utm_x, ground_pos_utm_y, ground_pos_utm_z, uav_pos_utm_x, uav_pos_utm_y, uav_pos_utm_z, wind_x, wind_y, wind_z,airspeed,angle_attack,sideslip\n"
 #endif
     );
   }
@@ -142,7 +142,6 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-#ifdef FOLLOW_ME_H
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
           counter, // int
           imu.gyro_unscaled.p, // int
@@ -157,7 +156,7 @@ void file_logger_periodic(void)
 		  h_ctl_aileron_setpoint, // int
 		  h_ctl_elevator_setpoint, // int
 		  ground_speed, // float
-		  actual_ground_speed, // float
+		  actual_enu_speed, // float
 		  h_ctl_roll_setpoint_follow_me, // float
 		  dist_wp_follow.x, // float
 		  dist_wp_follow.y, // float
@@ -178,7 +177,5 @@ void file_logger_periodic(void)
 		  sideslip // float
          );
 #endif
-#endif
-
   counter++;
 }

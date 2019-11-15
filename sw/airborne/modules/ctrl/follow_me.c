@@ -59,13 +59,22 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 // Variables that are send to the ground station for real time plotting or logging
 float desired_ground_speed_max; // for the real time plotting
 float desired_ground_speed_min; // for the real time plotting
-float actual_ground_speed;
+float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
-float dist_wp_follow_y_min; // for the real time plotting
-float dist_wp_follow_y_max; // for the real time plotting
-float dist_wp_follow_x_min;
-float dist_wp_follow_x_max;
 float safety_boat_distance = 1; // distance that the UAV should not move from the boat
+
+// for plotting of pid
+float first_term;
+float second_term;
+float third_term;
+
+// Y only for plotting purposes
+float dist_wp_follow_y_max;
+float dist_wp_follow_y_min = -3;
+// In case the x values are exceeded roll control is enabled
+float dist_wp_follow_x_min = -0.5;
+float dist_wp_follow_x_max = 0.5;
+
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
 float roll_diff = 0;
@@ -81,8 +90,8 @@ float ground_speed_diff_dgain = 0.15;
 float ground_speed_diff_sum_err = 0.0;
 
 float roll_diff_pgain = 0.006;
-float roll_diff_igain = 0.00005;
-float roll_diff_dgain = 0.0009;
+float roll_diff_igain = 0.0;
+float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
 
 struct UtmCoor_f ground_utm;
@@ -105,7 +114,7 @@ static float old_ground_timestamp;
 
 
 //Calculate the average gps heading in order to predict where the boat is going
-#define MAX_HEADING_SIZE 10
+#define MAX_HEADING_SIZE 20
 float average_heading[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1, count_heading=0;
 float AverageHeading(float);
@@ -173,7 +182,9 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	float roll_angle_min = -roll_diff_limit;
 	float roll_angle_max =  roll_diff_limit;
 	float roll_angle = stateGetNedToBodyEulers_f()->phi;
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_ground_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
+	actual_enu_speed = stateGetSpeedEnu_f()->y;  // store actual groundspeed in variable to send through pprzlink
+
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
 }
 
 
@@ -281,6 +292,8 @@ void follow_me_startup(void){
         struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
         follow_me_height = pos_Utm->alt;
     }
+	dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
+
 }
 
 void follow_me_parse_ground_gps(uint8_t *buf){
@@ -318,7 +331,6 @@ void follow_me_set_groundspeed(void){
 // Returns 0 if the waypoint is in front of the UAV and 1 otherwise
 void follow_me_set_wp(void){
 	if(ground_set) {
-		actual_ground_speed = stateGetHorizontalSpeedNorm_f();  // store actual groundspeed in variable to send through pprzlink
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
 		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
@@ -332,28 +344,22 @@ void follow_me_set_wp(void){
 
 		// Obtain follow me heading based on position
         counter++;
-        if (counter == 10){
+        if (counter == 15){
         	counter = 0;
 			float diff_y = ground_utm_new.north - ground_utm_old.north;
 			float diff_x = ground_utm_new.east - ground_utm_old.east;
-			printf("Diff x = %f, diff_y = %f \n", diff_x, diff_y);
 			if (diff_y == 0){
 				if (diff_x > 0){
-					printf("If with 90 \n");
 					follow_me_heading = AverageHeading(90);
 				}
 				else if (diff_y < 0){
-					printf("else if with 270 \n");
 					follow_me_heading = AverageHeading(270);
 				}
 				else if (diff_x == 0){
-					printf("Something went wrong \n");
 				}
 			} else {
-				printf("Else loop with added heading of %f \n", atan(diff_x/diff_y)*180/M_PI);
 				follow_me_heading = AverageHeading(atan(diff_x/diff_y)*180/M_PI);
 			}
-			printf("The average heading is given by %f with a ground course of 30\n\n", follow_me_heading);
 			ground_utm_old = ground_utm_new;
         }
 
@@ -382,11 +388,7 @@ void follow_me_set_wp(void){
 		dist_wp_follow.y = wp_follow_enu.y;
 		dist_wp_follow.z = wp_follow_enu.z;
 
-		// these values are only for plotting for now
-        dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
-        dist_wp_follow_y_min = -3; // distance of second waypoint which make the uav fly around (2* because wp is at 1*)
-        dist_wp_follow_x_min = -1;
-        dist_wp_follow_x_max = 1;
+
 
 
         // Update STBDY HOME AND FOLLOW ME WPS
@@ -458,14 +460,18 @@ int follow_me_call(void){
 	if ((dist_wp_follow.x > dist_wp_follow_x_max) || (dist_wp_follow.x < dist_wp_follow_x_min)){
 		nav_mode = NAV_MODE_FOLLOW;
 	    lateral_mode = LATERAL_MODE_FOLLOW;
-	}
-	else {
-		nav_mode = NAV_MODE_COURSE;
+	} else {
+	    nav_mode = NAV_MODE_COURSE;
 	    lateral_mode = LATERAL_MODE_COURSE;
 	}
     roll_diff_sum_err += dist_wp_follow.x;
     BoundAbs(roll_diff_sum_err, 20);
-    roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_igain;
+
+    first_term = roll_diff_pgain*dist_wp_follow.x;
+    second_term = roll_diff_igain*roll_diff_sum_err;
+    third_term = (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+
+    roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
 	// Bound groundspeed diff by limits
 	if (roll_diff > roll_diff_limit){
 		roll_diff = roll_diff_limit;
