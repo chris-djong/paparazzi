@@ -142,6 +142,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
+#ifdef FOLLOW_ME_H
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
           counter, // int
           imu.gyro_unscaled.p, // int
@@ -176,6 +177,7 @@ void file_logger_periodic(void)
 		  aoa, //float
 		  sideslip // float
          );
+#endif
 #endif
 
   counter++;
