@@ -39,6 +39,7 @@
 #include <Ivy/ivyglibloop.h>
 #include <rtcm3.h>              // Used to decode RTCM3 messages
 #include <CRC24Q.h>             // Used to verify CRC checks
+#include <time.h>
 #include <math/pprz_geodetic_float.h>
 
 #include "std.h"
@@ -94,6 +95,8 @@ static uint32_t uart_read(unsigned char(*buff)[], uint32_t n)  //, void *context
   }
 }
 
+static struct timespec wait = { .tv_sec = 0, .tv_nsec = 50000000 }; // 0.05 seconds wait between messages to awoid saturation
+
 static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
 {
   char number[5];
@@ -114,6 +117,7 @@ static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
       cpt++;
     }
 
+    nanosleep(&wait, NULL);
     printf_debug("%s\n\n", gps_packet);
     IvySendMsg("%s", gps_packet);
     offset += (packet_size-6);
