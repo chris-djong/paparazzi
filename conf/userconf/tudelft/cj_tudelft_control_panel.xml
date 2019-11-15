@@ -6,7 +6,8 @@
     </program>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
     <program name="GCS" command="sw/ground_segment/cockpit/gcs">
-      <arg flag="-layout" constant="bottom_settings.xml"/>
+      <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
+      <arg flag="-center_ac_id" constant="@AC_ID"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
@@ -75,9 +76,7 @@
         <arg flag="--boot"/>
         <arg flag="--norc"/>
       </program>
-      <program name="GCS">
-        <arg flag="-layout" constant="bottom_settings.xml"/>
-      </program>
+      <program name="GCS"/>
       <program name="Server">
         <arg flag="-n"/>
       </program> 
@@ -177,7 +176,6 @@
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>
-        <arg flag="-layout" constant="bottom_settings.xml"/>
       </program>
       <program name="GPSd position display">
         <arg flag="--ac" constant="1"/>
