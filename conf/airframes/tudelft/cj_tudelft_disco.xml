@@ -40,11 +40,11 @@
 
     <module name="follow_me"/> 
     <module name="rl_soaring"/>
-   <!--<module name="telemetry" type="transparent_udp"/> -->
-    <module name="telemetry" type="transparent">
+    <module name="telemetry" type="transparent_udp"/> 
+   <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B57600"/>
-    </module> 
+    </module> -->
       
     <module name="gps" type="ublox"/>
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
@@ -60,8 +60,8 @@
 
   <servos>
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1800" neutral="1400" max="1000"/>
-    <servo name="AILEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
+    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1450" max="1000"/> <!-- min is downward deflection-->
+    <servo name="AILEVON_LEFT" no="1" min="1000" neutral="1400" max="1900"/>  <!-- max is upward deflection-->
   </servos>
 
   <commands>
