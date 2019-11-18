@@ -446,7 +446,6 @@ void v_ctl_climb_loop(void)
 
   ac_char_update(controlled_throttle, v_ctl_pitch_of_vz, v_ctl_climb_setpoint, v_ctl_desired_acceleration);
 
-  controlled_throttle = 1;
   v_ctl_throttle_setpoint = TRIM_UPPRZ(controlled_throttle * MAX_PPRZ);
 }
 
