@@ -174,8 +174,8 @@ void file_logger_periodic(void)
 		  wind->z, // float
 		  airspeed, //float
 		  aoa, //float
-		  sideslip // float
-		   // GPS state
+		  sideslip, // float
+		  fix_mode // GPS state
          );
 #endif
   counter++;

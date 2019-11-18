@@ -112,6 +112,7 @@ float ground_speed;
 static float ground_climb;
 static float ground_course;
 static float ground_timestamp;
+int fix_mode;
 static float old_ground_timestamp;
 
 
@@ -314,6 +315,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
+	fix_mode = DL_GROUND_GPS_mode(buf);
 	// follow_me_heading = AverageHeading(ground_course);
 	// follow_me_heading = ground_course;
 	ground_set = true;
