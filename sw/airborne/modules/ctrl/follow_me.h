@@ -57,6 +57,14 @@ extern float roll_diff_igain;
 extern float roll_diff_pgain;
 extern float roll_diff_dgain;
 
+extern float dist_wp_follow_y_min;
+extern float dist_wp_follow_y_max;
+extern float roll_enable_lower;
+extern float roll_enable_upper;
+extern float roll_disable_lower;
+extern float roll_disable_upper;
+
+
 /** init function */
 extern void follow_me_init(void);
 

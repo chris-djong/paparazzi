@@ -69,11 +69,13 @@ float second_term;
 float third_term;
 
 // Y only for plotting purposes
-float dist_wp_follow_y_max;
+float dist_wp_follow_y_max = 10;
 float dist_wp_follow_y_min = -3;
 // In case the x values are exceeded roll control is enabled
-float dist_wp_follow_x_min = -0.5;
-float dist_wp_follow_x_max = 0.5;
+float roll_enable_lower = -0.5;
+float roll_enable_upper = 0.5;
+float roll_disable_lower = -1;
+float roll_disable_upper = 1;
 
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
@@ -184,7 +186,7 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	float roll_angle = stateGetNedToBodyEulers_f()->phi;
 	actual_enu_speed = stateGetSpeedEnu_f()->y;  // store actual groundspeed in variable to send through pprzlink
 
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &dist_wp_follow_x_min, &dist_wp_follow_x_max);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &roll_enable_lower, &roll_enable_upper, &roll_disable_lower, &roll_disable_upper);
 }
 
 
@@ -456,14 +458,20 @@ int follow_me_call(void){
 	}
 
 	// Roll rate controller
-	// first disable nav_mode_course so that there are no 2 counteracting roll modes
-	if ((dist_wp_follow.x > dist_wp_follow_x_max) || (dist_wp_follow.x < dist_wp_follow_x_min)){
+	// We either have the normal course mode or the nav follow mode.
+	// If we have been in course and exceed the enable limits then nav follow is activated
+	// If we have been in follow and exceed the disable limits then nav course is activated
+	printf("Distance = %f, Enable = [%f, %f], Disable = [%f, %f]\n", dist_wp_follow.x, roll_enable_lower, roll_enable_upper, roll_disable_lower, roll_disable_upper);
+	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable_upper) || (dist_wp_follow.x < roll_enable_lower))){
 		nav_mode = NAV_MODE_FOLLOW;
 	    lateral_mode = LATERAL_MODE_FOLLOW;
-	} else {
+	    printf("Switching to follow mode\n");
+	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable_upper) || (dist_wp_follow.x >= roll_disable_lower))) {
 	    nav_mode = NAV_MODE_COURSE;
 	    lateral_mode = LATERAL_MODE_COURSE;
+	    printf("Switching to course mode\n");
 	}
+
     roll_diff_sum_err += dist_wp_follow.x;
     BoundAbs(roll_diff_sum_err, 20);
 
@@ -495,5 +503,6 @@ int follow_me_call(void){
 void follow_me_stop(void){
 	ground_speed_diff = 0;
 	v_ctl_auto_groundspeed_setpoint = 100; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
+	roll_diff = 0;
 }
 
