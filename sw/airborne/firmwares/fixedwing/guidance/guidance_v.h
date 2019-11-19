@@ -33,23 +33,23 @@
 
 /* outer loop */
 //extern float v_ctl_altitude_error; in common definition
-// extern float v_ctl_altitude_setpoint; ///< in meters above MSL
-// extern float v_ctl_altitude_pre_climb;
-// extern float v_ctl_altitude_pgain;
+extern float v_ctl_altitude_setpoint; ///< in meters above MSL
+extern float v_ctl_altitude_pre_climb;
+extern float v_ctl_altitude_pgain;
 extern float v_ctl_altitude_pre_climb_correction;
 extern float v_ctl_altitude_max_climb;
 
 /* "auto throttle" inner loop parameters */
-// extern float v_ctl_auto_throttle_nominal_cruise_throttle;
+extern float v_ctl_auto_throttle_nominal_cruise_throttle;
 extern float v_ctl_auto_throttle_min_cruise_throttle;
 extern float v_ctl_auto_throttle_max_cruise_throttle;
 //extern float v_ctl_auto_throttle_cruise_throttle; in common definition
-// extern float v_ctl_auto_throttle_climb_throttle_increment;
+extern float v_ctl_auto_throttle_climb_throttle_increment;
 extern float v_ctl_auto_throttle_pgain;
 extern float v_ctl_auto_throttle_igain;
 extern float v_ctl_auto_throttle_dgain;
 //extern float v_ctl_auto_throttle_sum_err; in common definition
-// extern float v_ctl_auto_throttle_pitch_of_vz_pgain;
+extern float v_ctl_auto_throttle_pitch_of_vz_pgain;
 extern float v_ctl_auto_throttle_pitch_of_vz_dgain;
 
 /* cruise pitch trim */
@@ -72,15 +72,15 @@ extern float v_ctl_auto_pitch_sum_err;
 
 #if USE_AIRSPEED
 /* "airspeed" inner loop parameters */
-// extern float v_ctl_auto_airspeed_setpoint;
+extern float v_ctl_auto_airspeed_setpoint;
 //extern float v_ctl_auto_airspeed_controlled; in common definition
 extern float v_ctl_auto_airspeed_pgain;
 extern float v_ctl_auto_airspeed_igain;
 extern float v_ctl_auto_airspeed_sum_err;
 //extern float v_ctl_auto_groundspeed_setpoint; in common definition
-// extern float v_ctl_auto_groundspeed_pgain;
-// extern float v_ctl_auto_groundspeed_igain;
-// extern float v_ctl_auto_groundspeed_sum_err;
+extern float v_ctl_auto_groundspeed_pgain;
+extern float v_ctl_auto_groundspeed_igain;
+extern float v_ctl_auto_groundspeed_sum_err;
 #endif
 
 #if CTRL_VERTICAL_LANDING
