@@ -40,11 +40,11 @@
 
     <module name="follow_me"/> 
     <module name="rl_soaring"/>
-    <!-- <module name="telemetry" type="transparent_udp"/> -->
-    <module name="telemetry" type="transparent">
+    <module name="telemetry" type="transparent_udp"/> 
+    <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B57600"/>
-    </module>
+    </module>-->
       
     <module name="gps" type="ublox"/>
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
