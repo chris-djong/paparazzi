@@ -467,7 +467,6 @@ int follow_me_call(void){
 	    nav_mode = NAV_MODE_COURSE;
 	    lateral_mode = LATERAL_MODE_COURSE;
 	}
-
     roll_diff_sum_err += dist_wp_follow.x;
     BoundAbs(roll_diff_sum_err, 20);
 
