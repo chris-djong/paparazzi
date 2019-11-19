@@ -647,10 +647,10 @@
       <field name="Desired_roll_angle_max" type="float"/>
       <field name="Actual_roll_angle" type="float"/>    
       <field name="Distance_WP_x" type="float"/>
-      <field name="Distance_enable_lower" type="float"/>
-      <field name="Distance_enable_upper" type="float"/>
-      <field name="Distance_disable_lower" type="float"/>
-      <field name="Distance_disable_upper" type="float"/>
+      <field name="Distance_enable_u" type="float"/>
+      <field name="Distance_enable_l" type="float"/>
+      <field name="Distance_disable_u" type="float"/>
+      <field name="Distance_disable_l" type="float"/>
     </message>
 
     <!-- Message for RL soaring module --> 

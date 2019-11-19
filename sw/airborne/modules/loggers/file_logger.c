@@ -31,6 +31,7 @@
 #include <time.h>
 #include "std.h"
 #include "modules/ctrl/follow_me.h"
+#include "subsystems/gps.h"
 
 #include "subsystems/imu.h"
 #ifdef COMMAND_THRUST
@@ -91,7 +92,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, desired_ground_speed, actual_enu_speed, v_ctl_auto_cruise_throttle, dist_wp_follow, ground_pos_utm_x, ground_pos_utm_y, ground_pos_utm_z, uav_pos_utm_x, uav_pos_utm_y, uav_pos_utm_z, wind_x, wind_y, wind_z, airspeed, angle_attack, sideslip, GPSstate\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, desired_ground_speed, actual_enu_speed, v_ctl_auto_cruise_throttle, dist_wp_follow, ground_pos_utm_x, ground_pos_utm_y, ground_pos_utm_z, uav_pos_utm_x, uav_pos_utm_y, uav_pos_utm_z, wind_x, wind_y, wind_z, airspeed, angle_attack, sideslip, GPSstateGS, GPSstateAC\n"
 #endif
     );
   }
@@ -142,7 +143,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -175,7 +176,8 @@ void file_logger_periodic(void)
 		  airspeed, //float
 		  aoa, //float
 		  sideslip, // float
-		  fix_mode // GPS state
+		  fix_mode, // float GPS state ground station
+          gps.fix
          );
 #endif
   counter++;

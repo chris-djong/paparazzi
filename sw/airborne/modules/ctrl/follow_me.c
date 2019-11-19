@@ -72,13 +72,11 @@ float third_term;
 float dist_wp_follow_y_max = 10;
 float dist_wp_follow_y_min = -3;
 // In case the x values are exceeded roll control is enabled
-float roll_enable_lower = -0.5;
-float roll_enable_upper = 0.5;
-float roll_disable_lower = -1;
-float roll_disable_upper = 1;
+float roll_enable = 2;
+float roll_disable = 0.5;
 
 float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
-float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in gruond speed compared to desired value from gps
+float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
 float roll_diff = 0;
 float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
@@ -99,8 +97,6 @@ float roll_diff_sum_err = 0.0;
 struct UtmCoor_f ground_utm;
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
-
-
 
 // Old location to reset sum error
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
@@ -186,8 +182,10 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	float roll_angle_max =  roll_diff_limit;
 	float roll_angle = stateGetNedToBodyEulers_f()->phi;
 	actual_enu_speed = stateGetSpeedEnu_f()->y;  // store actual groundspeed in variable to send through pprzlink
+    float roll_disable_l = -roll_disable;
+    float roll_enable_l = -roll_enable;
 
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &roll_enable_lower, &roll_enable_upper, &roll_disable_lower, &roll_disable_upper);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &roll_enable, &roll_enable_l, &roll_disable, &roll_disable_l);
 }
 
 
@@ -196,6 +194,7 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 void follow_me_init(void){
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
     ground_set = false;
+    nav_mode = NAV_MODE_FOLLOW; // so that UAV rolls immediately to the waypoint
 }
 
 
@@ -316,8 +315,6 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	fix_mode = DL_GROUND_GPS_mode(buf);
-	// follow_me_heading = AverageHeading(ground_course);
-	// follow_me_heading = ground_course;
 	ground_set = true;
 }
 
@@ -463,15 +460,12 @@ int follow_me_call(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	printf("Distance = %f, Enable = [%f, %f], Disable = [%f, %f]\n", dist_wp_follow.x, roll_enable_lower, roll_enable_upper, roll_disable_lower, roll_disable_upper);
-	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable_upper) || (dist_wp_follow.x < roll_enable_lower))){
+	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
 		nav_mode = NAV_MODE_FOLLOW;
 	    lateral_mode = LATERAL_MODE_FOLLOW;
-	    printf("Switching to follow mode\n");
-	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable_upper) || (dist_wp_follow.x >= roll_disable_lower))) {
+	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
 	    nav_mode = NAV_MODE_COURSE;
 	    lateral_mode = LATERAL_MODE_COURSE;
-	    printf("Switching to course mode\n");
 	}
 
     roll_diff_sum_err += dist_wp_follow.x;
