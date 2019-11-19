@@ -174,10 +174,10 @@
         <arg flag="-t" constant="Distance WP X"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_lower:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_upper:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_lower:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_upper:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_l:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_u:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_l:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_u:1"/>
       </program>
       
     </session>
@@ -224,10 +224,10 @@
         <arg flag="-t" constant="Distance WP X"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_lower:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_upper:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_lower:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_upper:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_l:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_enable_u:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_l:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_disable_u:1"/>
       </program>
     </session>
     
