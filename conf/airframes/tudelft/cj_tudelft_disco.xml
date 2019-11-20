@@ -31,13 +31,13 @@
     <!--  SIMULATION TARGET -->
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
-      <!--  <module name="ahrs" type="float_dcm"/> -->
-      <module name="ahrs" type="int_cmpl_quat"/>
+      <!-- <module name="ahrs" type="int_cmpl_quat"/> -->
       <define name="AIRSPEED_ADC_SCALE" value="1"/>
       <define name="AIRSPEED_ADC_BIAS" value="1"/>
       <module name="airspeed" type="adc"/>
     </target>
-
+    
+    <module name="ahrs" type="float_dcm"/> 
     <module name="follow_me"/> 
     <module name="rl_soaring"/>
     <module name="telemetry" type="transparent_udp"/> 
