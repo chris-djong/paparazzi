@@ -103,6 +103,11 @@ float ground_speed; // ground speed received by the GPS message
 static float ground_timestamp; // only executed set wp function if we received a newer timestamp
 static float old_ground_timestamp;  // to compare it to the new timestamp
 int fix_mode;  // GPS mode use for logging
+struct FloatVect3 wp_follow_enu; // global because file logger needs access
+struct UtmCoor_f ground_utm;
+
+
+
 
 
 /*********************************
@@ -261,6 +266,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
   Reinforcement Learning functions
 ***********************************************************************************************************************/
 
+#ifdef RL_SOARING_H
 // Function to check whether we can hand control over to reinforcement learning again
 int8_t check_handover_rl(void);
 int8_t check_handover_rl(void){
@@ -273,6 +279,7 @@ int8_t check_handover_rl(void){
 	// In case we loop through the whole array return true
 	return 1;
 }
+#endif
 
 /***********************************************************************************************************************
   Follow me functions
@@ -358,6 +365,50 @@ void follow_me_set_heading(void){
     }
 }
 
+// Roll angle controller
+void follow_me_roll_pid(void);
+void follow_me_roll_pid(void){
+	// Roll rate controller
+	// We either have the normal course mode or the nav follow mode.
+	// If we have been in course and exceed the enable limits then nav follow is activated
+	// If we have been in follow and exceed the disable limits then nav course is activated
+	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
+		nav_mode = NAV_MODE_FOLLOW;
+		lateral_mode = LATERAL_MODE_FOLLOW;
+	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
+		nav_mode = NAV_MODE_COURSE;
+		lateral_mode = LATERAL_MODE_COURSE;
+	}
+	roll_diff_sum_err += dist_wp_follow.x;
+	BoundAbs(roll_diff_sum_err, 20);
+
+
+	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+	// Bound groundspeed diff by limits
+	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
+		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
+	}
+	else if (h_ctl_roll_setpoint_follow_me < -roll_diff_limit){
+		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
+	}
+}
+
+// Throttle controller
+void follow_me_throttle_pid(void);
+void follow_me_throttle_pid(void){
+	// Ground speed controller
+	ground_speed_diff_sum_err += dist_wp_follow.y;
+	BoundAbs(ground_speed_diff_sum_err, 20);
+	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
+	// Bound groundspeed diff by limits
+	if (ground_speed_diff > ground_speed_diff_limit){
+		ground_speed_diff = ground_speed_diff_limit;
+	}
+	else if (ground_speed_diff < -ground_speed_diff_limit){
+		ground_speed_diff = -ground_speed_diff_limit;
+	}
+}
+
 // Sets all the waypoints based on GPS coordinates received by ground segment
 void follow_me_set_wp(void){
 	if(ground_set) {
@@ -367,7 +418,6 @@ void follow_me_set_wp(void){
 		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 		lla.alt = ((float)(ground_lla.alt))/1000.;
 
-		struct UtmCoor_f ground_utm;
 		// Convert LLA to UTM in oder to set watpoint in UTM system
 		ground_utm.zone = nav_utm_zone0;
 		utm_of_lla_f(&ground_utm, &lla);
@@ -390,7 +440,6 @@ void follow_me_set_wp(void){
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
-		struct FloatVect3 wp_follow_enu;
 		wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
 		// Dist wp follows using ENU system
@@ -441,49 +490,6 @@ void follow_me_go(void){
     NavVerticalAltitudeMode(follow_me_height, 0.);
 }
 
-// Roll angle controller
-void follow_me_roll_pid(void);
-void follow_me_roll_pid(void){
-	// Roll rate controller
-	// We either have the normal course mode or the nav follow mode.
-	// If we have been in course and exceed the enable limits then nav follow is activated
-	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
-		nav_mode = NAV_MODE_FOLLOW;
-		lateral_mode = LATERAL_MODE_FOLLOW;
-	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
-		nav_mode = NAV_MODE_COURSE;
-		lateral_mode = LATERAL_MODE_COURSE;
-	}
-	roll_diff_sum_err += dist_wp_follow.x;
-	BoundAbs(roll_diff_sum_err, 20);
-
-
-	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-	// Bound groundspeed diff by limits
-	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
-		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
-	}
-	else if (h_ctl_roll_setpoint_follow_me < -roll_diff_limit){
-		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
-	}
-}
-
-// Throttle controller
-void follow_me_throttle_pid(void);
-void follow_me_throttle_pid(void){
-	// Ground speed controller
-	ground_speed_diff_sum_err += dist_wp_follow.y;
-	BoundAbs(ground_speed_diff_sum_err, 20);
-	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
-	// Bound groundspeed diff by limits
-	if (ground_speed_diff > ground_speed_diff_limit){
-		ground_speed_diff = ground_speed_diff_limit;
-	}
-	else if (ground_speed_diff < -ground_speed_diff_limit){
-		ground_speed_diff = -ground_speed_diff_limit;
-	}
-}
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){

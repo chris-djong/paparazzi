@@ -143,7 +143,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -161,9 +161,9 @@ void file_logger_periodic(void)
 		  h_ctl_roll_setpoint_follow_me, // float
 		  dist_wp_follow.x, // float
 		  dist_wp_follow.y, // float
-		  wp_ground_utm.x, // int
-		  wp_ground_utm.y, // int
-		  wp_ground_utm.z, // int
+		  ground_utm.east, // float
+		  ground_utm.north, // float
+		  ground_utm.alt, // float
 		  wp_follow_enu.x, // float
 		  wp_follow_enu.y, // float
 		  wp_follow_enu.z, // float

@@ -39,7 +39,7 @@
     
     <module name="ahrs" type="float_dcm"/> 
     <module name="follow_me"/> 
-    <module name="rl_soaring"/>
+    <!-- <module name="rl_soaring"/> -->
     <module name="telemetry" type="transparent_udp"/> 
     <!-- <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
