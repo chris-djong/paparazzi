@@ -83,9 +83,9 @@
 
     <!--  Initiate follow_me module  -->
     <block name="follow_me" strip_button="Follow me" group="flight">
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>
     
     <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">

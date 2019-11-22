@@ -40,79 +40,76 @@
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include <Ivy/ivy.h> // for go to block
-
-
 #include "subsystems/datalink/telemetry.h"
-#include "modules/rl_soaring/rl_soaring.h"
 
-// Parameters for follow_me module
-uint8_t follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t stdby_distance = 40; // based on nav_radius + 10
-uint8_t follow_me_height = 10;
-float follow_me_heading = 0;
-float average_follow_me_distance;
+#ifdef RL_SOARING_H
+#include "modules/rl_soaring/rl_soaring.h"
 #define HAND_RL_SIZE 20 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
 int8_t hand_rl[HAND_RL_SIZE] = {0};
 float hand_rl_threshold = 1;
 int8_t hand_rl_idx = 0; // the index value that needs to be modified
+#endif
 
-// Variables that are send to the ground station for real time plotting or logging
-float desired_ground_speed_max; // for the real time plotting
-float desired_ground_speed_min; // for the real time plotting
-float actual_enu_speed;
-struct FloatVect3 dist_wp_follow; // distance to follow me wp
-float safety_boat_distance = 1; // distance that the UAV should not move from the boat
+/*********************************
+  Parameters for follow_me module
+*********************************/
 
-// for plotting of pid
-float first_term;
-float second_term;
-float third_term;
+// Waypoint parameters
+uint8_t follow_me_distance = 20; // distance from which the follow me points are created
+uint8_t stdby_distance = 40; // based on nav_radius + 10
+uint8_t follow_me_height = 10;
+float follow_me_heading = 0;
 
-// Y only for plotting purposes
-float dist_wp_follow_y_max = 10;
-float dist_wp_follow_y_min = -3;
-// In case the x values are exceeded roll control is enabled
-float roll_enable = 2;
-float roll_disable = 0.5;
-
-float ground_speed_diff = 0; // counter which increases by 1 each time we are faster than the follow_me waypoint (in order to learn the ground speed of the boat )
-float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
-float roll_diff = 0;
+// Roll PID
+float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
+float roll_disable = 0.5; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
-
-int counter;
-struct FloatVect3 wp_follow_utm;
-struct FloatVect3 wp_follow_enu;
-float ground_speed_diff_pgain = 0.3;
-float ground_speed_diff_igain = 0.03;
-float ground_speed_diff_dgain = 0.15;
-float ground_speed_diff_sum_err = 0.0;
-
 float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
 
-struct UtmCoor_f ground_utm;
+// Throttle PID
+float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
+float ground_speed_diff_pgain = 0.3;
+float ground_speed_diff_igain = 0.03;
+float ground_speed_diff_dgain = 0.15;
+float ground_speed_diff_sum_err = 0.0;
+
+
+/*********************************
+  Variables for follow_me module
+*********************************/
+
+float average_follow_me_distance;
+float actual_enu_speed;
+struct FloatVect3 dist_wp_follow; // distance to follow me wp
+float ground_speed_diff = 0; // difference that is added to the desired ground speed
+float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
+
+// Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
+int counter; // counter which counts function executions
+int heading_calc_counter = 15; // in case counter reaches heading_calc_counter the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
-// Old location to reset sum error
+// Old location for D gains
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
 
 // Variables initialised in functions themselves
-static bool ground_set;
-static struct LlaCoor_i ground_lla;
-float ground_speed;
-static float ground_climb;
-static float ground_course;
-static float ground_timestamp;
-int fix_mode;
-static float old_ground_timestamp;
+static bool ground_set; // boolean to decide whether GPS message was received
+static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
+float ground_speed; // ground speed received by the GPS message
+static float ground_timestamp; // only executed set wp function if we received a newer timestamp
+static float old_ground_timestamp;  // to compare it to the new timestamp
+int fix_mode;  // GPS mode use for logging
 
 
-//Calculate the average gps heading in order to predict where the boat is going
+/*********************************
+  Average heading calculator
+*********************************/
+
+// Calculate the average gps heading in order to predict where the boat is going
 #define MAX_HEADING_SIZE 20
 float average_heading[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1, count_heading=0;
@@ -144,7 +141,11 @@ float AverageHeading(float item)
 }
 
 
-//Calculate the average gps heading in order to predict where the boat is going
+
+/*********************************
+  Average Distance calculator  // used by RL module
+*********************************/
+#ifdef RL_SOARING_H
 #define MAX_DISTANCE_SIZE 30
 float average_distance[MAX_DISTANCE_SIZE]={0};
 int8_t front_distance=-1,rear_distance=-1, count_distance=0;
@@ -174,29 +175,14 @@ float AverageDistance(int8_t item)
     Sum=Sum+average_distance[rear_distance];
     return ((float)Sum/fmin(MAX_DISTANCE_SIZE, count_distance));
 }
+#endif
 
 
 
-static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	float roll_angle_min = -roll_diff_limit;
-	float roll_angle_max =  roll_diff_limit;
-	float roll_angle = stateGetNedToBodyEulers_f()->phi;
-	actual_enu_speed = stateGetSpeedEnu_f()->y;  // store actual groundspeed in variable to send through pprzlink
-    float roll_disable_l = -roll_disable;
-    float roll_enable_l = -roll_enable;
 
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &first_term, &second_term, &third_term, &average_follow_me_distance, &v_ctl_auto_groundspeed_setpoint, &desired_ground_speed_min, &desired_ground_speed_max, &actual_enu_speed, &dist_wp_follow.y, &dist_wp_follow_y_min, &dist_wp_follow_y_max, &h_ctl_roll_setpoint, &roll_angle_min, &roll_angle_max, &roll_angle, &dist_wp_follow.x, &roll_enable, &roll_enable_l, &roll_disable, &roll_disable_l);
-}
-
-
-
-// Called at compiling of module
-void follow_me_init(void){
-	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
-    ground_set = false;
-    nav_mode = NAV_MODE_FOLLOW; // so that UAV rolls immediately to the waypoint
-}
-
+/***********************************************************************************************************************
+  Frame translation functions
+***********************************************************************************************************************/
 
 /*Translate frame to a new point
  * The frame is moved from its origin to the new point (transx, transy, transz)*/
@@ -226,20 +212,6 @@ struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	// Return
 	return transformation;
 }
-
-// Function to check whether we can hand control over to reinforcement learning again
-int8_t check_handover_rl(void);
-int8_t check_handover_rl(void){
-	for (int i=0; i<HAND_RL_SIZE; i++){
-		// In case we have only one incorrect value return false
-		if (hand_rl[i] == 0){
-			return 0;
-		}
-	}
-	// In case we loop through the whole array return true
-	return 1;
-}
-
 
 /*Transformation from UTM coordinate system to the Body system
  * Pos UTM is used as input so that during a whole function execution it stays constant for all the transforms
@@ -285,19 +257,54 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 }
 
 
+/***********************************************************************************************************************
+  Reinforcement Learning functions
+***********************************************************************************************************************/
 
+// Function to check whether we can hand control over to reinforcement learning again
+int8_t check_handover_rl(void);
+int8_t check_handover_rl(void){
+	for (int i=0; i<HAND_RL_SIZE; i++){
+		// In case we have only one incorrect value return false
+		if (hand_rl[i] == 0){
+			return 0;
+		}
+	}
+	// In case we loop through the whole array return true
+	return 1;
+}
+
+/***********************************************************************************************************************
+  Follow me functions
+***********************************************************************************************************************/
+
+// Variables that are send through IVY
+static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x);
+}
+
+// Called at compiling of module
+void follow_me_init(void){
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
+}
 
 // Called each time the follow me block is started
 void follow_me_startup(void){
+#ifdef RL_SOARING_H
 	if (!rl_started){
-        // Set the default altitude of waypoints to the current height so that the drone keeps the height
-        struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-        follow_me_height = pos_Utm->alt;
-    }
-	dist_wp_follow_y_max = follow_me_distance - safety_boat_distance;
 
+    }
+#endif
+
+    // Set the default altitude of waypoints to the current height so that the drone keeps the height
+    struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+    follow_me_height = pos_Utm->alt;
+    ground_set = false;
+    nav_mode = NAV_MODE_FOLLOW; // so that UAV rolls immediately to the waypoint
 }
 
+
+// Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
 
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
@@ -308,10 +315,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
 	ground_speed = DL_GROUND_GPS_speed(buf);
-	desired_ground_speed_min = ground_speed - ground_speed_diff_limit;
-	desired_ground_speed_max = ground_speed + ground_speed_diff_limit;
-	ground_climb = DL_GROUND_GPS_climb(buf);
-	ground_course = DL_GROUND_GPS_course(buf);
+	// ground_climb = DL_GROUND_GPS_climb(buf);
+	// ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	fix_mode = DL_GROUND_GPS_mode(buf);
@@ -328,8 +333,32 @@ void follow_me_set_groundspeed(void){
 	}
 }
 
-// Sets the WP_FOLLOW based on GPS coordinates received by ground segment
-// Returns 0 if the waypoint is in front of the UAV and 1 otherwise
+// Sets the heading based on the average over several GPS positions
+void follow_me_set_heading(void);
+void follow_me_set_heading(void){
+	// Obtain follow me heading based on position
+    counter++;
+    if (counter == heading_calc_counter){
+    	counter = 0;
+		float diff_y = ground_utm_new.north - ground_utm_old.north;
+		float diff_x = ground_utm_new.east - ground_utm_old.east;
+		if (diff_y == 0){
+			if (diff_x > 0){
+				follow_me_heading = AverageHeading(90);
+			}
+			else if (diff_y < 0){
+				follow_me_heading = AverageHeading(270);
+			}
+			else if (diff_x == 0){
+			}
+		} else {
+			follow_me_heading = AverageHeading(atan(diff_x/diff_y)*180/M_PI);
+		}
+		ground_utm_old = ground_utm_new;
+    }
+}
+
+// Sets all the waypoints based on GPS coordinates received by ground segment
 void follow_me_set_wp(void){
 	if(ground_set) {
 		// Obtain lat lon coordinates for conversion
@@ -338,32 +367,11 @@ void follow_me_set_wp(void){
 		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 		lla.alt = ((float)(ground_lla.alt))/1000.;
 
+		struct UtmCoor_f ground_utm;
 		// Convert LLA to UTM in oder to set watpoint in UTM system
 		ground_utm.zone = nav_utm_zone0;
 		utm_of_lla_f(&ground_utm, &lla);
         ground_utm_new = ground_utm;
-
-		// Obtain follow me heading based on position
-        counter++;
-        if (counter == 15){
-        	counter = 0;
-			float diff_y = ground_utm_new.north - ground_utm_old.north;
-			float diff_x = ground_utm_new.east - ground_utm_old.east;
-			if (diff_y == 0){
-				if (diff_x > 0){
-					follow_me_heading = AverageHeading(90);
-				}
-				else if (diff_y < 0){
-					follow_me_heading = AverageHeading(270);
-				}
-				else if (diff_x == 0){
-				}
-			} else {
-				follow_me_heading = AverageHeading(atan(diff_x/diff_y)*180/M_PI);
-			}
-			ground_utm_old = ground_utm_new;
-        }
-
 
 		// Follow waypoint
 		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + x_diff*cosf(-follow_me_heading/180.*M_PI);
@@ -377,10 +385,12 @@ void follow_me_set_wp(void){
 		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
 		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
+		struct FloatVect3 wp_follow_utm;
 		wp_follow_utm.x = x_follow;
 		wp_follow_utm.y = y_follow;
 		wp_follow_utm.z = follow_me_height;
 
+		struct FloatVect3 wp_follow_enu;
 		wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
 		// Dist wp follows using ENU system
@@ -388,8 +398,6 @@ void follow_me_set_wp(void){
 		dist_wp_follow.x = wp_follow_enu.x;
 		dist_wp_follow.y = wp_follow_enu.y;
 		dist_wp_follow.z = wp_follow_enu.z;
-
-
 
 
         // Update STBDY HOME AND FOLLOW ME WPS
@@ -407,6 +415,7 @@ void follow_me_set_wp(void){
 		// Reset the ground boolean
 	    ground_set = false;
 
+#ifdef RL_SOARING_H
 	    if (rl_started){
 			average_follow_me_distance = AverageDistance(dist_wp_follow.y);
 			if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
@@ -419,35 +428,54 @@ void follow_me_set_wp(void){
 				hand_rl_idx = 0;
 			}
 	    }
+#endif
 	}
 	return;
 }
 
 
-// Which navigational procedure to use
-// 3 possible location: -1 is behind the boat
-//                       0 is between the boat and the Follow me waypoint
-//                       1 is in front of the follow me waypoint
+// Sets the general heading in the direction of FOLLOW2 (waypoint located far in front of the boat)
 void follow_me_go(void);
 void follow_me_go(void){
 	NavGotoWaypoint(WP_FOLLOW2);
     NavVerticalAltitudeMode(follow_me_height, 0.);
-
 }
 
-// This function is executed each time before the follow_me_block is called
-// It calculates the difference in groundspeed between the UAV and the system
-// This ground speed diff is used in order to propagate errors in case the GPS speed error is not reliable
-int follow_me_call(void){
-	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
-	if (ground_timestamp > old_ground_timestamp){
-		follow_me_set_wp();
+// Roll angle controller
+void follow_me_roll_pid(void);
+void follow_me_roll_pid(void){
+	// Roll rate controller
+	// We either have the normal course mode or the nav follow mode.
+	// If we have been in course and exceed the enable limits then nav follow is activated
+	// If we have been in follow and exceed the disable limits then nav course is activated
+	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
+		nav_mode = NAV_MODE_FOLLOW;
+		lateral_mode = LATERAL_MODE_FOLLOW;
+	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
+		nav_mode = NAV_MODE_COURSE;
+		lateral_mode = LATERAL_MODE_COURSE;
 	}
+	roll_diff_sum_err += dist_wp_follow.x;
+	BoundAbs(roll_diff_sum_err, 20);
 
+
+	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+	// Bound groundspeed diff by limits
+	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
+		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
+	}
+	else if (h_ctl_roll_setpoint_follow_me < -roll_diff_limit){
+		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
+	}
+}
+
+// Throttle controller
+void follow_me_throttle_pid(void);
+void follow_me_throttle_pid(void){
 	// Ground speed controller
-    ground_speed_diff_sum_err += dist_wp_follow.y;
-    BoundAbs(ground_speed_diff_sum_err, 20);
-    ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
+	ground_speed_diff_sum_err += dist_wp_follow.y;
+	BoundAbs(ground_speed_diff_sum_err, 20);
+	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
 	// Bound groundspeed diff by limits
 	if (ground_speed_diff > ground_speed_diff_limit){
 		ground_speed_diff = ground_speed_diff_limit;
@@ -455,49 +483,39 @@ int follow_me_call(void){
 	else if (ground_speed_diff < -ground_speed_diff_limit){
 		ground_speed_diff = -ground_speed_diff_limit;
 	}
+}
 
-	// Roll rate controller
-	// We either have the normal course mode or the nav follow mode.
-	// If we have been in course and exceed the enable limits then nav follow is activated
-	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
-		nav_mode = NAV_MODE_FOLLOW;
-	    lateral_mode = LATERAL_MODE_FOLLOW;
-	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
-	    nav_mode = NAV_MODE_COURSE;
-	    lateral_mode = LATERAL_MODE_COURSE;
-	}
-    roll_diff_sum_err += dist_wp_follow.x;
-    BoundAbs(roll_diff_sum_err, 20);
-
-    first_term = roll_diff_pgain*dist_wp_follow.x;
-    second_term = roll_diff_igain*roll_diff_sum_err;
-    third_term = (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-
-    roll_diff = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-	// Bound groundspeed diff by limits
-	if (roll_diff > roll_diff_limit){
-		roll_diff = roll_diff_limit;
-	}
-	else if (roll_diff < -roll_diff_limit){
-		roll_diff = -roll_diff_limit;
+// This is the main function executed by the follow_me_block
+int follow_me_call(void){
+	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
+	if (ground_timestamp > old_ground_timestamp){
+		follow_me_set_wp();
 	}
 
-	h_ctl_roll_setpoint_follow_me = roll_diff;
 
-	follow_me_go();
+    // Loop through controller
+	follow_me_roll_pid();
+	follow_me_throttle_pid();
+
+    // Set heading and groundspeed and move to the correct location
 	follow_me_set_groundspeed();
+	follow_me_set_heading();
+	follow_me_go();
 
+
+#ifdef RL_SOARING_H
 	if (check_handover_rl()){
 		GotoBlock(7);
 	}
+#endif
 
 	return 1;
 }
 
+// This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
 	ground_speed_diff = 0;
 	v_ctl_auto_groundspeed_setpoint = 100; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
-	roll_diff = 0;
+	h_ctl_roll_setpoint_follow_me = 0;
 }
 
