@@ -344,7 +344,6 @@ void v_ctl_climb_loop(void)
   float airspeed_incr = v_ctl_auto_airspeed_setpoint - v_ctl_auto_airspeed_setpoint_slew;
   BoundAbs(airspeed_incr, AIRSPEED_SETPOINT_SLEW * dt_attidude);
   v_ctl_auto_airspeed_setpoint_slew += airspeed_incr;
-
   // Set it to less than if enabled. As soon as we leave the follow me module it will be set to 25 so that this loop will not be executed anymore
   // This ensure that the groundspeed loop does not induce the pitching moment in case the desired airspeed is increased to much (and we have too much wind)
   if (v_ctl_auto_groundspeed_setpoint < 30){
@@ -437,7 +436,6 @@ void v_ctl_climb_loop(void)
     + v_ctl_energy_diff_pgain * en_dis_err
     + v_ctl_auto_throttle_nominal_cruise_pitch;
 
-  //printf("V_ctl_pitch_of_vz is given by:\n Speed error: %f\n Climb setpoint: %f\n airspeed dgain: %f\n Energy error:%f\n Nominal cruise pitch :%f\n\n", v_ctl_auto_pitch_of_airspeed_pgain * speed_error, (v_ctl_climb_setpoint /*+ d_err * v_ctl_auto_throttle_pitch_of_vz_dgain*/) * v_ctl_auto_throttle_pitch_of_vz_pgain, v_ctl_auto_pitch_of_airspeed_dgain * vdot, v_ctl_energy_diff_pgain * en_dis_err, v_ctl_auto_throttle_nominal_cruise_pitch);
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
   //printf("Overal pitch setpoint %f of v_ctl_of_vz and %f of nav_pitch\n\n\n\n", v_ctl_pitch_of_vz, nav_pitch);

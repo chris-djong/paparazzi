@@ -89,14 +89,10 @@
       </program>
       <program name="Real-time Plotter">
         <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP Y"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x500-0+1560"/>
-        <arg flag="-t" constant="Distance WP X"/>
+        <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
       </program>
     </session>
     
@@ -115,14 +111,10 @@
       </program>
       <program name="Real-time Plotter">
         <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP Y"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x500-0+1560"/>
-        <arg flag="-t" constant="Distance WP X"/>
+        <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
       </program>
       
     </session>
@@ -142,14 +134,10 @@
       </program>
       <program name="Real-time Plotter">
         <arg flag="-g" constant="2000x500-0+520"/>
-        <arg flag="-t" constant="Distance WP Y"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="2000x500-0+1560"/>
-        <arg flag="-t" constant="Distance WP X"/>
+        <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
       </program>
     </session>
     

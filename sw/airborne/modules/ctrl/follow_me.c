@@ -71,9 +71,9 @@ float roll_diff_sum_err = 0.0;
 
 // Throttle PID
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
-float ground_speed_diff_pgain = 0.3;
-float ground_speed_diff_igain = 0.03;
-float ground_speed_diff_dgain = 0.15;
+float ground_speed_diff_pgain = 0.6;
+float ground_speed_diff_igain = 0.02;
+float ground_speed_diff_dgain = 0.01;
 float ground_speed_diff_sum_err = 0.0;
 
 
@@ -302,12 +302,18 @@ void follow_me_startup(void){
 
     }
 #endif
-
+    follow_me_set_wp();
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
     follow_me_height = pos_Utm->alt;
     ground_set = false;
-    nav_mode = NAV_MODE_FOLLOW; // so that UAV rolls immediately to the waypoint
+    if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
+    	nav_mode = NAV_MODE_FOLLOW;
+    	lateral_mode = LATERAL_MODE_FOLLOW;
+    } else {
+    	nav_mode = NAV_MODE_COURSE;
+    	lateral_mode = LATERAL_MODE_FOLLOW;
+    }
 }
 
 
@@ -372,12 +378,17 @@ void follow_me_roll_pid(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (nav_mode == NAV_MODE_COURSE && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
+	if ((nav_mode == NAV_MODE_COURSE) && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
 		nav_mode = NAV_MODE_FOLLOW;
 		lateral_mode = LATERAL_MODE_FOLLOW;
 	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
 		nav_mode = NAV_MODE_COURSE;
 		lateral_mode = LATERAL_MODE_COURSE;
+	}
+	// This condition is required in case the relative wind is slower than the stall speed of the UAV
+	if (dist_wp_follow.y > 2*follow_me_distance){
+		nav_mode = NAV_MODE_COURSE;
+	    lateral_mode = LATERAL_MODE_COURSE;
 	}
 	roll_diff_sum_err += dist_wp_follow.x;
 	BoundAbs(roll_diff_sum_err, 20);
@@ -399,7 +410,7 @@ void follow_me_throttle_pid(void){
 	// Ground speed controller
 	ground_speed_diff_sum_err += dist_wp_follow.y;
 	BoundAbs(ground_speed_diff_sum_err, 20);
-	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_igain;
+	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_dgain;
 	// Bound groundspeed diff by limits
 	if (ground_speed_diff > ground_speed_diff_limit){
 		ground_speed_diff = ground_speed_diff_limit;
@@ -523,5 +534,7 @@ void follow_me_stop(void){
 	ground_speed_diff = 0;
 	v_ctl_auto_groundspeed_setpoint = 100; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
 	h_ctl_roll_setpoint_follow_me = 0;
+	nav_mode = NAV_MODE_COURSE;
+	lateral_mode = LATERAL_MODE_COURSE;
 }
 
