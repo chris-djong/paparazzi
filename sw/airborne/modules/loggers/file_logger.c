@@ -92,7 +92,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, desired_ground_speed, actual_enu_speed, v_ctl_auto_cruise_throttle, dist_wp_follow, ground_pos_utm_x, ground_pos_utm_y, ground_pos_utm_z, uav_pos_utm_x, uav_pos_utm_y, uav_pos_utm_z, wind_x, wind_y, wind_z, airspeed, angle_attack, sideslip, GPSstateGS, GPSstateAC\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_speed,actual_enu_speed,h_ctl_roll_setpoint_follow_me, dist_wp_follow.x,dist_wp_follow.y,ground_utm.east,ground_utm.north,ground_utm.alt,wp_follow_enu.x,wp_follow_enu.y,wp_follow_enu.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,fix_mode,GPS state ground station,GPS state aircraft\n"
 #endif
     );
   }
@@ -186,7 +186,7 @@ void file_logger_periodic(void)
 		  aoa, //float
 		  sideslip, // float
 		  fix_mode, // float GPS state ground station
-          gps.fix
+          gps.fix // float GPS state aircraft
          );
 #endif
   counter++;
