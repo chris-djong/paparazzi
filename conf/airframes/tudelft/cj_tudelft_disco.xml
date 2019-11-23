@@ -11,6 +11,7 @@
     ************************************************  -->
     <target name="ap" board="disco">
       <module name="radio_control" type="sbus"/>
+      <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
       <module name="airspeed" type="ms45xx_i2c">
         <define name="MS45XX_I2C_DEV" value="i2c1"/>
         <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
@@ -18,8 +19,6 @@
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       </module>
-      <module name="imu" type="disco"/>
-      <module name="actuators" type="disco"/>
     </target>
     <!-- ************************************************
               SIMULATION TARGET 
@@ -46,15 +45,17 @@
     
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
-    
-    <!-- Navigational parameters -->
+        
+    <!-- Sensor parameters -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm"/> 
     <module name="ins" type="alt_float"/>
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="navigation"/>
+    <module name="actuators" type="disco"/>
     
     <!-- Type of telemetry -->
     <module name="telemetry" type="transparent_udp"/> 
@@ -64,7 +65,7 @@
     </module>-->
     
     <!-- Control Algorithms -->
-    <module name="control" type="energy"/> <!-- This means it uses v_n guidance firmware-->
+    <module name="control" type="new"/> <!-- This means it uses v_n guidance firmware-->
   </firmware>
 
 
@@ -127,13 +128,6 @@
                IMU DEFINITIONS
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
-    <!--<define name="ACCEL_X_NEUTRAL" value="-141"/>
-    <define name="ACCEL_Y_NEUTRAL" value="13"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-12"/>
-    <define name="ACCEL_X_SENS" value="2.43116617606" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.46264528353" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.41899590699" integer="16"/> -->
-    
     <define name="ACCEL_X_NEUTRAL" value="-237"/>
     <define name="ACCEL_Y_NEUTRAL" value="-7"/>
     <define name="ACCEL_Z_NEUTRAL" value="-377"/>
@@ -201,19 +195,31 @@
                VERTICAL CONTROL DEFINITIONS
     ************************************************  -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">    
-    <!-- New Control Algorithm -->
-    <!-- 
-    <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0"/>
-    <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="1"/>
     
+    <!-- New Control Algorithm -->
+    
+    <!-- outer loop proportional gain 
+    <define name="ALTITUDE_PGAIN" value="0.12"/>
+    <define name="ALTITUDE_MAX_CLIMB" value="4."/>
+    <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
+    <define name="PITCH_TRIM" value="2." unit="deg"/>
+
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.6"/>
+    <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.25"/>
+    <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.85"/>
+
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.088" unit="%/(m/s)"/>
     <define name="AUTO_THROTTLE_PGAIN" value="0.004"/>
     <define name="AUTO_THROTTLE_DGAIN" value="0.0"/>
     <define name="AUTO_THROTTLE_IGAIN" value="0."/>
-    
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.11"/>
+
     <define name="AUTO_PITCH_PGAIN" value="0.027"/>
     <define name="AUTO_PITCH_DGAIN" value="0.01"/>
     <define name="AUTO_PITCH_IGAIN" value="0.0"/>
-    
+    <define name="AUTO_PITCH_MAX_PITCH" value="20" unit="deg"/>
+    <define name="AUTO_PITCH_MIN_PITCH" value="-20" unit="deg"/>
+
     <define name="AUTO_AIRSPEED_SETPOINT" value="16."/>
     <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.1"/>
     <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.12"/>
@@ -223,9 +229,22 @@
     <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.042"/>
     <define name="AIRSPEED_MAX" value="30"/>
     <define name="AIRSPEED_MIN" value="10"/>
+
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="15"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="1."/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0."/>
+
+    <define name="PITCH_LOITER_TRIM" value="0." unit="deg"/>
+    <define name="PITCH_DASH_TRIM" value="0." unit="deg"/>
+
+    <define name="THROTTLE_SLEW" value="0.1"/>
+    -->
     
-    <define name="AUTO_PITCH_MAX_PITCH" value="20" unit="deg"/>
-    <define name="AUTO_PITCH_MIN_PITCH" value="-20" unit="deg"/>  -->
+    
+    
+    <!-- --------------------------------------------------------------------------- -->
+    
+    
     
     <!-- Energy Control Algorithm -->
     <define name="ALTITUDE_PGAIN" value="0.15"/>
@@ -261,7 +280,7 @@
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
     <define name="COURSE_PGAIN" value="0.743"/>
     <define name="COURSE_TAU" value="0.5"/>
-    <define name="ROLL_MAX_SETPOINT" value="30." unit="deg"/>
+    <define name="ROLL_MAX_SETPOINT" value="45." unit="deg"/>
     <define name="PITCH_MAX_SETPOINT" value="30." unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-30." unit="deg"/>
 
@@ -271,7 +290,7 @@
     <define name="ROLL_KFFA" value="0"/>
     <define name="ROLL_KFFD" value="0"/>
 
-    <define name="PITCH_PGAIN" value="17250"/>
+    <define name="PITCH_PGAIN" value="10000"/>
     <define name="PITCH_DGAIN" value="500."/>
     <define name="PITCH_IGAIN" value="400"/>
     <define name="PITCH_KFFA" value="0."/>
@@ -294,9 +313,9 @@
     ************************************************  -->
   <section name="FAILSAFE" prefix="FAILSAFE_">
     <define name="DELAY_WITHOUT_GPS" value="2" unit="s"/>
-    <define name="DEFAULT_THROTTLE" value="0.3" unit="%"/>
+    <define name="DEFAULT_THROTTLE" value="0.0" unit="%"/>
     <define name="DEFAULT_ROLL" value="0.3" unit="rad"/>
-    <define name="DEFAULT_PITCH" value="0.5" unit="rad"/>
+    <define name="DEFAULT_PITCH" value="0.0" unit="rad"/>
     <define name="HOME_RADIUS" value="100" unit="m"/>
   </section>
 
