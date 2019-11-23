@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009 Antoine Drouin <poinix@gmail.com>
+ * Copyright (C) 2009  ENAC
  *
  * This file is part of paparazzi.
  *
@@ -19,25 +19,51 @@
  * Boston, MA 02111-1307, USA.
  */
 
-/** @file firmwares/rotorcraft/stabilization.h
- *  General stabilization interface for rotorcrafts.
+/**
+ * @file firmwares/fixedwing/stabilization/stabilization_adaptive.h
+ *
+ * Fixed wing horizontal adaptive control.
+ *
  */
 
-#ifndef STABILIZATION_H
-#define STABILIZATION_H
+#ifndef FW_H_CTL_A_H
+#define FW_H_CTL_A_H
 
+#include <inttypes.h>
 #include "std.h"
-
+#include "paparazzi.h"
 #include "generated/airframe.h"
 
-extern void stabilization_init(void);
-extern void stabilization_filter_commands(void);
+extern float h_ctl_roll_sum_err;
+extern float h_ctl_pitch_sum_err;
+extern float h_ctl_roll_igain;
+extern float h_ctl_pitch_igain;
+extern float h_ctl_roll_Kffa;
+extern float h_ctl_roll_Kffd;
+extern float h_ctl_pitch_Kffa;
+extern float h_ctl_pitch_Kffd;
+extern float h_ctl_pitch_of_roll;
+extern float h_ctl_roll_setpoint_follow_me;
 
-/** Stabilization commands.
- *  Contains the resulting stabilization commands,
- *  regardless of whether rate or attitude is currently used.
- *  Range -MAX_PPRZ:MAX_PPRZ
- */
-extern int32_t stabilization_cmd[COMMANDS_NB];
+#if H_CTL_YAW_LOOP
+extern float h_ctl_yaw_dgain;
+extern float h_ctl_yaw_ny_igain;
+#endif
 
-#endif /* STABILIZATION_H */
+
+#define H_CTL_ROLL_SUM_ERR_MAX (MAX_PPRZ/2.)
+#define H_CTL_PITCH_SUM_ERR_MAX (MAX_PPRZ/2.)
+
+#define stabilization_adaptive_SetRollIGain(_gain) { \
+    h_ctl_roll_sum_err = 0.; \
+    h_ctl_roll_igain = _gain; \
+  }
+
+#define stabilization_adaptive_SetPitchIGain(_gain) { \
+    h_ctl_pitch_sum_err = 0.; \
+    h_ctl_pitch_igain = _gain; \
+  }
+
+extern bool use_airspeed_ratio;
+
+#endif /* FW_H_CTL_A_H */

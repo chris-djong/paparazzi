@@ -65,7 +65,7 @@
     </module>-->
     
     <!-- Control Algorithms -->
-    <module name="control" type="new"/> <!-- This means it uses v_n guidance firmware-->
+    <module name="control" type="new"/> 
   </firmware>
 
 
@@ -195,10 +195,7 @@
                VERTICAL CONTROL DEFINITIONS
     ************************************************  -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">    
-    
     <!-- New Control Algorithm -->
-    
-    <!-- outer loop proportional gain 
     <define name="ALTITUDE_PGAIN" value="0.12"/>
     <define name="ALTITUDE_MAX_CLIMB" value="4."/>
     <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
@@ -229,24 +226,20 @@
     <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.042"/>
     <define name="AIRSPEED_MAX" value="30"/>
     <define name="AIRSPEED_MIN" value="10"/>
-
-    <define name="AUTO_GROUNDSPEED_SETPOINT" value="15"/>
-    <define name="AUTO_GROUNDSPEED_PGAIN" value="1."/>
-    <define name="AUTO_GROUNDSPEED_IGAIN" value="0."/>
+    
+    <define name="AUTO_GROUNDSPEED_SETPOINT" value="12"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="15"/>
+    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.5"/>
+    <define name="AUTO_GROUNDSPEED_DGAIN" value="5"/>
 
     <define name="PITCH_LOITER_TRIM" value="0." unit="deg"/>
     <define name="PITCH_DASH_TRIM" value="0." unit="deg"/>
 
     <define name="THROTTLE_SLEW" value="0.1"/>
-    -->
-    
-    
-    
+     
     <!-- --------------------------------------------------------------------------- -->
     
-    
-    
-    <!-- Energy Control Algorithm -->
+    <!-- Energy Control Algorithm 
     <define name="ALTITUDE_PGAIN" value="0.15"/>
     <define name="AIRSPEED_PGAIN" value="0.15"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.4"/>
@@ -271,7 +264,7 @@
     <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
     <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/> -->
   </section>
 
   <!-- ************************************************

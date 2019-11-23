@@ -633,6 +633,7 @@
     <message name="FOLLOW_ME" id ="75">
       <field name="Distance_WP_y" type="float"/>   
       <field name="Distance_WP_x" type="float"/>
+      <field name="Desired_groundspeed" type="float"/>
     </message>
 
     <!-- Message for RL soaring module --> 

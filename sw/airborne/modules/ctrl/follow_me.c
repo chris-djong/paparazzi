@@ -70,11 +70,20 @@ float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
 
 // Throttle PID
+float ground_speed_diff_sum_err = 0.0;
 float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
+
+// Energy control defines FW_V_CTL_ENERGY_H
+#ifdef FW_V_CTL_ENERGY_H
 float ground_speed_diff_pgain = 0.6;
 float ground_speed_diff_igain = 0.02;
 float ground_speed_diff_dgain = 0.01;
-float ground_speed_diff_sum_err = 0.0;
+#else
+// New control does not define FW_V_CTL_ENERY_H
+float ground_speed_diff_pgain = 0.3;
+float ground_speed_diff_igain = 0.01;
+float ground_speed_diff_dgain = 0.015;
+#endif
 
 
 /*********************************
@@ -287,7 +296,7 @@ int8_t check_handover_rl(void){
 
 // Variables that are send through IVY
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_groundspeed_setpoint);
 }
 
 // Called at compiling of module
@@ -307,6 +316,7 @@ void follow_me_startup(void){
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
     follow_me_height = pos_Utm->alt;
     ground_set = false;
+    v_ctl_speed_mode = V_CTL_SPEED_GROUNDSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
     	nav_mode = NAV_MODE_FOLLOW;
     	lateral_mode = LATERAL_MODE_FOLLOW;
@@ -536,5 +546,6 @@ void follow_me_stop(void){
 	h_ctl_roll_setpoint_follow_me = 0;
 	nav_mode = NAV_MODE_COURSE;
 	lateral_mode = LATERAL_MODE_COURSE;
+	v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 }
 

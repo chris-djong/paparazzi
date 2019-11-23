@@ -69,6 +69,10 @@
 
           <dl_setting MAX="1" MIN="0" STEP="0.01" VAR="v_ctl_auto_throttle_climb_throttle_increment" shortname="throttle_incr" param="V_CTL_AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT"/>
           <dl_setting MAX="1" MIN="0" STEP="0.01" VAR="v_ctl_auto_throttle_pitch_of_vz_pgain" shortname="pitch_of_vz" param="V_CTL_AUTO_THROTTLE_PITCH_OF_VZ_PGAIN"/>
+          
+          <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_pgain" shortname="Ground p" />
+          <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_igain" shortname="Ground i" />
+          <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_dgain" shortname="Ground d" />
         </dl_settings>
       </dl_settings>
     </dl_settings>

@@ -83,7 +83,7 @@ float h_ctl_course_pre_bank_correction;
 float h_ctl_course_pgain;
 float h_ctl_course_dgain;
 float h_ctl_roll_max_setpoint;
-
+float h_ctl_roll_setpoint_follow_me;
 /* roll and pitch disabling */
 bool h_ctl_disabled;
 
@@ -388,7 +388,10 @@ void h_ctl_course_loop(void)
   h_ctl_roll_setpoint = h_ctl_course_pre_bank_correction * h_ctl_course_pre_bank
                         + h_ctl_course_pgain * speed_depend_nav * err
                         + h_ctl_course_dgain * d_err;
-
+  // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
+  if (nav_mode == NAV_MODE_FOLLOW){
+    h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+  }
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }
 
@@ -738,4 +741,3 @@ inline static void h_ctl_cl_loop(void)
   h_ctl_flaps_setpoint = TRIM_PPRZ(cmd);
 }
 #endif
-
