@@ -22,7 +22,7 @@
       </module>
       <!-- In /modules/loggers/file_logger.c include the required headers and specify that variables that should be loggeed -->
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+        <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       </module>
       <module name="imu" type="disco"/>
       <module name="actuators" type="disco"/>
@@ -96,12 +96,21 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <define name="ACCEL_X_NEUTRAL" value="-141"/>
+    <!--<define name="ACCEL_X_NEUTRAL" value="-141"/>
     <define name="ACCEL_Y_NEUTRAL" value="13"/>
     <define name="ACCEL_Z_NEUTRAL" value="-12"/>
     <define name="ACCEL_X_SENS" value="2.43116617606" integer="16"/>
     <define name="ACCEL_Y_SENS" value="2.46264528353" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.41899590699" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.41899590699" integer="16"/> -->
+    
+    <define name="ACCEL_X_NEUTRAL" value="-237"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-7"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-377"/>
+    <define name="ACCEL_X_SENS" value="2.44905795906" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.2515134532" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.40482153489" integer="16"/>
+    
+    
 
     <define name="MAG_X_NEUTRAL" value="-164"/>
     <define name="MAG_Y_NEUTRAL" value="-244"/>
