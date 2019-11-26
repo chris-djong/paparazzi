@@ -35,7 +35,7 @@
   Variables used by the settings
 *************************************************/
 
-extern uint8_t follow_me_distance;
+extern float follow_me_distance;
 extern uint8_t follow_me_height;
 extern uint16_t follow_me_region;
 extern float follow_me_heading;
@@ -100,7 +100,12 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
 // run function
 extern int follow_me_call(void);
 
+// Used by telemetry for reception of ground gps
 extern void follow_me_set_wp(void);
+
+// Used by flight plan
+void follow_me_soar_here(void);
+
 
 #endif
 

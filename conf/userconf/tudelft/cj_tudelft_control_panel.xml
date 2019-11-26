@@ -83,7 +83,7 @@
         <arg flag="--ac" constant="1"/>
         <arg flag="--simulate"/>
       </program>
-      <program name="Environment Simulator">
+     <program name="Environment Simulator">
         <arg flag="-w" constant="10"/> <!-- Wind speed -->
         <arg flag="-d" constant="0"/> <!-- Wind direction -->
       </program>

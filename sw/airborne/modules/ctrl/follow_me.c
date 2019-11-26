@@ -55,7 +55,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 *********************************/
 
 // Waypoint parameters
-uint8_t follow_me_distance = 20; // distance from which the follow me points are created
+float follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t stdby_distance = 40; // based on nav_radius + 10
 uint8_t follow_me_height = 10;
 uint16_t follow_me_region = 200;
@@ -82,8 +82,8 @@ float ground_speed_diff_igain = 0.02;
 float ground_speed_diff_dgain = 0.01;
 #else
 // New control does not define FW_V_CTL_ENERY_H
-float ground_speed_diff_pgain = 0.3;
-float ground_speed_diff_igain = 0.01;
+float ground_speed_diff_pgain = 0.5;
+float ground_speed_diff_igain = 0.04;
 float ground_speed_diff_dgain = 0.015;
 #endif
 
@@ -115,7 +115,7 @@ static float ground_timestamp; // only executed set wp function if we received a
 static float old_ground_timestamp;  // to compare it to the new timestamp
 int fix_mode;  // GPS mode use for logging
 struct FloatVect3 wp_follow_enu; // global because file logger needs access
-struct UtmCoor_f ground_utm;
+struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
 
 
@@ -126,7 +126,7 @@ struct UtmCoor_f ground_utm;
 *********************************/
 
 // Calculate the average gps heading in order to predict where the boat is going
-#define MAX_HEADING_SIZE 20
+#define MAX_HEADING_SIZE 15
 float average_heading[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1, count_heading=0;
 float AverageHeading(float);
@@ -209,6 +209,7 @@ struct FloatVect3 translate_frame(struct FloatVect3 *point, int trans_x, int tra
 	transformation.x = point->x - trans_x;
 	transformation.y = point->y - trans_y;
 	transformation.z = point->z - trans_z;
+
 	// Return
 	return transformation;
 }
@@ -219,10 +220,12 @@ struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	// Create return Vector for function
 	struct FloatVect3 transformation;
 
+
     // Rotate point
-	transformation.x = cosf(theta)*point->x - sinf(theta)*point->y;
-	transformation.y = sinf(theta)*point->x + cosf(theta)*point->y;
+	transformation.x = cosf(theta)*point->x + sinf(theta)*point->y;
+	transformation.y = -sinf(theta)*point->x + cosf(theta)*point->y;
 	transformation.z = point->z;
+
 	// Return
 	return transformation;
 }
@@ -243,6 +246,8 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 
 	// Then rotate frame
 	float heading = stateGetNedToBodyEulers_f()->psi;
+	printf(" UTM to ENU heading is %f\n", heading);
+
 	transformation = rotate_frame(&transformation, heading);
 	// Return
 	return transformation;
@@ -261,6 +266,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	float heading = stateGetNedToBodyEulers_f()->psi;
 
     // Rotate frame back
+	printf("ENU to UTM heading is %f\n", heading);
 	transformation = rotate_frame(point, -heading);
 
 	// Translate frame back
@@ -296,28 +302,29 @@ int8_t check_handover_rl(void){
 
 void follow_me_soar_here(void);
 void follow_me_soar_here(void){
-	// Based on the current Utm position and follow_me_heading we have to change the reference frame
-	// such that it`s y axis is orthogonal to the heading and the origin is at the boat location
-	// Create return vector for the function
-    struct FloatVect3 transformation;
+	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
+	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
+		// Based on the current Utm position and follow_me_heading we have to change the reference frame
+		// such that it`s y axis is orthogonal to the heading and the origin is at the boat location
+		// Create return vector for the function
+		struct FloatVect3 transformation;
 
-    // Obtain current UTM position
-	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+		// Obtain current UTM position
+		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+		struct FloatVect3 point;
+		point.x = pos_Utm->east;
+		point.y = pos_Utm->north;
+		point.z = pos_Utm->alt;
 
-	struct FloatVect3 point;
-	point.x = pos_Utm->east;
-	point.y = pos_Utm->north;
-	point.z = pos_Utm->alt;
+		// Translate frame
+		transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
 
-	// Translate frame
-	transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
+		// Then rotate frame
+		transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
 
-	// Then rotate frame
-	transformation = rotate_frame(&transformation, follow_me_heading);
-
-    printf("Soaring has been initiated with lateral of %f and distance of %f\n", transformation.x, transformation.y);
-
-	return;
+		follow_me_distance = transformation.y;
+		lateral_offset = transformation.x;
+	}
 }
 
 
@@ -338,7 +345,7 @@ void follow_me_startup(void){
 
     }
 #endif
-	follow_me_soar_here();
+	// follow_me_soar_here();
     follow_me_set_wp();
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
@@ -416,10 +423,10 @@ void follow_me_roll_pid(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	if ((nav_mode == NAV_MODE_COURSE) && ((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
+	if (((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
 		nav_mode = NAV_MODE_FOLLOW;
 		lateral_mode = LATERAL_MODE_FOLLOW;
-	} else if (nav_mode == NAV_MODE_FOLLOW && ((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
+	} else if (((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
 		nav_mode = NAV_MODE_COURSE;
 		lateral_mode = LATERAL_MODE_COURSE;
 	}
@@ -476,14 +483,6 @@ void follow_me_set_wp(void){
 		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
 		int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
-		// Follow 2 waypoint at twice the distance
-		int32_t x_follow2 = ground_utm.east + 1000*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = ground_utm.north + 1000*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
-
-		// Move stdby waypoint in front of the boat at the given distance
-		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
-
 		struct FloatVect3 wp_follow_utm;
 		wp_follow_utm.x = x_follow;
 		wp_follow_utm.y = y_follow;
@@ -497,6 +496,13 @@ void follow_me_set_wp(void){
 		dist_wp_follow.y = wp_follow_enu.y;
 		dist_wp_follow.z = wp_follow_enu.z;
 
+		// Follow 2 waypoint at twice the distance
+		int32_t x_follow2 = ground_utm.east  + 250*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = ground_utm.north + 250*cosf(follow_me_heading/180.*M_PI);
+
+		// Move stdby waypoint in front of the boat at the given distance
+		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
         // Update STBDY HOME AND FOLLOW ME WPS
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
@@ -505,10 +511,10 @@ void follow_me_set_wp(void){
 		nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_height + 20);
 
 		// Update allowable Flying Region
-		nav_move_waypoint(WP_FR_TL, x_follow - follow_me_region, y_follow + follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_TR, x_follow + follow_me_region, y_follow + follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_BL, x_follow - follow_me_region, y_follow - follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_BR, x_follow + follow_me_region, y_follow - follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_height);
 
 		// Reset the ground boolean
 	    ground_set = false;
@@ -546,7 +552,6 @@ int follow_me_call(void){
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_set_wp();
 	}
-
 
     // Loop through controller
 	follow_me_roll_pid();

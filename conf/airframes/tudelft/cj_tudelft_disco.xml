@@ -49,8 +49,7 @@
     <!--  Vehicle state -->
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm"/> 
-    <!-- <module name="ins" type="alt_float"/> -->
-    <module name="ins" type="ekf2"/>     
+    <module name="ins" type="alt_float"/>
 
     <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
