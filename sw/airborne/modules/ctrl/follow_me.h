@@ -37,8 +37,9 @@
 
 extern uint8_t follow_me_distance;
 extern uint8_t follow_me_height;
+extern uint16_t follow_me_region;
 extern float follow_me_heading;
-extern float x_diff;
+extern float lateral_offset;
 
 extern float ground_speed_diff_igain;
 extern float ground_speed_diff_pgain;

@@ -46,11 +46,13 @@
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
         
-    <!-- Sensor parameters -->
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <!--  Vehicle state -->
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm"/> 
-    <module name="ins" type="alt_float"/>
+    <!-- <module name="ins" type="alt_float"/> -->
+    <module name="ins" type="ekf2"/>     
+
+    <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>

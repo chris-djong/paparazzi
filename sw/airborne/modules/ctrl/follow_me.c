@@ -58,7 +58,9 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t stdby_distance = 40; // based on nav_radius + 10
 uint8_t follow_me_height = 10;
+uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
+
 
 // Roll PID
 float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
@@ -94,7 +96,7 @@ float average_follow_me_distance;
 float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
 float ground_speed_diff = 0; // difference that is added to the desired ground speed
-float x_diff = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
+float lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
@@ -159,6 +161,7 @@ float AverageHeading(float item)
 /*********************************
   Average Distance calculator  // used by RL module
 *********************************/
+
 #ifdef RL_SOARING_H
 #define MAX_DISTANCE_SIZE 30
 float average_distance[MAX_DISTANCE_SIZE]={0};
@@ -190,9 +193,6 @@ float AverageDistance(int8_t item)
     return ((float)Sum/fmin(MAX_DISTANCE_SIZE, count_distance));
 }
 #endif
-
-
-
 
 /***********************************************************************************************************************
   Frame translation functions
@@ -258,7 +258,6 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	// Obtain current Utm position for translationg
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
-
 	float heading = stateGetNedToBodyEulers_f()->psi;
 
     // Rotate frame back
@@ -294,6 +293,34 @@ int8_t check_handover_rl(void){
   Follow me functions
 ***********************************************************************************************************************/
 
+
+void follow_me_soar_here(void);
+void follow_me_soar_here(void){
+	// Based on the current Utm position and follow_me_heading we have to change the reference frame
+	// such that it`s y axis is orthogonal to the heading and the origin is at the boat location
+	// Create return vector for the function
+    struct FloatVect3 transformation;
+
+    // Obtain current UTM position
+	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+	struct FloatVect3 point;
+	point.x = pos_Utm->east;
+	point.y = pos_Utm->north;
+	point.z = pos_Utm->alt;
+
+	// Translate frame
+	transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
+
+	// Then rotate frame
+	transformation = rotate_frame(&transformation, follow_me_heading);
+
+    printf("Soaring has been initiated with lateral of %f and distance of %f\n", transformation.x, transformation.y);
+
+	return;
+}
+
+
 // Variables that are send through IVY
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_groundspeed_setpoint);
@@ -311,6 +338,7 @@ void follow_me_startup(void){
 
     }
 #endif
+	follow_me_soar_here();
     follow_me_set_wp();
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
@@ -445,12 +473,12 @@ void follow_me_set_wp(void){
         ground_utm_new = ground_utm;
 
 		// Follow waypoint
-		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + x_diff*cosf(-follow_me_heading/180.*M_PI);
-		int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + x_diff*sinf(-follow_me_heading/180.*M_PI);
+		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+		int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
 		// Follow 2 waypoint at twice the distance
-		int32_t x_follow2 = ground_utm.east + 10*follow_me_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = ground_utm.north + 10*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_follow2 = ground_utm.east + 1000*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = ground_utm.north + 1000*follow_me_distance*cosf(follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
 		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
@@ -477,10 +505,10 @@ void follow_me_set_wp(void){
 		nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_height + 20);
 
 		// Update allowable Flying Region
-		nav_move_waypoint(WP_FR_TL, x_follow - 200, y_follow + 200, follow_me_height);
-		nav_move_waypoint(WP_FR_TR, x_follow + 200, y_follow + 200, follow_me_height);
-		nav_move_waypoint(WP_FR_BL, x_follow - 200, y_follow - 200, follow_me_height);
-		nav_move_waypoint(WP_FR_BR, x_follow + 200, y_follow - 200, follow_me_height);
+		nav_move_waypoint(WP_FR_TL, x_follow - follow_me_region, y_follow + follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_TR, x_follow + follow_me_region, y_follow + follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_BL, x_follow - follow_me_region, y_follow - follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_BR, x_follow + follow_me_region, y_follow - follow_me_region, follow_me_height);
 
 		// Reset the ground boolean
 	    ground_set = false;
