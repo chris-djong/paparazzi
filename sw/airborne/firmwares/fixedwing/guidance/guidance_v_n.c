@@ -278,7 +278,6 @@ static inline void v_ctl_set_pitch(void)
                          + v_ctl_auto_pitch_pgain * err
                          + v_ctl_auto_pitch_dgain * d_err
                          + v_ctl_auto_pitch_igain * v_ctl_auto_pitch_sum_err;
-
 }
 
 static inline void v_ctl_set_throttle(void)
@@ -382,8 +381,8 @@ static inline void v_ctl_set_groundspeed(void)
 {
   static float last_err_ground = 0;
   // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
-  struct EnuCoor_f *enu_speed = stateGetSpeedEnu_f();
-  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - enu_speed->y);
+  struct NedCoor_f *ned_speed = stateGetSpeedNed_f();
+  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - fabs(ned_speed->x));
   float d_err_groundspeed = err_groundspeed - last_err_ground;
   v_ctl_auto_groundspeed_sum_err += err_groundspeed;
   BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
@@ -396,6 +395,7 @@ static inline void v_ctl_set_groundspeed(void)
 
 void v_ctl_climb_loop(void)
 {
+
 
   switch (v_ctl_speed_mode) {
 

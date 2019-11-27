@@ -92,7 +92,6 @@ extern void follow_me_startup(void);
 // Function which is called once in each block which is not the follow me block
 extern void follow_me_stop(void);
 
-
 /** on receiving a GROUND_GPS message
  */
 extern void follow_me_parse_ground_gps(uint8_t *buf);

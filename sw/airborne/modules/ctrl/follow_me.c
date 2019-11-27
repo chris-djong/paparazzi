@@ -60,7 +60,7 @@ uint8_t stdby_distance = 40; // based on nav_radius + 10
 uint8_t follow_me_height = 10;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
-
+uint8_t dist_follow2 = 250;
 
 // Roll PID
 float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
@@ -83,7 +83,7 @@ float ground_speed_diff_dgain = 0.01;
 #else
 // New control does not define FW_V_CTL_ENERY_H
 float ground_speed_diff_pgain = 0.5;
-float ground_speed_diff_igain = 0.04;
+float ground_speed_diff_igain = 0.1;
 float ground_speed_diff_dgain = 0.015;
 #endif
 
@@ -220,7 +220,6 @@ struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	// Create return Vector for function
 	struct FloatVect3 transformation;
 
-
     // Rotate point
 	transformation.x = cosf(theta)*point->x + sinf(theta)*point->y;
 	transformation.y = -sinf(theta)*point->x + cosf(theta)*point->y;
@@ -246,7 +245,6 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 
 	// Then rotate frame
 	float heading = stateGetNedToBodyEulers_f()->psi;
-	printf(" UTM to ENU heading is %f\n", heading);
 
 	transformation = rotate_frame(&transformation, heading);
 	// Return
@@ -266,7 +264,6 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	float heading = stateGetNedToBodyEulers_f()->psi;
 
     // Rotate frame back
-	printf("ENU to UTM heading is %f\n", heading);
 	transformation = rotate_frame(point, -heading);
 
 	// Translate frame back
@@ -324,6 +321,7 @@ void follow_me_soar_here(void){
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
+
 	}
 }
 
@@ -357,10 +355,35 @@ void follow_me_startup(void){
     	lateral_mode = LATERAL_MODE_FOLLOW;
     } else {
     	nav_mode = NAV_MODE_COURSE;
-    	lateral_mode = LATERAL_MODE_FOLLOW;
+    	lateral_mode = LATERAL_MODE_COURSE;
     }
 }
 
+// Sets the heading based on the average over several GPS positions
+void follow_me_set_heading(void);
+void follow_me_set_heading(void){
+	// Obtain follow me heading based on position
+    counter++;
+    if (counter == heading_calc_counter){
+    	counter = 0;
+		float diff_y = ground_utm_new.north - ground_utm_old.north;
+		float diff_x = ground_utm_new.east - ground_utm_old.east;
+		// First check conditions in which we divide by 0
+		if (diff_y == 0){
+			if (diff_x > 0){
+				follow_me_heading = AverageHeading(90);
+			}
+			else if (diff_x < 0){
+				follow_me_heading = AverageHeading(270);
+			}
+			else if (diff_x == 0){
+			}
+		} else {
+			follow_me_heading = AverageHeading(atan2(diff_x, diff_y)*180/M_PI);
+		}
+		ground_utm_old = ground_utm_new;
+    }
+}
 
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
@@ -379,6 +402,14 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	fix_mode = DL_GROUND_GPS_mode(buf);
 	ground_set = true;
+
+	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
+	if (ground_timestamp > old_ground_timestamp){
+		follow_me_set_wp();
+	}
+
+	// Set heading here so that it can be calculated already during stdby or Manual execution
+	follow_me_set_heading();
 }
 
 
@@ -389,31 +420,6 @@ void follow_me_set_groundspeed(void){
 	if (v_ctl_auto_groundspeed_setpoint < 0){
 		v_ctl_auto_groundspeed_setpoint = 0;
 	}
-}
-
-// Sets the heading based on the average over several GPS positions
-void follow_me_set_heading(void);
-void follow_me_set_heading(void){
-	// Obtain follow me heading based on position
-    counter++;
-    if (counter == heading_calc_counter){
-    	counter = 0;
-		float diff_y = ground_utm_new.north - ground_utm_old.north;
-		float diff_x = ground_utm_new.east - ground_utm_old.east;
-		if (diff_y == 0){
-			if (diff_x > 0){
-				follow_me_heading = AverageHeading(90);
-			}
-			else if (diff_y < 0){
-				follow_me_heading = AverageHeading(270);
-			}
-			else if (diff_x == 0){
-			}
-		} else {
-			follow_me_heading = AverageHeading(atan(diff_x/diff_y)*180/M_PI);
-		}
-		ground_utm_old = ground_utm_new;
-    }
 }
 
 // Roll angle controller
@@ -450,7 +456,7 @@ void follow_me_roll_pid(void){
 }
 
 // Throttle controller
-void follow_me_throttle_pid(void);
+//void follow_me_throttle_pid(void);
 void follow_me_throttle_pid(void){
 	// Ground speed controller
 	ground_speed_diff_sum_err += dist_wp_follow.y;
@@ -468,6 +474,7 @@ void follow_me_throttle_pid(void){
 // Sets all the waypoints based on GPS coordinates received by ground segment
 void follow_me_set_wp(void){
 	if(ground_set) {
+
 		// Obtain lat lon coordinates for conversion
 		struct LlaCoor_f lla;
 		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
@@ -496,9 +503,10 @@ void follow_me_set_wp(void){
 		dist_wp_follow.y = wp_follow_enu.y;
 		dist_wp_follow.z = wp_follow_enu.z;
 
-		// Follow 2 waypoint at twice the distance
-		int32_t x_follow2 = ground_utm.east  + 250*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = ground_utm.north + 250*cosf(follow_me_heading/180.*M_PI);
+		printf("Desired groundspeed %f %f\n", v_ctl_auto_groundspeed_setpoint, ground_speed_diff);
+		// Follow 2 waypoint
+		int32_t x_follow2 = ground_utm.east  + dist_follow2*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = ground_utm.north + dist_follow2*cosf(follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
 		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
@@ -548,18 +556,12 @@ void follow_me_go(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
-	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
-	if (ground_timestamp > old_ground_timestamp){
-		follow_me_set_wp();
-	}
-
     // Loop through controller
 	follow_me_roll_pid();
 	follow_me_throttle_pid();
 
     // Set heading and groundspeed and move to the correct location
 	follow_me_set_groundspeed();
-	follow_me_set_heading();
 	follow_me_go();
 
 
