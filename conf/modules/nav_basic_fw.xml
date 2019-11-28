@@ -11,7 +11,7 @@
       <dl_settings NAME="nav">
         <dl_setting MAX="500" MIN="-500" STEP="5" VAR="nav_radius"/>
         <dl_setting MAX="359" MIN="0" STEP="5" VAR="nav_course"/>
-        <dl_setting MAX="2" MIN="1" STEP="1" VAR="nav_mode"/>
+        <dl_setting MAX="3" MIN="1" STEP="1" VAR="nav_mode"/>
         <dl_setting MAX="5" MIN="-5" STEP="0.5" VAR="nav_climb"/>
         <dl_setting MAX="15" MIN="-15" STEP="1" VAR="fp_pitch"/>
         <dl_setting MAX="1.0" MIN="0.0" STEP="0.01" VAR="fp_throttle"/>

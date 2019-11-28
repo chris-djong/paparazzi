@@ -88,7 +88,7 @@ float sim_altitude = 0;
 float sim_climb = 0;
 int sim_time = 0;
 
-int change_state_at = 50000;
+int change_state_at = 500;
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
@@ -99,17 +99,23 @@ static void update_gps(struct gps_data_t *gpsdata,
 		// Increase time step
 	    sim_time += 1;
 	    if (sim_time%(4*change_state_at) == 0){
-	    	sim_lat_speed = 200*1e-8;
-	    	sim_lon_speed = 200*1e-8;
-	    } else if (sim_time%(3*change_state_at) == 0){
-	    	sim_lat_speed = 200*1e-8;
+	    	sim_lat_speed = -200*1e-8;
 	    	sim_lon_speed = -200*1e-8;
+	        printf("\n\n\n\nChanging to state 1\n");
+
+	    } else if (sim_time%(3*change_state_at) == 0){
+	    	sim_lat_speed = -200*1e-8;
+	    	sim_lon_speed = 200*1e-8;
+	        printf("\n\n\n\nChanging to state 4\n");
+
 	    } else if (sim_time%(2*change_state_at) == 0){
-	    	sim_lat_speed = 200*1e-8;
-	        sim_lon_speed = 200*1e-8;
-	    } else if (sim_time%(change_state_at) == 0){
-	    	sim_lat_speed = 200*1e-8;
+	    	sim_lat_speed = -200*1e-8;
 	        sim_lon_speed = -200*1e-8;
+	        printf("\n\n\n\nChanging to state 3\n");
+	    } else if (sim_time%(change_state_at) == 0){
+	    	sim_lat_speed = -200*1e-8;
+	        sim_lon_speed = 200*1e-8;
+	        printf("\n\n\n\nChanging to state 2\n");
 	    }
 	    // Simulate heading change
 	    sim_lat += sim_lat_speed;

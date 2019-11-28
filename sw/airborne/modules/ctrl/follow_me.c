@@ -153,7 +153,15 @@ float AverageHeading(float item)
         rear_heading=(rear_heading+1)%MAX_HEADING_SIZE;
     average_heading[rear_heading]=item;
     Sum=Sum+average_heading[rear_heading];
-    return ((float)Sum/fmin(MAX_HEADING_SIZE, count_heading));
+    // The following normalization is required because we allow inputs between -360 and 360 in the heading calculations
+    float average = (float)Sum/fmin(MAX_HEADING_SIZE, count_heading);
+    printf("Average is given by %f\n", average);
+    if (average > 180){
+    	average -= 360;
+    } else if (average < -180){
+    	average += 360;
+    }
+    return average;
 }
 
 
@@ -369,17 +377,30 @@ void follow_me_set_heading(void){
 		float diff_y = ground_utm_new.north - ground_utm_old.north;
 		float diff_x = ground_utm_new.east - ground_utm_old.east;
 		// First check conditions in which we divide by 0
+		// Note atan2 gives results between -180 and 180
 		if (diff_y == 0){
 			if (diff_x > 0){
 				follow_me_heading = AverageHeading(90);
 			}
 			else if (diff_x < 0){
-				follow_me_heading = AverageHeading(270);
+				follow_me_heading = AverageHeading(-90);
 			}
 			else if (diff_x == 0){
 			}
 		} else {
-			follow_me_heading = AverageHeading(atan2(diff_x, diff_y)*180/M_PI);
+			// Atan2 gives a value between -180 and 180, this induces problems with the average calculation in case the result
+			// Goes from 150 to -150 for example. This can be counteracted by allowing inputs from -360 to 360 and then after the
+			// average calculation normalizing it to the required values
+			printf("\n\nSetting heading to new value %f\n", heading )
+			float heading = atan2(diff_x, diff_y)*180/M_PI;
+			if (follow_me_heading - heading > 180){
+				printf("Adding 360 because follow me is %f and new is %f\n", follow_me_heading, heading);
+				heading += 360;
+			} else if (follow_me_heading - heading < -180){
+				printf("Removing 360 because follow me is %f and new is %f\n", follow_me_heading, heading);
+				heading -= 360;
+			}
+			follow_me_heading = AverageHeading(heading);
 		}
 		ground_utm_old = ground_utm_new;
     }
@@ -503,7 +524,6 @@ void follow_me_set_wp(void){
 		dist_wp_follow.y = wp_follow_enu.y;
 		dist_wp_follow.z = wp_follow_enu.z;
 
-		printf("Desired groundspeed %f %f\n", v_ctl_auto_groundspeed_setpoint, ground_speed_diff);
 		// Follow 2 waypoint
 		int32_t x_follow2 = ground_utm.east  + dist_follow2*sinf(follow_me_heading/180.*M_PI);
 		int32_t y_follow2 = ground_utm.north + dist_follow2*cosf(follow_me_heading/180.*M_PI);
