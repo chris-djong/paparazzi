@@ -100,7 +100,7 @@ float lateral_offset = 0; // Amount in meters which the waypoint should be moved
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
-int heading_calc_counter = 15; // in case counter reaches heading_calc_counter the heading is calculated
+int heading_calc_counter = 30; // in case counter reaches heading_calc_counter the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
@@ -126,42 +126,59 @@ struct UtmCoor_f ground_utm;  // global because required for file logger and cal
 *********************************/
 
 // Calculate the average gps heading in order to predict where the boat is going
-#define MAX_HEADING_SIZE 15
-float average_heading[MAX_HEADING_SIZE]={0};
+// This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
+// The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
+#define MAX_HEADING_SIZE 5
+float all_diff_x[MAX_HEADING_SIZE]={0};
+float all_diff_y[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1, count_heading=0;
-float AverageHeading(float);
+float AverageHeading(float, float);
 //function definition
-float AverageHeading(float item)
+float AverageHeading(float diffx, float diffy)
 {
 	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
 	// Count = int8_t
 	if (count_heading<MAX_HEADING_SIZE){
 		count_heading += 1;
 	}
-    static float Sum=0;
+    float Sum_x = 0;
+    float Sum_y = 0;
+
     if(front_heading ==(rear_heading+1)%MAX_HEADING_SIZE)
     {
         if(front_heading==rear_heading)
             front_heading=rear_heading=-1;
         else
             front_heading = (front_heading+1)%MAX_HEADING_SIZE;
-        Sum=Sum-average_heading[front_heading];
     }
     if(front_heading==-1)
         front_heading=rear_heading=0;
     else
         rear_heading=(rear_heading+1)%MAX_HEADING_SIZE;
-    average_heading[rear_heading]=item;
-    Sum=Sum+average_heading[rear_heading];
-    // The following normalization is required because we allow inputs between -360 and 360 in the heading calculations
-    float average = (float)Sum/fmin(MAX_HEADING_SIZE, count_heading);
-    printf("Average is given by %f\n", average);
-    if (average > 180){
-    	average -= 360;
-    } else if (average < -180){
-    	average += 360;
+
+    all_diff_x[rear_heading] = diffx;
+    all_diff_y[rear_heading] = diffy;
+
+
+    for (int i=0; i<MAX_HEADING_SIZE; i++){
+    	Sum_x = Sum_x + all_diff_x[i];
+    	Sum_y = Sum_y + all_diff_y[i];
     }
-    return average;
+
+    float heading;
+    // First check cases which divide by 0
+    if (diffy == 0){
+    	if (diffx > 0){
+    		heading = 90.0;
+    	} else if (diffx < 0){
+    		heading = -90.0;
+    	} else if (diffx == 0){
+    		heading = 0.0;
+    	}
+    } else {
+        heading = atan2(diffx, diffy)*180.0/M_PI;
+    }
+    return heading;
 }
 
 
@@ -376,32 +393,11 @@ void follow_me_set_heading(void){
     	counter = 0;
 		float diff_y = ground_utm_new.north - ground_utm_old.north;
 		float diff_x = ground_utm_new.east - ground_utm_old.east;
+
 		// First check conditions in which we divide by 0
 		// Note atan2 gives results between -180 and 180
-		if (diff_y == 0){
-			if (diff_x > 0){
-				follow_me_heading = AverageHeading(90);
-			}
-			else if (diff_x < 0){
-				follow_me_heading = AverageHeading(-90);
-			}
-			else if (diff_x == 0){
-			}
-		} else {
-			// Atan2 gives a value between -180 and 180, this induces problems with the average calculation in case the result
-			// Goes from 150 to -150 for example. This can be counteracted by allowing inputs from -360 to 360 and then after the
-			// average calculation normalizing it to the required values
-			printf("\n\nSetting heading to new value %f\n", heading )
-			float heading = atan2(diff_x, diff_y)*180/M_PI;
-			if (follow_me_heading - heading > 180){
-				printf("Adding 360 because follow me is %f and new is %f\n", follow_me_heading, heading);
-				heading += 360;
-			} else if (follow_me_heading - heading < -180){
-				printf("Removing 360 because follow me is %f and new is %f\n", follow_me_heading, heading);
-				heading -= 360;
-			}
-			follow_me_heading = AverageHeading(heading);
-		}
+		follow_me_heading = AverageHeading(diff_x, diff_y);
+		printf("Follow_me_heading of %f has been obtained\n", follow_me_heading);
 		ground_utm_old = ground_utm_new;
     }
 }
