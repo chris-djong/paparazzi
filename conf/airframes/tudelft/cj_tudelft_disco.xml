@@ -50,13 +50,27 @@
     <define name="STALL_AIRSPEED" value="8"/>
     <module name="air_data"/>
     
+    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
+    <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
+    <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- Make sure is callibrated if set to TRUE -->
+    
+    
     
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
         
     <!--  Vehicle -->
     <module name="imu" type="disco"/>
-    <module name="ahrs" type="float_dcm"/> 
+    <module name="ahrs" type="float_dcm">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/>
+        <!-- <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> -->
+        <!-- <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>-->
+        <!-- <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="2.0" unit="m/s"/>-->
+        <!--<define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="20"/>--> <!-- Set to 0 if IMU runs away -->
+        <!-- <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/>--> <!--ABI sender id of IMU to use-->
+        <!-- <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID" /> --> <!--for when using the mag_calib_ukf-->
+    </module>
     <module name="actuators" type="disco"/>
     
     
@@ -67,11 +81,11 @@
     <module name="navigation"/>
     
     <!-- Type of telemetry -->
-    <module name="telemetry" type="transparent_udp"/> 
-    <!-- <module name="telemetry" type="transparent">
+    <!-- <module name="telemetry" type="transparent_udp"/> -->
+    <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B57600"/>
-    </module>-->
+    </module>
     
     <!-- Control Algorithms -->
     <module name="control" type="new"/> 
@@ -141,20 +155,23 @@
     <!-- Calibration for PH-4HH performed on 29 of November 2019 -->
     <!-- for Disco PH-4HM labelled Chris -->
     
-    <define name="ACCEL_X_NEUTRAL" value="-220"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-9"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-284"/>
-    <define name="ACCEL_X_SENS" value="2.450842483539393" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.451204567523103" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.4136274953676624" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="-241"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-8"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-403"/>
+    <define name="ACCEL_X_SENS" value="2.449574992839191" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4506198003165993" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4050357128352857" integer="16"/>
 
-    <define name="MAG_X_NEUTRAL" value="-164"/>
-    <define name="MAG_Y_NEUTRAL" value="-244"/>
-    <define name="MAG_Z_NEUTRAL" value="-590"/>
-    <define name="MAG_X_SENS" value="7.76268606256" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.53777959342" integer="16"/>
-    <define name="MAG_Z_SENS" value="8.13033580043" integer="16"/>
     
+
+    
+    <define name="MAG_X_NEUTRAL" value="-175"/>
+    <define name="MAG_Y_NEUTRAL" value="-76"/>
+    <define name="MAG_Z_NEUTRAL" value="-869"/>
+    <define name="MAG_X_SENS" value="6.999010552417837" integer="16"/>
+    <define name="MAG_Y_SENS" value="6.941504898357588" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.41620875250963" integer="16"/>
+
     <!-- End of 29 0f November 2019 calibration -->
 
     <define name="BODY_TO_IMU_PHI" value="0"/>
@@ -167,21 +184,22 @@
   <!-- ************************************************
                AHRS DEFINITIONS
     ************************************************  -->
-  <!--section name="AHRS" prefix="AHRS_">
-    <define name="H_X" value="0.5141"/>
-    <define name="H_Y" value="0.0002"/>
-    <define name="H_Z" value="0.8576"/>
-  </section-->
-
+    
+  
+  <section name="AHRS" prefix="AHRS_">
+    <!-- Values for Valkenburg Zuid Holland NL -->
+    
+    <define name="H_X" value="0.387264"/>
+    <define name="H_Y" value=" 0.0099463"/>
+    <define name="H_Z" value="0.921915"/>
+  </section>
+  
   <!-- ************************************************
                INS DEFINITIONS
     ************************************************  -->
   <section name="INS" prefix="INS_">
     <define name="ROLL_NEUTRAL_DEFAULT" value="0" unit="deg"/>
     <define name="PITCH_NEUTRAL_DEFAULT" value="0" unit="deg"/>
-    <define name="H_X" value="0.5141"/>
-    <define name="H_Y" value="0.0002"/>
-    <define name="H_Z" value="0.8576"/>
   </section>
 
   <!-- ************************************************
