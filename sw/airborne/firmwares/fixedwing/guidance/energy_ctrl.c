@@ -69,6 +69,9 @@
 #include "subsystems/abi.h"
 #include <stdio.h>
 
+#include "modules/ctrl/follow_me.h"  // required so that FOLLOW_ME_H is defined
+
+
 /////// DEFAULT GUIDANCE_V NECESSITIES //////
 
 /* mode */
@@ -279,7 +282,11 @@ void v_ctl_init(void)
   v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
   v_ctl_auto_groundspeed_pgain = V_CTL_AUTO_GROUNDSPEED_PGAIN;
   v_ctl_auto_groundspeed_igain = V_CTL_AUTO_GROUNDSPEED_IGAIN;
+#ifdef V_CTL_AUTO_GROUNDSPEED_DGAIN
   v_ctl_auto_groundspeed_dgain = V_CTL_AUTO_GROUNDSPEED_DGAIN;
+#else
+  v_ctl_auto_groundspeed_dgain = 0;
+#endif
   v_ctl_auto_groundspeed_sum_err = 0.;
 #endif
 
@@ -346,11 +353,15 @@ void v_ctl_climb_loop(void)
   v_ctl_auto_airspeed_setpoint_slew += airspeed_incr;
   // Set it to less than if enabled. As soon as we leave the follow me module it will be set to 25 so that this loop will not be executed anymore
   // This ensure that the groundspeed loop does not induce the pitching moment in case the desired airspeed is increased to much (and we have too much wind)
-  if (v_ctl_auto_groundspeed_setpoint < 30){
+  if (v_ctl_speed_mode == V_CTL_SPEED_GROUNDSPEED){
 	  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
 	  // Base it on enu speed for the follow me module (throttle only increases forward speed not sideways)
-	  struct EnuCoor_f *enu_speed = stateGetSpeedEnu_f();
-	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - enu_speed->y);
+#ifdef FOLLOW_ME_H
+	  struct NedCoor_f *ned_speed = stateGetSpeedNed_f();
+	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - fabs(ned_speed->x));
+#else
+	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
+#endif
 	  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
 	  v_ctl_auto_groundspeed_last_err = err_groundspeed;
 	  v_ctl_auto_groundspeed_sum_err += err_groundspeed;

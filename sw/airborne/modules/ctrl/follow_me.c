@@ -322,7 +322,7 @@ int8_t check_handover_rl(void){
 ***********************************************************************************************************************/
 
 
-void follow_me_soar_here(void);
+//void follow_me_soar_here(void);
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
@@ -397,7 +397,6 @@ void follow_me_set_heading(void){
 		// First check conditions in which we divide by 0
 		// Note atan2 gives results between -180 and 180
 		follow_me_heading = AverageHeading(diff_x, diff_y);
-		printf("Follow_me_heading of %f has been obtained\n", follow_me_heading);
 		ground_utm_old = ground_utm_new;
     }
 }
@@ -473,7 +472,7 @@ void follow_me_roll_pid(void){
 }
 
 // Throttle controller
-//void follow_me_throttle_pid(void);
+void follow_me_throttle_pid(void);
 void follow_me_throttle_pid(void){
 	// Ground speed controller
 	ground_speed_diff_sum_err += dist_wp_follow.y;
@@ -593,7 +592,7 @@ int follow_me_call(void){
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
 	ground_speed_diff = 0;
-	v_ctl_auto_groundspeed_setpoint = 100; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
+	v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
 	h_ctl_roll_setpoint_follow_me = 0;
 	nav_mode = NAV_MODE_COURSE;
 	lateral_mode = LATERAL_MODE_COURSE;

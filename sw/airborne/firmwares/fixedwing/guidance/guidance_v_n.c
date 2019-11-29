@@ -31,6 +31,7 @@
 #include "firmwares/fixedwing/nav.h"
 #include "generated/airframe.h"
 #include "autopilot.h"
+#include "modules/ctrl/follow_me.h"  // required so that FOLLOW_ME_H is defined
 
 /* mode */
 uint8_t v_ctl_mode;
@@ -173,7 +174,11 @@ void v_ctl_init(void)
   v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
   v_ctl_auto_groundspeed_pgain = V_CTL_AUTO_GROUNDSPEED_PGAIN;
   v_ctl_auto_groundspeed_igain = V_CTL_AUTO_GROUNDSPEED_IGAIN;
+#ifdef V_CTL_AUTO_GROUNDSPEED_DGAIN // this has been added by chris for tuning of the follow me module
   v_ctl_auto_groundspeed_dgain = V_CTL_AUTO_GROUNDSPEED_DGAIN;
+#else
+  v_ctl_auto_groundspeed_dgain = 0;
+#endif
   v_ctl_auto_groundspeed_sum_err = 0.;
 #endif
 
@@ -380,9 +385,14 @@ static inline void v_ctl_set_airspeed(void)
 static inline void v_ctl_set_groundspeed(void)
 {
   static float last_err_ground = 0;
+#ifdef FOLLOW_ME_H
   // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
   struct NedCoor_f *ned_speed = stateGetSpeedNed_f();
   float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - fabs(ned_speed->x));
+#else
+  float err_groundspeed = v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f();
+#endif
+
   float d_err_groundspeed = err_groundspeed - last_err_ground;
   v_ctl_auto_groundspeed_sum_err += err_groundspeed;
   BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);

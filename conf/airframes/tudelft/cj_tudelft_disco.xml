@@ -5,11 +5,16 @@
 -->
 
 <airframe name="Disco">
-  <firmware name="fixedwing">    
+  <firmware name="fixedwing">  
+  
+      <module name="follow_me"/> 
+    
+   
     <!-- ************************************************
                AUTOPILOT TARGET 
     ************************************************  -->
-    <target name="ap" board="disco">
+   
+    <target name="ap" board="disco">    
       <module name="radio_control" type="sbus"/>
       <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
       <module name="airspeed" type="ms45xx_i2c">
@@ -19,22 +24,25 @@
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       </module>
+      <module name="ins" type="alt_float"/>
     </target>
+    
     <!-- ************************************************
               SIMULATION TARGET 
     ************************************************  -->
+    
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
       <define name="AIRSPEED_ADC_SCALE" value="1"/>
       <define name="AIRSPEED_ADC_BIAS" value="1"/>
       <module name="airspeed" type="adc"/>
+      <module name="ins" type="alt_float"/>
     </target>
     
     <!-- ************************************************
                ALL TARGETS
     ************************************************  -->
     <!-- Personal modules -->
-    <module name="follow_me"/> 
     <!-- <module name="rl_soaring"/> -->
         
     <!-- Airspeed definitions  -->
@@ -46,17 +54,17 @@
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
         
-    <!--  Vehicle state -->
+    <!--  Vehicle -->
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm"/> 
-    <module name="ins" type="alt_float"/>
-
+    <module name="actuators" type="disco"/>
+    
+    
     <!-- Navigation -->    
     <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="navigation"/>
-    <module name="actuators" type="disco"/>
     
     <!-- Type of telemetry -->
     <module name="telemetry" type="transparent_udp"/> 
@@ -224,7 +232,7 @@
     <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.0"/>
     <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.06"/>
     <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.0"/>
-    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.042"/>
+    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.02"/>
     <define name="AIRSPEED_MAX" value="30"/>
     <define name="AIRSPEED_MIN" value="10"/>
     
@@ -236,36 +244,37 @@
     <define name="PITCH_LOITER_TRIM" value="0." unit="deg"/>
     <define name="PITCH_DASH_TRIM" value="0." unit="deg"/>
 
-    <define name="THROTTLE_SLEW" value="0.1"/>
+    <define name="THROTTLE_SLEW" value="0.1"/> 
      
     <!-- --------------------------------------------------------------------------- -->
     
     <!-- Energy Control Algorithm 
     <define name="ALTITUDE_PGAIN" value="0.15"/>
-    <define name="AIRSPEED_PGAIN" value="0.15"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.4"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.1"/>
+    <define name="AIRSPEED_PGAIN" value="0.19"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.11"/>
     
-    <define name="ALTITUDE_MAX_CLIMB" value="2"/>
-    <define name="GLIDE_RATIO" value="8"/>
+    <define name="ALTITUDE_MAX_CLIMB" value="3.0"/>
+    <define name="GLIDE_RATIO" value="7.0"/>
     
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.1"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.1"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.1"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.01"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.003"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
 
     <define name="ENERGY_TOT_PGAIN" value="0.35"/>
-    <define name="ENERGY_TOT_IGAIN" value="0.30"/>
+    <define name="ENERGY_TOT_IGAIN" value="0.20"/>
     <define name="ENERGY_DIFF_PGAIN" value="0.40"/>
-    <define name="ENERGY_DIFF_IGAIN" value="0.15"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.10"/>
 
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0." unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.39" unit="%/(m/s)"/>
     
     <define name="AUTO_GROUNDSPEED_SETPOINT" value="12"/>
     <define name="AUTO_GROUNDSPEED_PGAIN" value="0.01"/>
-    <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
-    <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.2"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.3"/> -->
+     <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
+     <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
+    
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.06"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/> -->
   </section>
 
   <!-- ************************************************
