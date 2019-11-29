@@ -6,8 +6,8 @@
 
 <airframe name="Disco">
   <firmware name="fixedwing">  
-  
-      <module name="follow_me"/> 
+   <!-- Define default radius for oval eight and stdby -->
+   <module name="follow_me"/> 
     
    
     <!-- ************************************************
@@ -137,14 +137,16 @@
                IMU DEFINITIONS
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
-    <define name="ACCEL_X_NEUTRAL" value="-237"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-7"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-377"/>
-    <define name="ACCEL_X_SENS" value="2.44905795906" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.2515134532" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.40482153489" integer="16"/>
+  
+    <!-- Calibration for PH-4HH performed on 29 of November 2019 -->
+    <!-- for Disco PH-4HM labelled Chris -->
     
-    
+    <define name="ACCEL_X_NEUTRAL" value="-220"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-9"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-284"/>
+    <define name="ACCEL_X_SENS" value="2.450842483539393" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.451204567523103" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4136274953676624" integer="16"/>
 
     <define name="MAG_X_NEUTRAL" value="-164"/>
     <define name="MAG_Y_NEUTRAL" value="-244"/>
@@ -152,10 +154,14 @@
     <define name="MAG_X_SENS" value="7.76268606256" integer="16"/>
     <define name="MAG_Y_SENS" value="7.53777959342" integer="16"/>
     <define name="MAG_Z_SENS" value="8.13033580043" integer="16"/>
+    
+    <!-- End of 29 0f November 2019 calibration -->
 
     <define name="BODY_TO_IMU_PHI" value="0"/>
     <define name="BODY_TO_IMU_THETA" value="0"/>
     <define name="BODY_TO_IMU_PSI" value="0"/>
+    
+    
   </section>
 
   <!-- ************************************************
@@ -286,6 +292,7 @@
     <define name="ROLL_MAX_SETPOINT" value="45." unit="deg"/>
     <define name="PITCH_MAX_SETPOINT" value="30." unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-30." unit="deg"/>
+    <define name="COURSE_PRE_BANK_CORRECTION" value="1.0"/>
 
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
     <define name="ROLL_RATE_GAIN" value="1000."/>

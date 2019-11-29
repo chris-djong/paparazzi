@@ -80,15 +80,15 @@ char* wp;
 // Parameters for simulation
 float sim_lon = 4.44938;
 float sim_lat = 52.89775888;
-float sim_lat_speed = -200*1e-8;
-float sim_lon_speed = -200*1e-8;
+float sim_lat_speed = 0;//-200*1e-8;
+float sim_lon_speed = 0;//-200*1e-8;
 float sim_course = 30;
 float sim_speed = 1;
 float sim_altitude = 0;
 float sim_climb = 0;
 int sim_time = 0;
 
-int change_state_at = 500;
+int change_state_at = 50000;
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,

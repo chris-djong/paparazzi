@@ -310,7 +310,6 @@ void h_ctl_course_loop(void)
     }
   }
 #endif
-
   float roll_setpoint = cmd + h_ctl_course_pre_bank_correction * h_ctl_course_pre_bank;
 
 #ifdef H_CTL_ROLL_SLEW

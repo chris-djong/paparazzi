@@ -56,7 +56,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Waypoint parameters
 float follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t stdby_distance = 40; // based on nav_radius + 10
+uint8_t stdby_distance = 60; // based on stbdy radius + 10
 uint8_t follow_me_height = 10;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
@@ -524,8 +524,8 @@ void follow_me_set_wp(void){
 		int32_t y_follow2 = ground_utm.north + dist_follow2*cosf(follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
-		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_stdby = ground_utm.east - stdby_distance*sinf(follow_me_heading/180.*M_PI);
+		int32_t y_stdby = ground_utm.north - stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
         // Update STBDY HOME AND FOLLOW ME WPS
 		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);

@@ -384,7 +384,6 @@ void h_ctl_course_loop(void)
 
   float speed_depend_nav = stateGetHorizontalSpeedNorm_f() / NOMINAL_AIRSPEED;
   // Bound(speed_depend_nav, 0.66, 1.5);
-
   h_ctl_roll_setpoint = h_ctl_course_pre_bank_correction * h_ctl_course_pre_bank
                         + h_ctl_course_pgain * speed_depend_nav * err
                         + h_ctl_course_dgain * d_err;

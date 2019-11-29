@@ -73,10 +73,18 @@
       <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="15"/>
     </block>
     <!--  After the height of 25 m is obtained we deroute to the standby waypoint for 1 minute-->
-    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="flight">
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="tuning">
       <call_once fun="follow_me_stop()"/>
       <!-- <call_once fun="rl_soaring_stop()"/> -->
-      <circle radius="30" wp="STDBY" pre_call="follow_me_set_wp()" />
+      <circle radius="50" wp="STDBY" />
+    </block>
+    
+    <block name="Figure 8 (STDBY - HOME)" strip_button="Figure 8 (STDBY - HOME)" strip_icon="eight.png" group="tuning">
+      <eight center="STDBY" radius="nav_radius" turn_around="HOME"/>
+    </block>
+    
+    <block name="Oval (STBDY -HOME)" strip_button="Oval (STDBY - HOME)" strip_icon="oval.png" group="tuning">
+      <oval p1="STDBY" p2="HOME" radius="nav_radius"/>
     </block>
     
   <!-- *********** Flight *********** -->
