@@ -10,15 +10,4 @@
    settings_modules="modules/guidance_full_pid_fw.xml modules/stabilization_adaptive_fw.xml modules/nav_basic_fw.xml modules/gps_ubx_ucenter.xml modules/gps.xml modules/ahrs_float_dcm.xml modules/imu_common.xml modules/air_data.xml modules/airspeed_adc.xml modules/airspeed_ms45xx_i2c.xml modules/follow_me.xml"
    gui_color="#ffffffffffff"
   />
-  <aircraft
-   name="Disco_openuas"
-   ac_id="2"
-   airframe="airframes/tudelft/openuas_parrot_disco.xml"
-   radio="radios/cj_tudelft_sbus_out_radio.xml"
-   telemetry="telemetry/tudelft/cj_tudelft_telemetry.xml"
-   flight_plan="flight_plans/tudelft/cj_tudelft_followfront.xml"
-   settings="settings/fixedwing_basic.xml"
-   settings_modules="modules/digital_cam_video.xml modules/dc_ctrl_parrot_mykonos.xml modules/video_rtp_stream.xml modules/video_capture.xml modules/bebop_cam.xml modules/photogrammetry_calculator.xml modules/tune_airspeed.xml modules/nav_smooth.xml modules/nav_survey_poly_osam.xml modules/nav_basic_fw.xml modules/geo_mag.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/gps_ubx_ucenter.xml modules/gps.xml modules/imu_common.xml modules/ahrs_float_dcm.xml"
-   gui_color="#ffffffffffff"
-  />
 </conf>

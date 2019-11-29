@@ -42,12 +42,12 @@ extern float v_ctl_auto_airspeed_throttle_sum_err;
 extern float v_ctl_auto_airspeed_pitch_pgain;
 extern float v_ctl_auto_airspeed_pitch_dgain;
 extern float v_ctl_auto_groundspeed_dgain;
-extern float v_ctl_auto_groundspeed_pgain;
-extern float v_ctl_auto_groundspeed_igain;
+//extern float v_ctl_auto_groundspeed_pgain;
+//extern float v_ctl_auto_groundspeed_igain;
 extern float v_ctl_auto_airspeed_pitch_igain;
 extern float v_ctl_auto_airspeed_pitch_sum_err;
 
-extern float v_ctl_auto_groundspeed_setpoint;
+//extern float v_ctl_auto_groundspeed_setpoint;
 
 extern uint8_t v_ctl_speed_mode;
 

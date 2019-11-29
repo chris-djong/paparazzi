@@ -242,7 +242,6 @@ void ins_ekf2_init(void)
 /* Update the INS state */
 void ins_ekf2_update(void)
 {
-  printf("Updating ins ekf2\n");
   /* Set EKF settings */
   ekf.set_in_air_status(autopilot_in_flight());
 
