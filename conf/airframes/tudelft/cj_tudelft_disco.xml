@@ -162,9 +162,6 @@
     <define name="ACCEL_Y_SENS" value="2.4506198003165993" integer="16"/>
     <define name="ACCEL_Z_SENS" value="2.4050357128352857" integer="16"/>
 
-    
-
-    
     <define name="MAG_X_NEUTRAL" value="-175"/>
     <define name="MAG_Y_NEUTRAL" value="-76"/>
     <define name="MAG_Z_NEUTRAL" value="-869"/>

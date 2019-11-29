@@ -165,15 +165,13 @@ float AverageHeading(float diffx, float diffy)
     	Sum_y = Sum_y + all_diff_y[i];
     }
 
-    float heading;
+    float heading = 0.0;
     // First check cases which divide by 0
     if (diffy == 0){
     	if (diffx > 0){
     		heading = 90.0;
     	} else if (diffx < 0){
     		heading = -90.0;
-    	} else if (diffx == 0){
-    		heading = 0.0;
     	}
     } else {
         heading = atan2(diffx, diffy)*180.0/M_PI;
