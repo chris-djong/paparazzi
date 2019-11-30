@@ -320,6 +320,7 @@ void ins_ekf2_update(void)
  */
 static void ins_ekf2_publish_attitude(uint32_t stamp)
 {
+
   imuSample imu_sample;
   imu_sample.time_us = stamp;
   imu_sample.delta_ang_dt = ekf2.gyro_dt * 1.e-6f;
@@ -327,7 +328,6 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
   imu_sample.delta_vel_dt = ekf2.accel_dt * 1.e-6f;
   imu_sample.delta_vel = Vector3f{ekf2.accel.x, ekf2.accel.y, ekf2.accel.z} * imu_sample.delta_vel_dt;
   ekf.setIMUData(imu_sample);
-
   if (ekf.attitude_valid()) {
     // Calculate the quaternion
     struct FloatQuat ltp_to_body_quat;
@@ -345,22 +345,24 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
     uint8_t quat_reset_counter;
     ekf.get_quat_reset(delta_q_reset, &quat_reset_counter);
 
+
+#ifndef NO_HEADING
     // If reset update the setpoint heading
     if (ekf2.quat_reset_counter < quat_reset_counter) {
       float psi = matrix::Eulerf(matrix::Quatf(delta_q_reset)).psi();
 #if defined STABILIZATION_ATTITUDE_TYPE_INT
-      stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
+      //stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
 #else
-      stab_att_sp_euler.psi += psi;
+      //stab_att_sp_euler.psi += psi;
 #endif
-      guidance_h.sp.heading += psi;
-      guidance_h.rc_sp.psi += psi;
-      nav_heading += ANGLE_BFP_OF_REAL(psi);
-      guidance_h_read_rc(autopilot_in_flight());
-      stabilization_attitude_enter();
+      //guidance_h.sp.heading += psi;
+      //guidance_h.rc_sp.psi += psi;
+      //nav_heading += ANGLE_BFP_OF_REAL(psi);
+      //guidance_h_read_rc(autopilot_in_flight());
+      //stabilization_attitude_enter();
       ekf2.quat_reset_counter = quat_reset_counter;
     }
-
+#endif
     /* Get in-run gyro bias */
     struct FloatRates body_rates;
     float gyro_bias[3];
@@ -439,6 +441,7 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
 static void accel_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp, struct Int32Vect3 *accel)
 {
+
   struct FloatVect3 accel_imu;
   struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ekf2.body_to_imu);
 
