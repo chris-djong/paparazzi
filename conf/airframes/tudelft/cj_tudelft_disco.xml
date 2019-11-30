@@ -24,7 +24,13 @@
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       </module>
-      <module name="ins" type="alt_float"/>
+      
+      <!-- Option 1 EKF2 -->
+      <define name="NO_HEADING"/> <!--  This define is used so that the heading will not be updated by the EKF2 (due to rotorcraft <-> fw issues) -->
+      <module name="ins" type="ekf2"/>
+      
+      <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro
+      <module name="ins" type="alt_float"/> -->
     </target>
     
     <!-- ************************************************
@@ -81,12 +87,12 @@
     <module name="navigation"/>
     
     <!-- Type of telemetry -->
-    <!-- <module name="telemetry" type="transparent_udp"/> -->
-    <module name="telemetry" type="transparent">
+    <module name="telemetry" type="transparent_udp"/> 
+   <!--  <module name="telemetry" type="transparent">
         <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B57600"/>
     </module>
-    
+    -->
     <!-- Control Algorithms -->
     <module name="control" type="new"/> 
   </firmware>
