@@ -6,7 +6,6 @@
 <ubx>
 
   <msg_class name="NAV" ID="0x01">
-
     <message name="POSLLH" ID="0x02" length="28">
       <field name="ITOW" format="U4" unit="ms"/>
       <field name="LON" format="I4" scaling="1e-7" unit="deg"/>
@@ -339,9 +338,8 @@
     </message>
 
   </msg_class>
-
+  
   <msg_class name="RXM" ID="0x02">
-
 <!--
 Only available with raw data product variant.
 This message contains all information needed to be able to generate a RINEX observation
@@ -416,6 +414,11 @@ supported.
       <field name="reserved3" format="U1"/>
     </message>
 
+  </msg_class>
+  
+  <msg_class name="VENDOR_EXTENSION" ID="0xF5">
+      <message name="PVT" ID="0xFE" length="0">
+      </message>
   </msg_class>
 
 </ubx>

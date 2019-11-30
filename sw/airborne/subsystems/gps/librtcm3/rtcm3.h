@@ -16,10 +16,11 @@
 #define READ_MESSAGE    3
 #define READ_CHECKSUM   4
 
-#define RTCM3_PREAMBLE 0xD3
+#define RTCM3_PREAMBLE 0xD3  // The header of each RTCM message starts with an 0xD3 byte
 #define RTCM3_MSG_1005 0x69
 #define RTCM3_MSG_1077 0xB1
 #define RTCM3_MSG_1087 0xBB
+
 
 /* Macros for UBX message processing */
 
@@ -33,10 +34,12 @@
 #define GOT_PAYLOAD     7
 #define GOT_CHECKSUM1   8
 
-#define UBX_PREAMBLE1       0xB5                // Sync 1
-#define UBX_PREAMBLE2       0x62                // Sync 2
+#define UBX_PREAMBLE1       0xB5     // This bytes gives the start of a UBX message   // Sync 1
+#define UBX_PREAMBLE2       0x62     // This bytes gives the start of a UBX message   // Sync 2
 #define UBX_NAV_SVIN        0x3B
 #define GPS_UBX_MAX_PAYLOAD 255
+
+#define UBX_RTCM3_PVT 0xF5FE  // first byte for ClassID second byte ID
 
 #define GPS_UBX_ERR_NONE         0
 #define GPS_UBX_ERR_OVERRUN      1
