@@ -26,7 +26,7 @@
       </module>
       
       <!-- Option 1 EKF2 -->
-      <define name="NO_HEADING"/> <!--  This define is used so that the heading will not be updated by the EKF2 (due to rotorcraft <-> fw issues) -->
+      <define name="NO_HEADING_EKF2"/> <!--  This define is used so that the heading will not be updated by the EKF2 (due to rotorcraft <-> fw issues) -->
       <module name="ins" type="ekf2"/>
       
       <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro

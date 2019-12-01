@@ -346,7 +346,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
     ekf.get_quat_reset(delta_q_reset, &quat_reset_counter);
 
 
-#ifndef NO_HEADING
+#ifndef NO_HEADING_EKF2
     // If reset update the setpoint heading
     if (ekf2.quat_reset_counter < quat_reset_counter) {
       float psi = matrix::Eulerf(matrix::Quatf(delta_q_reset)).psi();
