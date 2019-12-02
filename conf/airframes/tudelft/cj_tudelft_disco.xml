@@ -241,6 +241,7 @@
   <section name="VERTICAL CONTROL" prefix="V_CTL_">    
     <!-- New Control Algorithm -->
     <define name="ALTITUDE_PGAIN" value="0.12"/>
+    <define name="ALTITUDE_MAX_CLIMB" value="3"/>
     <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
     <define name="PITCH_TRIM" value="2." unit="deg"/>
 
