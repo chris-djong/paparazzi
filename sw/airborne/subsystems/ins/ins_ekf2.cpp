@@ -346,10 +346,11 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
     ekf.get_quat_reset(delta_q_reset, &quat_reset_counter);
 
 
-#ifndef NO_HEADING_EKF2
     // If reset update the setpoint heading
     if (ekf2.quat_reset_counter < quat_reset_counter) {
       float psi = matrix::Eulerf(matrix::Quatf(delta_q_reset)).psi();
+
+#ifdef COMMAND_THRUST // apply heading for rotorcraft
 #if defined STABILIZATION_ATTITUDE_TYPE_INT
       //stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
 #else
@@ -360,9 +361,16 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
       //nav_heading += ANGLE_BFP_OF_REAL(psi);
       //guidance_h_read_rc(autopilot_in_flight());
       //stabilization_attitude_enter();
-      ekf2.quat_reset_counter = quat_reset_counter;
-    }
+
+#else // apply heading for fixedwing
+      struct FloatEulers *euler_angles;
+      euler_angles = stateGetNedToBodyEulers_f();
+      printf("Current psi is given by %f and we are adding %f\n", euler_angles->psi, psi);
+      euler_angles->psi += psi;
+      printf("After conversion the euler angles are given by %f\n", euler_angles->psi);
 #endif
+    ekf2.quat_reset_counter = quat_reset_counter;
+    }
     /* Get in-run gyro bias */
     struct FloatRates body_rates;
     float gyro_bias[3];

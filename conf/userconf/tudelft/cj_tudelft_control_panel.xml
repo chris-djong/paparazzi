@@ -125,7 +125,6 @@
       </program>
       <program name="Server"/>
       <program name="GCS">
-        <arg flag="-center_ac_id" constant="1"/>
         <arg flag="-speech"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>

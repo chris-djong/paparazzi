@@ -27,15 +27,14 @@
 
 
       <!-- Type of telemetry -->
-      <!-- <module name="telemetry" type="transparent_udp"/> -->
-      <module name="telemetry" type="transparent">
+      <module name="telemetry" type="transparent_udp"/> 
+      <!-- <module name="telemetry" type="transparent">
           <configure name="MODEM_PORT" value="UART2"/>
           <configure name="MODEM_BAUD" value="B57600"/>
-      </module>
+      </module>-->
       
       
       <!-- Option 1 EKF2 -->
-      <define name="NO_HEADING_EKF2"/> <!--  This define is used so that the heading will not be updated by the EKF2 (due to rotorcraft <-> fw issues) -->
       <module name="ins" type="ekf2"/>
       
       <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro
@@ -47,6 +46,7 @@
     ************************************************  -->
     
     <target name="sim" board="pc">
+      <module name="telemetry" type="transparent_udp"/> 
       <module name="radio_control" type="ppm"/>
       <define name="AIRSPEED_ADC_SCALE" value="1"/>
       <define name="AIRSPEED_ADC_BIAS" value="1"/>

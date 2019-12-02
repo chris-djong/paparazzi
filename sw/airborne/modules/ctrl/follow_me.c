@@ -401,7 +401,6 @@ void follow_me_set_heading(void){
 
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
-
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
 		return;
 
