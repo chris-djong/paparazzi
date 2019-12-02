@@ -24,6 +24,15 @@
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       </module>
+
+
+      <!-- Type of telemetry -->
+      <!-- <module name="telemetry" type="transparent_udp"/> -->
+      <module name="telemetry" type="transparent">
+          <configure name="MODEM_PORT" value="UART2"/>
+          <configure name="MODEM_BAUD" value="B57600"/>
+      </module>
+      
       
       <!-- Option 1 EKF2 -->
       <define name="NO_HEADING_EKF2"/> <!--  This define is used so that the heading will not be updated by the EKF2 (due to rotorcraft <-> fw issues) -->
@@ -81,18 +90,12 @@
     
     
     <!-- Navigation -->    
-    <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+    <define name="USE_GPS_UBX_RTCM" value="TRUE"/> <!--  required so that RTCM messages are decoded in /subsystems/gps/gps_ubx.c -->
     <module name="gps" type="ublox"/>
     <module name="gps" type="ubx_ucenter"/>
     <module name="navigation"/>
     
-    <!-- Type of telemetry -->
-    <module name="telemetry" type="transparent_udp"/> 
-   <!--  <module name="telemetry" type="transparent">
-        <configure name="MODEM_PORT" value="UART2"/>
-        <configure name="MODEM_BAUD" value="B57600"/>
-    </module>
-    -->
+    
     <!-- Control Algorithms -->
     <module name="control" type="new"/> 
   </firmware>
@@ -191,10 +194,15 @@
   
   <section name="AHRS" prefix="AHRS_">
     <!-- Values for Valkenburg Zuid Holland NL -->
-    
-    <define name="H_X" value="0.387264"/>
+    <!-- <define name="H_X" value="0.387264"/>
     <define name="H_Y" value=" 0.0099463"/>
-    <define name="H_Z" value="0.921915"/>
+    <define name="H_Z" value="0.921915"/> -->
+    
+    <!-- Values for Den Helder NL -->
+    <define name="H_X" value="0.377011"/>
+    <define name="H_Y" value="0.0102128"/>
+    <define name="H_Z" value="0.926152"/>
+    
   </section>
   
   <!-- ************************************************
@@ -233,7 +241,6 @@
   <section name="VERTICAL CONTROL" prefix="V_CTL_">    
     <!-- New Control Algorithm -->
     <define name="ALTITUDE_PGAIN" value="0.12"/>
-    <define name="ALTITUDE_MAX_CLIMB" value="4."/>
     <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
     <define name="PITCH_TRIM" value="2." unit="deg"/>
 

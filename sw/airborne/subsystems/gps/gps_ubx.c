@@ -19,7 +19,6 @@
  * Boston, MA 02111-1307, USA.
  */
 
-
 #include "subsystems/gps/gps_ubx.h"
 #include "subsystems/abi.h"
 #include "led.h"
@@ -31,10 +30,13 @@
 
 #if USE_GPS_UBX_RTCM
 #include "subsystems/gps/librtcm3/CRC24Q.h"
+// These definitions need to correspond to the values assignes in /sw/airborne/subsystems/gps/librtcm3/rtcm3.h
 #define RTCM3_PREAMBLE 0xD3
 #define RTCM3_MSG_1005 0x69
 #define RTCM3_MSG_1077 0xB1
 #define RTCM3_MSG_1087 0xBB
+#define RTCM3_MSG_1230 0xC0 // try random bytes as no previous system could be detected in assigning IDs
+#define RTCM3_MSG_4072 0xC1 // try random bytes as no previous system could be detected in assigning IDs
 #endif
 
 #if PRINT_DEBUG_GPS_UBX
@@ -282,13 +284,20 @@ void gps_ubx_read_message(void)
             break;
           case 1077:
             rtcm_man.Cnt177 += 1;
-            rtcm_man.Crc177 += crcFailed;;
+            rtcm_man.Crc177 += crcFailed;
             break;
           case 1087:
             rtcm_man.Cnt187 += 1;
-            rtcm_man.Crc187 += crcFailed;;
+            rtcm_man.Crc187 += crcFailed;
             break;
+          case 1230:
+        	rtcm_man.Cnt187 += 1;
+        	rtcm_man.Crc187 += crcFailed;
+          case 4072:
+        	rtcm_man.Cnt187 += 1;
+        	rtcm_man.Crc187 += crcFailed;
           default:
+        	printf("Unknown case for rtcm message parsing %i in gps_ubx\n\n", rtcm_man.MsgType);
             break;
         }
       } else {
@@ -520,6 +529,8 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
                 case RTCM3_MSG_1005 : break;
                 case RTCM3_MSG_1077 : break;
                 case RTCM3_MSG_1087 : break;
+                case RTCM3_MSG_1230 : break;
+                case RTCM3_MSG_4072 : break;
                 default: DEBUG_PRINT("Unknown type: %i", packet_id); break;
               }
             } else {
