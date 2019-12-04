@@ -365,9 +365,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
 #else // apply heading for fixedwing
       struct FloatEulers *euler_angles;
       euler_angles = stateGetNedToBodyEulers_f();
-      printf("Current psi is given by %f and we are adding %f\n", euler_angles->psi, psi);
       euler_angles->psi += psi;
-      printf("After conversion the euler angles are given by %f\n", euler_angles->psi);
 #endif
     ekf2.quat_reset_counter = quat_reset_counter;
     }

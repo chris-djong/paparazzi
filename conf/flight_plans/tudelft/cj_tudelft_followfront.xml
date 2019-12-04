@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="10" ground_alt="0" lat0="52.89775888" lon0="4.44938" max_dist_from_home="500" qfu="190" name="Never Landing Drone" security_height="25">
+<flight_plan alt="10" ground_alt="0" lat0="52.89775888" lon0="4.44938" max_dist_from_home="1000" qfu="190" name="Never Landing Drone" security_height="25">
 
 <header>
 #include "subsystems/datalink/datalink.h"
@@ -9,7 +9,9 @@
     <!-- Keep this order in waypoints or change the wp_id if conditions in follow_me.c module -->
     <!--  FOLLOW = 3 / AF = 5 / TD = 6 / FLARE = 7 -->
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="STDBY" x="0" y="0" height="10"/>
+    <waypoint name="STDBY" x="50" y="0" height="50"/>
+    <waypoint name="1" x="50" y="0" height="50"/>
+    <waypoint name="2" x="50" y="-50" height="50"/>
     <waypoint name="FOLLOW" x="0" y="0" height="10"/>
     <waypoint name="FOLLOW2" x="0" y="0" height="10"/>
     <waypoint name="CLIMB" x="0" y="-200"/>
@@ -76,15 +78,15 @@
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="tuning">
       <call_once fun="follow_me_stop()"/>
       <!-- <call_once fun="rl_soaring_stop()"/> -->
-      <circle radius="50" wp="STDBY" />
+      <circle radius="nav_radius" wp="STDBY" />
     </block>
     
-    <block name="Figure 8 (STDBY - HOME)" strip_button="Figure 8 (STDBY - HOME)" strip_icon="eight.png" group="tuning">
-      <eight center="STDBY" radius="nav_radius" turn_around="HOME"/>
+    <block name="Figure 8 (1-2)" strip_button="Figure 8 (1-2)" strip_icon="eight.png" group="tuning">
+      <eight center="1" radius="nav_radius" turn_around="2"/>
     </block>
     
-    <block name="Oval (STBDY -HOME)" strip_button="Oval (STDBY - HOME)" strip_icon="oval.png" group="tuning">
-      <oval p1="STDBY" p2="HOME" radius="nav_radius"/>
+    <block name="Oval (1-2)" strip_button="Oval (1-2)" strip_icon="oval.png" group="tuning">
+      <oval p1="1" p2="2" radius="nav_radius"/>
     </block>
     
   <!-- *********** Flight *********** -->
