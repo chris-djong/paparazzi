@@ -352,15 +352,15 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
 
 #ifdef COMMAND_THRUST // apply heading for rotorcraft
 #if defined STABILIZATION_ATTITUDE_TYPE_INT
-      //stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
+      stab_att_sp_euler.psi += ANGLE_BFP_OF_REAL(psi);
 #else
-      //stab_att_sp_euler.psi += psi;
+      stab_att_sp_euler.psi += psi;
 #endif
-      //guidance_h.sp.heading += psi;
-      //guidance_h.rc_sp.psi += psi;
-      //nav_heading += ANGLE_BFP_OF_REAL(psi);
-      //guidance_h_read_rc(autopilot_in_flight());
-      //stabilization_attitude_enter();
+      guidance_h.sp.heading += psi;
+      guidance_h.rc_sp.psi += psi;
+      nav_heading += ANGLE_BFP_OF_REAL(psi);
+      guidance_h_read_rc(autopilot_in_flight());
+      stabilization_attitude_enter();
 
 #else // apply heading for fixedwing
       struct FloatEulers *euler_angles;
