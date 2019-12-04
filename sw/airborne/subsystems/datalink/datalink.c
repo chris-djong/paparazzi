@@ -70,6 +70,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
     // Check that the message is really a datalink message
     if (pprzlink_get_msg_class_id(buf) == DL_datalink_CLASS_ID) {
 #endif
+
       /* parse datalink messages coming from ground station */
       switch (msg_id) {
         case  DL_PING: {
@@ -174,7 +175,6 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 #endif  // USE_GPS_UBX_RTCM
 #endif  // USE_GPS
-
         default:
           break;
       }
