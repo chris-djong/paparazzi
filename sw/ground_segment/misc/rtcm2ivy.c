@@ -39,7 +39,6 @@
 #include <Ivy/ivyglibloop.h>
 #include <rtcm3.h>              // Used to decode RTCM3 messages
 #include <CRC24Q.h>             // Used to verify CRC checks
-#include <time.h>
 #include <math/pprz_geodetic_float.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -109,7 +108,6 @@ static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
       cpt++;
     }
 
-    nanosleep(&wait, NULL);
     printf_debug("%s\n\n", gps_packet);
     IvySendMsg("%s", gps_packet);
     offset += (packet_size-6);
@@ -163,7 +161,7 @@ static void rtcm3_1005_callback(uint8_t len, uint8_t msg[])
       posEcef.y      = RTCMgetbits_38(msg, 24 + 74) * 0.0001;
       posEcef.z      = RTCMgetbits_38(msg, 24 + 114) * 0.0001;
       lla_of_ecef_f(&posLla, &posEcef);
-      printf_debug("Lat: %f, Lon: %f, Alt: %f\n", posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, posLla.alt);
+      // printf_debug("Lat: %f, Lon: %f, Alt: %f\n", posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, posLla.alt);
       // Send spoof gpsd message to GCS to plot groundstation position
       IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f", "ground", "FLIGHT_PARAM", "GCS", 0.0, 0.0, 0.0,
                  posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, 0.0, 0.0, posLla.alt, 0.0, 0.0, 0.0, 0,  0.0);
@@ -285,7 +283,7 @@ static gboolean parse_device_data(GIOChannel *chan, GIOCondition cond, gpointer 
   gsize bytes_read;
   GError *_err = NULL;
   GIOStatus st = g_io_channel_read_chars(chan, buf, 1024, &bytes_read, &_err);
-  printf_debug("Bytes read: %lu %d %d %d\r\n", bytes_read, msg_state.msg_class, msg_state.state, rd_msg_len);
+  // printf_debug("Bytes read: %lu %d %d %d\r\n", bytes_read, msg_state.msg_class, msg_state.state, rd_msg_len);
   if (!_err) {
     if (st == G_IO_STATUS_NORMAL) {
       for(uint16_t i = 0; i < bytes_read; i++) {
@@ -432,7 +430,7 @@ int main(int argc, char **argv)
   rtcm3_register_callback(&msg_state, RTCM3_MSG_4072, &rtcm3_4072_callback, &rtcm3_4072_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1005, &rtcm3_1005_callback, &rtcm3_1005_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1077, &rtcm3_1077_callback, &rtcm3_1077_node);
-  //rtcm3_register_callback(&msg_state, RTCM3_MSG_1087, &rtcm3_1087_callback, &rtcm3_1087_node);
+  rtcm3_register_callback(&msg_state, RTCM3_MSG_1087, &rtcm3_1087_callback, &rtcm3_1087_node);
   //rtcm3_register_callback(&msg_state, RTCM3_MSG_1097, &rtcm3_1097_callback, &rtcm3_1097_node);
   //rtcm3_register_callback(&msg_state, RTCM3_MSG_1127, &rtcm3_1127_callback, &rtcm3_1127_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1230, &rtcm3_1230_callback, &rtcm3_1230_node);
