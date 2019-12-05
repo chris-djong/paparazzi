@@ -36,14 +36,8 @@ extern "C" {
 #include "subsystems/ahrs.h"
 #include "subsystems/ins.h"
 
-struct ekf2_parameters_t {
-  int32_t mag_fusion_type;
-};
-
 extern void ins_ekf2_init(void);
 extern void ins_ekf2_update(void);
-extern void ins_ekf2_change_param(int32_t unk);
-extern struct ekf2_parameters_t ekf2_params;
 
 #ifdef __cplusplus
 }
