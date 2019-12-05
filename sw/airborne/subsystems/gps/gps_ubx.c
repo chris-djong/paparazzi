@@ -19,6 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+
 #include "subsystems/gps/gps_ubx.h"
 #include "subsystems/abi.h"
 #include "led.h"
@@ -30,7 +31,6 @@
 
 #if USE_GPS_UBX_RTCM
 #include "subsystems/gps/librtcm3/CRC24Q.h"
-// These definitions need to correspond to the values assignes in /sw/airborne/subsystems/gps/librtcm3/rtcm3.h
 #define RTCM3_PREAMBLE 0xD3
 #define RTCM3_MSG_4072 0x72
 #define RTCM3_MSG_1005 0x69
@@ -141,7 +141,7 @@ static void gps_ubx_parse_nav_pvt(void) {
   gps_ubx.state.pdop        = UBX_NAV_PVT_pDOP(gps_ubx.msg_buf);
   gps_ubx.state.hacc        = UBX_NAV_PVT_hAcc(gps_ubx.msg_buf) / 10;
   gps_ubx.state.vacc        = UBX_NAV_PVT_vAcc(gps_ubx.msg_buf) / 10;
-  gps_ubx.state.sacc        = UBX_NAV_PVT_vAcc(gps_ubx.msg_buf) / 10;
+  gps_ubx.state.sacc        = UBX_NAV_PVT_sAcc(gps_ubx.msg_buf) / 10;
 }
 
 static void gps_ubx_parse_nav_sol(void) {
@@ -194,8 +194,8 @@ static void gps_ubx_parse_nav_posllh(void) {
   SetBit(gps_ubx.state.valid_fields, GPS_VALID_HMSL_BIT);
 
   // Copy accuracy information
-  gps_ubx.state.hacc        = UBX_NAV_POSLLH_hAcc(gps_ubx.msg_buf);
-  gps_ubx.state.vacc        = UBX_NAV_POSLLH_vAcc(gps_ubx.msg_buf);
+  gps_ubx.state.hacc        = UBX_NAV_POSLLH_hAcc(gps_ubx.msg_buf) / 10;
+  gps_ubx.state.vacc        = UBX_NAV_POSLLH_vAcc(gps_ubx.msg_buf) / 10;
 }
 
 static void gps_ubx_parse_nav_posutm(void) {
@@ -293,214 +293,25 @@ static void gps_ubx_parse_nav_status(void) {
 }
 
 static void gps_ubx_parse_nav_relposned(void) {
-  /*uint8_t version = UBX_NAV_RELPOSNED_VERSION(gps_ubx.msg_buf);
-  if (version != NAV_RELPOSNED_VERSION)
+  gps_ubx.state.tow   = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
+  uint8_t version     = UBX_NAV_RELPOSNED_version(gps_ubx.msg_buf);
+  if (version != 1)
     return;
 
-  gps_relposned.iTOW          = UBX_NAV_RELPOSNED_ITOW(gps_ubx.msg_buf);
-  gps_relposned.refStationId  = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
-  gps_relposned.relPosN     = UBX_NAV_RELPOSNED_RELPOSN(gps_ubx.msg_buf);
-  gps_relposned.relPosE     = UBX_NAV_RELPOSNED_RELPOSE(gps_ubx.msg_buf);
-  gps_relposned.relPosD     = UBX_NAV_RELPOSNED_RELPOSD(gps_ubx.msg_buf) ;
-  gps_relposned.relPosHPN   = UBX_NAV_RELPOSNED_RELPOSNHP(gps_ubx.msg_buf);
-  gps_relposned.relPosHPE   = UBX_NAV_RELPOSNED_RELPOSEHP(gps_ubx.msg_buf);
-  gps_relposned.relPosHPD   = UBX_NAV_RELPOSNED_RELPOSDHP(gps_ubx.msg_buf);
-  gps_relposned.accN      = UBX_NAV_RELPOSNED_Nacc(gps_ubx.msg_buf);
-  gps_relposned.accE      = UBX_NAV_RELPOSNED_Eacc(gps_ubx.msg_buf);
-  gps_relposned.accD      = UBX_NAV_RELPOSNED_Dacc(gps_ubx.msg_buf);
-  uint8_t flags           = UBX_NAV_RELPOSNED_Flags(gps_ubx.msg_buf);
-  gps_relposned.carrSoln    = RTCMgetbitu(&flags, 3, 2);
-  gps_relposned.relPosValid   = RTCMgetbitu(&flags, 5, 1);
-  gps_relposned.diffSoln    = RTCMgetbitu(&flags, 6, 1);
-  gps_relposned.gnssFixOK   = RTCMgetbitu(&flags, 7, 1);*/
+  uint8_t flags           = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
+  if(flags & 0x4 || flags & 0x40) {
+    gps_ubx.state.relpos_tow    = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.x  = UBX_NAV_RELPOSNED_relPosN(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.y  = UBX_NAV_RELPOSNED_relPosE(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.z  = UBX_NAV_RELPOSNED_relPosD(gps_ubx.msg_buf);
+    SetBit(gps_ubx.state.valid_fields, GPS_VALID_RELPOS_BIT);
+  }
 }
 
 void gps_ubx_read_message(void)
 {
 
   if (gps_ubx.msg_class == UBX_NAV_ID) {
-<<<<<<< HEAD
-    if (gps_ubx.msg_id == UBX_NAV_SOL_ID) {
-      /* get hardware clock ticks */
-      gps_ubx_time_sync.t0_ticks      = sys_time.nb_tick;
-      gps_ubx_time_sync.t0_tow        = UBX_NAV_SOL_ITOW(gps_ubx.msg_buf);
-      gps_ubx_time_sync.t0_tow_frac   = UBX_NAV_SOL_Frac(gps_ubx.msg_buf);
-      gps_ubx.state.tow        = UBX_NAV_SOL_ITOW(gps_ubx.msg_buf);
-      gps_ubx.state.week       = UBX_NAV_SOL_week(gps_ubx.msg_buf);
-#if ! USE_GPS_UBX_RTCM
-      gps_ubx.state.fix        = UBX_NAV_SOL_GPSfix(gps_ubx.msg_buf);
-#endif
-      gps_ubx.state.ecef_pos.x = UBX_NAV_SOL_ECEF_X(gps_ubx.msg_buf);
-      gps_ubx.state.ecef_pos.y = UBX_NAV_SOL_ECEF_Y(gps_ubx.msg_buf);
-      gps_ubx.state.ecef_pos.z = UBX_NAV_SOL_ECEF_Z(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_POS_ECEF_BIT);
-      gps_ubx.state.pacc       = UBX_NAV_SOL_Pacc(gps_ubx.msg_buf);
-      gps_ubx.state.ecef_vel.x = UBX_NAV_SOL_ECEFVX(gps_ubx.msg_buf);
-      gps_ubx.state.ecef_vel.y = UBX_NAV_SOL_ECEFVY(gps_ubx.msg_buf);
-      gps_ubx.state.ecef_vel.z = UBX_NAV_SOL_ECEFVZ(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_VEL_ECEF_BIT);
-      gps_ubx.state.sacc       = UBX_NAV_SOL_Sacc(gps_ubx.msg_buf);
-      gps_ubx.state.pdop       = UBX_NAV_SOL_PDOP(gps_ubx.msg_buf);
-      gps_ubx.state.num_sv     = UBX_NAV_SOL_numSV(gps_ubx.msg_buf);
-#ifdef GPS_LED
-      if (gps_ubx.state.fix == GPS_FIX_3D) {
-        LED_ON(GPS_LED);
-      } else {
-        LED_TOGGLE(GPS_LED);
-      }
-#endif
-    } else if (gps_ubx.msg_id == UBX_NAV_POSLLH_ID) {
-      gps_ubx.state.lla_pos.lat = UBX_NAV_POSLLH_LAT(gps_ubx.msg_buf);
-      gps_ubx.state.lla_pos.lon = UBX_NAV_POSLLH_LON(gps_ubx.msg_buf);
-      gps_ubx.state.lla_pos.alt = UBX_NAV_POSLLH_HEIGHT(gps_ubx.msg_buf);
-      gps_ubx.state.hacc = UBX_NAV_POSLLH_Hacc(gps_ubx.msg_buf);
-      gps_ubx.state.vacc = UBX_NAV_POSLLH_Vacc(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_POS_LLA_BIT);
-      gps_ubx.state.hmsl        = UBX_NAV_POSLLH_HMSL(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_HMSL_BIT);
-    } else if (gps_ubx.msg_id == UBX_NAV_POSUTM_ID) {
-      gps_ubx.state.utm_pos.east = UBX_NAV_POSUTM_EAST(gps_ubx.msg_buf);
-      gps_ubx.state.utm_pos.north = UBX_NAV_POSUTM_NORTH(gps_ubx.msg_buf);
-      uint8_t hem = UBX_NAV_POSUTM_HEM(gps_ubx.msg_buf);
-      if (hem == UTM_HEM_SOUTH) {
-        gps_ubx.state.utm_pos.north -= 1000000000;  /* Subtract false northing: -10000km */
-      }
-      gps_ubx.state.utm_pos.alt = UBX_NAV_POSUTM_ALT(gps_ubx.msg_buf) * 10;
-      gps_ubx.state.utm_pos.zone = UBX_NAV_POSUTM_ZONE(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_POS_UTM_BIT);
-
-      gps_ubx.state.hmsl = gps_ubx.state.utm_pos.alt;
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_HMSL_BIT);
-    } else if (gps_ubx.msg_id == UBX_NAV_VELNED_ID) {
-      gps_ubx.state.speed_3d = UBX_NAV_VELNED_Speed(gps_ubx.msg_buf);
-      gps_ubx.state.gspeed = UBX_NAV_VELNED_GSpeed(gps_ubx.msg_buf);
-      gps_ubx.state.ned_vel.x = UBX_NAV_VELNED_VEL_N(gps_ubx.msg_buf);
-      gps_ubx.state.ned_vel.y = UBX_NAV_VELNED_VEL_E(gps_ubx.msg_buf);
-      gps_ubx.state.ned_vel.z = UBX_NAV_VELNED_VEL_D(gps_ubx.msg_buf);
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_VEL_NED_BIT);
-      // Ublox gives I4 heading in 1e-5 degrees, apparenty from 0 to 360 degrees (not -180 to 180)
-      // I4 max = 2^31 = 214 * 1e5 * 100 < 360 * 1e7: overflow on angles over 214 deg -> casted to -214 deg
-      // solution: First to radians, and then scale to 1e-7 radians
-      // First x 10 for loosing less resolution, then to radians, then multiply x 10 again
-      gps_ubx.state.course = (RadOfDeg(UBX_NAV_VELNED_Heading(gps_ubx.msg_buf) * 10)) * 10;
-      SetBit(gps_ubx.state.valid_fields, GPS_VALID_COURSE_BIT);
-      gps_ubx.state.cacc = (RadOfDeg(UBX_NAV_VELNED_CAcc(gps_ubx.msg_buf) * 10)) * 10;
-      gps_ubx.state.tow = UBX_NAV_VELNED_ITOW(gps_ubx.msg_buf);
-    } else if (gps_ubx.msg_id == UBX_NAV_SVINFO_ID) {
-      gps_ubx.state.nb_channels = Min(UBX_NAV_SVINFO_NCH(gps_ubx.msg_buf), GPS_NB_CHANNELS);
-      uint8_t i;
-      for (i = 0; i < gps_ubx.state.nb_channels; i++) {
-        gps_ubx.state.svinfos[i].svid = UBX_NAV_SVINFO_SVID(gps_ubx.msg_buf, i);
-        gps_ubx.state.svinfos[i].flags = UBX_NAV_SVINFO_Flags(gps_ubx.msg_buf, i);
-        gps_ubx.state.svinfos[i].qi = UBX_NAV_SVINFO_QI(gps_ubx.msg_buf, i);
-        gps_ubx.state.svinfos[i].cno = UBX_NAV_SVINFO_CNO(gps_ubx.msg_buf, i);
-        gps_ubx.state.svinfos[i].elev = UBX_NAV_SVINFO_Elev(gps_ubx.msg_buf, i);
-        gps_ubx.state.svinfos[i].azim = UBX_NAV_SVINFO_Azim(gps_ubx.msg_buf, i);
-      }
-    } else if (gps_ubx.msg_id == UBX_NAV_STATUS_ID) {
-#if !USE_GPS_UBX_RTCM
-      gps_ubx.state.fix = UBX_NAV_STATUS_GPSfix(gps_ubx.msg_buf);
-#endif
-      gps_ubx.status_flags = UBX_NAV_STATUS_Flags(gps_ubx.msg_buf);
-      gps_ubx.sol_flags = UBX_NAV_SOL_Flags(gps_ubx.msg_buf);
-    } else if (gps_ubx.msg_id == UBX_NAV_RELPOSNED_ID) {
-#if USE_GPS_UBX_RTCM
-      uint8_t version = UBX_NAV_RELPOSNED_VERSION(gps_ubx.msg_buf);
-      if (version == NAV_RELPOSNED_VERSION) {
-        gps_relposned.iTOW          = UBX_NAV_RELPOSNED_ITOW(gps_ubx.msg_buf);
-        gps_relposned.refStationId  = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
-        gps_relposned.relPosN     = UBX_NAV_RELPOSNED_RELPOSN(gps_ubx.msg_buf);
-        gps_relposned.relPosE     = UBX_NAV_RELPOSNED_RELPOSE(gps_ubx.msg_buf);
-        gps_relposned.relPosD     = UBX_NAV_RELPOSNED_RELPOSD(gps_ubx.msg_buf) ;
-        gps_relposned.relPosHPN   = UBX_NAV_RELPOSNED_RELPOSNHP(gps_ubx.msg_buf);
-        gps_relposned.relPosHPE   = UBX_NAV_RELPOSNED_RELPOSEHP(gps_ubx.msg_buf);
-        gps_relposned.relPosHPD   = UBX_NAV_RELPOSNED_RELPOSDHP(gps_ubx.msg_buf);
-        gps_relposned.accN      = UBX_NAV_RELPOSNED_Nacc(gps_ubx.msg_buf);
-        gps_relposned.accE      = UBX_NAV_RELPOSNED_Eacc(gps_ubx.msg_buf);
-        gps_relposned.accD      = UBX_NAV_RELPOSNED_Dacc(gps_ubx.msg_buf);
-        uint8_t flags           = UBX_NAV_RELPOSNED_Flags(gps_ubx.msg_buf);
-        gps_relposned.carrSoln    = RTCMgetbitu(&flags, 3, 2);
-        gps_relposned.relPosValid   = RTCMgetbitu(&flags, 5, 1);
-        gps_relposned.diffSoln    = RTCMgetbitu(&flags, 6, 1);
-        gps_relposned.gnssFixOK   = RTCMgetbitu(&flags, 7, 1);
-        if (gps_relposned.gnssFixOK > 0) {
-          if (gps_relposned.diffSoln > 0) {
-            if (gps_relposned.carrSoln == 2) {
-              gps_ubx.state.fix = 5; // rtk
-            } else {
-              gps_ubx.state.fix = 4; // dgnss
-            }
-          } else {
-            gps_ubx.state.fix = 3; // 3D
-          }
-        } else {
-          gps_ubx.state.fix = 0;
-        }
-        DEBUG_PRINT("GNSS Fix OK: %i\tDGNSS: %i\tRTK: %i\trelPosValid: %i\trefStationId: %i\n", gps_relposned.gnssFixOK,
-                    gps_relposned.diffSoln, gps_relposned.carrSoln, gps_relposned.relPosValid, gps_relposned.refStationId);
-      }
-#endif // USE_GPS_UBX_RTCM
-    }
-  } else if (gps_ubx.msg_class == UBX_RXM_ID) {
-    if (gps_ubx.msg_id == UBX_RXM_RAW_ID) {
-#if USE_GPS_UBX_RXM_RAW
-      gps_ubx_raw.iTOW = UBX_RXM_RAW_iTOW(gps_ubx.msg_buf);
-      gps_ubx_raw.week = UBX_RXM_RAW_week(gps_ubx.msg_buf);
-      gps_ubx_raw.numSV = UBX_RXM_RAW_numSV(gps_ubx.msg_buf);
-      uint8_t i;
-      uint8_t max_SV = Min(gps_ubx_raw.numSV, GPS_UBX_NB_CHANNELS);
-      for (i = 0; i < max_SV; i++) {
-        gps_ubx_raw.measures[i].cpMes = UBX_RXM_RAW_cpMes(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].prMes = UBX_RXM_RAW_prMes(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].doMes = UBX_RXM_RAW_doMes(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].sv = UBX_RXM_RAW_sv(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].mesQI = UBX_RXM_RAW_mesQI(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].cno = UBX_RXM_RAW_cno(gps_ubx.msg_buf, i);
-        gps_ubx_raw.measures[i].lli = UBX_RXM_RAW_lli(gps_ubx.msg_buf, i);
-      }
-#endif // USE_GPS_UBX_RXM_RAW
-    } else if (gps_ubx.msg_id == UBX_RXM_RTCM_ID) {
-#if USE_GPS_UBX_RTCM
-      uint8_t version   = UBX_RXM_RTCM_version(gps_ubx.msg_buf);
-      if (version == RXM_RTCM_VERSION) {
-        //      uint8_t flags     = UBX_RXM_RTCM_flags(gps_ubx.msg_buf);
-        //      bool crcFailed    = RTCMgetbitu(&flags, 7, 1);
-        //      uint16_t refStation = UBX_RXM_RTCM_refStation(gps_ubx.msg_buf);
-        //      uint16_t msgType  = UBX_RXM_RTCM_msgType(gps_ubx.msg_buf);
-        //      DEBUG_PRINT("Message %i from refStation %i processed (CRCfailed: %i)\n", msgType, refStation, crcFailed);
-
-        rtcm_man.RefStation  = UBX_RXM_RTCM_refStation(gps_ubx.msg_buf);
-        rtcm_man.MsgType     = UBX_RXM_RTCM_msgType(gps_ubx.msg_buf);
-        uint8_t flags     = UBX_RXM_RTCM_flags(gps_ubx.msg_buf);
-        bool crcFailed    = RTCMgetbitu(&flags, 7, 1);
-        switch (rtcm_man.MsgType) {
-          case 1005:
-            rtcm_man.Cnt105 += 1;
-            rtcm_man.Crc105 += crcFailed;
-            break;
-          case 1077:
-            rtcm_man.Cnt177 += 1;
-            rtcm_man.Crc177 += crcFailed;
-            break;
-          case 1087:
-            rtcm_man.Cnt187 += 1;
-            rtcm_man.Crc187 += crcFailed;
-            break;
-          case 1230:
-        	rtcm_man.Cnt187 += 1;
-        	rtcm_man.Crc187 += crcFailed;
-          case 4072:
-        	rtcm_man.Cnt187 += 1;
-        	rtcm_man.Crc187 += crcFailed;
-          default:
-        	printf("Unknown case for rtcm message parsing %i in gps_ubx\n\n", rtcm_man.MsgType);
-            break;
-        }
-      } else {
-        DEBUG_PRINT("Unknown RXM_RTCM version: %i\n", version);
-      }
-#endif // USE_GPS_UBX_RTCM
-=======
     switch(gps_ubx.msg_id) {
       case UBX_NAV_POSECEF_ID:
         gps_ubx_parse_nav_posecef();
@@ -535,7 +346,6 @@ void gps_ubx_read_message(void)
       case UBX_NAV_RELPOSNED_ID:
         gps_ubx_parse_nav_relposned();
         break;
->>>>>>> 277df914e... [gps] Update ublox driver and RTCM support
     }
   }
 }
@@ -762,14 +572,9 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
                 case RTCM3_MSG_1005 : break;
                 case RTCM3_MSG_1077 : break;
                 case RTCM3_MSG_1087 : break;
-<<<<<<< HEAD
-                case RTCM3_MSG_1230 : break;
-                case RTCM3_MSG_4072 : break;
-=======
                 case RTCM3_MSG_1097 : break;
                 case RTCM3_MSG_1127 : break;
                 case RTCM3_MSG_1230 : break;
->>>>>>> 277df914e... [gps] Update ublox driver and RTCM support
                 default: DEBUG_PRINT("Unknown type: %i", packet_id); break;
               }
             } else {
@@ -793,4 +598,3 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
   }
 }
 #endif
-

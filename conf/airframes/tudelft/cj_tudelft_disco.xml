@@ -35,7 +35,7 @@
       
       
       <!-- Option 1 EKF2  NOT WORKING YET --> 
-      <module name="ins" type="ekf2"/> 
+      <module name="ins" type="alt_float"/> 
       
       <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro -->
       <!-- <module name="ins" type="alt_float"/> -->
@@ -200,8 +200,8 @@
     <define name="H_Y" value=" 0.0099463"/>
     <define name="H_Z" value="0.921915"/>
     
-    <!-- Values for Den Helder NL -->
-   <!-- <define name="H_X" value="0.377011"/>
+    <!-- Values for Den Helder NL
+    <define name="H_X" value="0.377011"/>
     <define name="H_Y" value="0.0102128"/>
     <define name="H_Z" value="0.926152"/> -->
     

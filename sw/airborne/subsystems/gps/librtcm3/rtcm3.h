@@ -37,12 +37,10 @@
 #define GOT_PAYLOAD     7
 #define GOT_CHECKSUM1   8
 
-#define UBX_PREAMBLE1       0xB5     // This bytes gives the start of a UBX message   // Sync 1
-#define UBX_PREAMBLE2       0x62     // This bytes gives the start of a UBX message   // Sync 2
+#define UBX_PREAMBLE1       0xB5                // Sync 1
+#define UBX_PREAMBLE2       0x62                // Sync 2
 #define UBX_NAV_SVIN        0x3B
 #define GPS_UBX_MAX_PAYLOAD 255
-
-#define UBX_RTCM3_PVT 0xF5FE  // first byte for ClassID second byte ID
 
 #define GPS_UBX_ERR_NONE         0
 #define GPS_UBX_ERR_OVERRUN      1
@@ -332,16 +330,11 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
       s->state    = READ_LENGTH;
       break;
     case READ_LENGTH:
-      rd_msg_len  = (rd_msg_len1 << 8) + ((int) buff);
+      rd_msg_len  = (rd_msg_len1 << 8) + ((int) buff) ;
       s->state    = READ_MESSAGE;
       break;
     case READ_MESSAGE:
-<<<<<<< HEAD
-      if (byteIndex == (rd_msg_len - 1) || rd_msg_len == 0) {
-    	  s->state = READ_CHECKSUM; }
-=======
       if (byteIndex >= (rd_msg_len - 1)) { s->state = READ_CHECKSUM; }
->>>>>>> 277df914e... [gps] Update ublox driver and RTCM support
       byteIndex++;
       break;
     case READ_CHECKSUM:
@@ -351,18 +344,6 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
         printf("\n\n");
 #endif
         s->state = UNINIT;
-<<<<<<< HEAD
-
-        // Check what message type it is
-        int rcv_msg_type = RTCMgetbitu(s->msg_buff, 24 + 0, 12);
-        switch (rcv_msg_type) {
-          case 1005: s->msg_type = RTCM3_MSG_1005; break;
-          case 1077: s->msg_type = RTCM3_MSG_1077; break;
-          case 1087: s->msg_type = RTCM3_MSG_1087; break;
-          case 1230: s->msg_type = RTCM3_MSG_1230; break;
-          case 4072: s->msg_type = RTCM3_MSG_4072; break;
-          default  : printf("Unknown message type %d\n", rcv_msg_type); return RTCM_OK_CALLBACK_UNDEFINED;
-=======
         s->n_read++;
         s->msg_len   = s->n_read;
         s->msg_class = NO_CLASS;
@@ -381,7 +362,6 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
           case 1127: s->msg_type = RTCM3_MSG_1127; break;
           case 1230: s->msg_type = RTCM3_MSG_1230; break;
           default  : printf("Unknown message type %d\n", RTCMgetbitu(s->msg_buff, 24 + 0, 12)); return RTCM_OK_CALLBACK_UNDEFINED;
->>>>>>> 277df914e... [gps] Update ublox driver and RTCM support
         }
 #ifdef NO_CALLBACK
         return RTCM_OK_CALLBACK_EXECUTED;
