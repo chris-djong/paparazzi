@@ -70,8 +70,13 @@ uint32_t serial_baud  = B115200;
 uint32_t packet_size  = 100;    // 802.15.4 (Series 1) XBee 100 Bytes payload size
 uint32_t ivy_size     = 0;
 
+// Allocate memory for ac_ids up to 255
+#define IVY_MSG_HEAD "0 GPS_INJECT 1"
+// char *ivy_msg_head = (char*)malloc(16 * sizeof(char));
+// sprintf(ivy_msg_head, "0 GPS_INJECT %i", ac_id);
+
+
 #define PACKET_MAX_SIZE	512
-#define IVY_MSG_HEAD    "0 GPS_INJECT 17"
 
 /** Debugging options */
 bool verbose          = FALSE;
@@ -97,13 +102,13 @@ static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
 
   while (offset < len) { // fragment if necessary
 
-    snprintf(gps_packet, ivy_size, IVY_MSG_HEAD" %d %d", packet_id, msg[offset]);
+    snprintf(gps_packet, ivy_size, IVY_MSG_HEAD" %d %02X", packet_id, msg[offset]);
 
     cpt = 1;
     // max cpt = packet_size - array size (1 byte) - rtcm type (1 byte) - pprzlink header (4 bytes in v2)
     //         = packet_size - 6
     while ((cpt < (packet_size - 6)) && (cpt < (len-offset))) {
-      snprintf(number, 5, ",%d", msg[cpt+offset]); // coma + (000..255) + '\0' = 5 chars
+      snprintf(number, 5, ",%02X", msg[cpt+offset]); // coma + (000..255) + '\0' = 5 chars
       strcat(gps_packet, number);
       cpt++;
     }
@@ -396,6 +401,7 @@ int main(int argc, char **argv)
         break;
       case 'i':
         ac_id = atoi(optarg);
+        //sprintf(ivy_msg_head, "0 GPS_INJECT %i", ac_id);
         break;
       case '?':
         if (optopt == 'p' || optopt == 'd' || optopt == 'b' || optopt == 'i') {

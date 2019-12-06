@@ -74,6 +74,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
       /* parse datalink messages coming from ground station */
       switch (msg_id) {
         case  DL_PING: {
+        	printf("Parsing DL_PING\n");
 #if PPRZLINK_DEFAULT_VER == 2
           // Reply to the sender of the message
           struct pprzlink_msg msg;
@@ -90,6 +91,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 
         case DL_SETTING : {
+        	printf("Parsing DL_SETTING\n");
           if (DL_SETTING_ac_id(buf) != AC_ID) { break; }
           uint8_t i = DL_SETTING_index(buf);
           float var = DL_SETTING_value(buf);
@@ -110,6 +112,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 
         case DL_GET_SETTING : {
+        	printf("Parsing DL_GET-sETTING\n");
           if (DL_GET_SETTING_ac_id(buf) != AC_ID) { break; }
           uint8_t i = DL_GET_SETTING_index(buf);
           float val = settings_get_value(i);
@@ -130,6 +133,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
 
 #ifdef RADIO_CONTROL_TYPE_DATALINK
         case DL_RC_3CH :
+        	printf("Parsing DL_RC_3CH\n");
 #ifdef RADIO_CONTROL_DATALINK_LED
           LED_TOGGLE(RADIO_CONTROL_DATALINK_LED);
 #endif
@@ -151,9 +155,10 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
           }
           break;
 #endif // RADIO_CONTROL_TYPE_DATALINK
+#if USE_GPS // TRUE, verified by printing
+        case DL_GPS_INJECT : {     // DL_GPS_INJECT = 153
+        	printf("GPS INJECT ARRIVING packet id = %d\n", DL_GPS_INJECT_packet_id(buf));
 
-#if USE_GPS
-        case DL_GPS_INJECT : {
           // Check if the GPS is for this AC
           if (DL_GPS_INJECT_ac_id(buf) != AC_ID) { break; }
 
@@ -165,8 +170,9 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
           );
         }
         break;
-#if USE_GPS_UBX_RTCM
-        case DL_RTCM_INJECT : {
+#if USE_GPS_UBX_RTCM // True verified by printing
+        case DL_RTCM_INJECT : {   // DL_RTCM_INJECT = 157
+          printf("DL_RTCM_INJECT message arriving\n");
           // GPS parse data
           gps_inject_data(DL_RTCM_INJECT_packet_id(buf),
                           DL_RTCM_INJECT_data_length(buf),

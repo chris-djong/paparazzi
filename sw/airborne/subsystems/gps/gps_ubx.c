@@ -518,16 +518,27 @@ void gps_ubx_msg(void)
 /*
  * Write bytes to the ublox UART connection
  * This is a wrapper functions used in the librtcm library
- */
+*/
+
+// seee ubx send bytes linkdevicde *dev uint8t len uint8t *bytes  as well ---------------------------------------------------
+// send BUFFER TO FILE USING DEVICE PRIJNT see how to do that on linux ------------------------------------------------------
+// upload paparazzi --> kill process --> try with ucenter whether fix is possible -------------------------------------------
 void gps_ublox_write(struct link_device *dev, uint8_t *buff, uint32_t n);
 void gps_ublox_write(struct link_device *dev, uint8_t *buff, uint32_t n)
 {
-  uint32_t i = 0;
-  for (i = 0; i < n; i++) {
-    dev->put_byte(dev->periph, 0, buff[i]);
-  }
-  dev->send_message(dev->periph, 0);
-  return;
+ uint32_t i = 0;
+ // Added for debugging by Chris
+ FILE *fptr;
+ // use appropriate location if you are using MacOS or Linux
+ fptr = fopen("/data/ftp/internal_000/paparazzi/binary_file_gps", "ab");
+ for (i = 0; i < n; i++) {
+   dev->put_byte(dev->periph, 0, buff[i]);
+   fprintf(fptr,"%d", buff[i]);
+ }
+
+ fclose(fptr);
+ dev->send_message(dev->periph, 0);
+ return;
 }
 
 /**
@@ -537,7 +548,6 @@ void gps_ublox_write(struct link_device *dev, uint8_t *buff, uint32_t n)
 void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
 {
   uint8_t i;
-
   // nothing to do
   if (length == 0) {
     return;
@@ -554,16 +564,18 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
   for (i = 0; i < length; i++) {
     if (rtcm.nbyte == 0) {
       // wait for frame start byte
-      if (data[i] == RTCM3_PREAMBLE) {
+      if (data[i] == RTCM3_PREAMBLE) { // this works correctly, verified by printing
         rtcm.buff[rtcm.nbyte++] = data[i];
       }
     } else {
       // fill buffer
+      // this works correctly, verified by printing
       if (rtcm.nbyte < INJECT_BUFF_SIZE) {
         rtcm.buff[rtcm.nbyte++] = data[i];
         if (rtcm.nbyte == 3) {
           // extract length
           rtcm.len = RTCMgetbitu(rtcm.buff, 14, 10) + 3;
+          // this works correctly, verified by printing
         } else {
           // wait complete frame
           if (rtcm.nbyte == rtcm.len + 3) {
@@ -571,9 +583,11 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
             unsigned int crc1 = crc24q(rtcm.buff, rtcm.len);
             unsigned int crc2 = RTCMgetbitu(rtcm.buff, rtcm.len * 8, 24);
 
+
             if (crc1 == crc2)  {
               // write to GPS
               gps_ublox_write(&(UBX_GPS_LINK).device, rtcm.buff, rtcm.len + 3);
+              // this works correctly, verified by printing
               switch (packet_id) {
                 case RTCM3_MSG_4072 : break;
                 case RTCM3_MSG_1005 : break;
