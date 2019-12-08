@@ -70,73 +70,25 @@
 
 struct gps_data_t *gpsdata;
 gboolean verbose;
-gboolean simulate;
 char* server;
 char* port;
 char* ivy_bus;
-char* ac;
-char* wp;
-
-// Parameters for simulation
-float sim_lon = 4.44938;
-float sim_lat = 52.89775888;
-float sim_lat_speed = -200*1e-8;
-float sim_lon_speed = -200*1e-8;
-float sim_course = 30;
-float sim_speed = 1;
-float sim_altitude = 0;
-float sim_climb = 0;
-int sim_time = 0;
-
-int change_state_at = 50000;
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
                        size_t len)
 {
-
-	if (simulate){
-		// Increase time step
-	    sim_time += 1;
-	    if (sim_time%(4*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	    	sim_lon_speed = -200*1e-8;
-	    } else if (sim_time%(3*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	    	sim_lon_speed = 200*1e-8;
-	    } else if (sim_time%(2*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	        sim_lon_speed = -200*1e-8;
-	    } else if (sim_time%(change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	        sim_lon_speed = 200*1e-8;
-	    }
-	    // Simulate heading change
-	    sim_lat += sim_lat_speed;
-	    sim_lon += sim_lon_speed;
-
-		gpsdata->fix.latitude = sim_lat;
-		gpsdata->fix.longitude = sim_lon;
-
-	    gpsdata->fix.track = sim_course;
-	    gpsdata->fix.speed = sim_speed;
-	    gpsdata->fix.altitude = sim_altitude;
-	    gpsdata->fix.climb = sim_climb;
-	    gpsdata->fix.time = sim_time;
-	    gpsdata->fix.mode = 3;
-	}
-
     static double fix_time = 0;
     double fix_track = 0;
     double fix_speed = 0;
     double fix_altitude = 0;
     double fix_climb = 0;
-    // Only anlyse data if we have a fix and did not transmit this timestep already 
+
     if ((isnan(gpsdata->fix.latitude) == 0) &&
-       (isnan(gpsdata->fix.longitude) == 0) &&
-       (isnan(gpsdata->fix.time) == 0) &&
-       (gpsdata->fix.mode >= MODE_2D) &&
-       (gpsdata->fix.time != fix_time))
+        (isnan(gpsdata->fix.longitude) == 0) &&
+        (isnan(gpsdata->fix.time) == 0) &&
+        (gpsdata->fix.mode >= MODE_2D) &&
+        (gpsdata->fix.time != fix_time))
     {
         if (!isnan(gpsdata->fix.track))
             fix_track = gpsdata->fix.track;
@@ -155,10 +107,9 @@ static void update_gps(struct gps_data_t *gpsdata,
             printf("sending gps info viy Ivy: lat %g, lon %g, speed %g, course %g, alt %g, climb %g\n",
                    gpsdata->fix.latitude, gpsdata->fix.longitude, fix_speed, fix_track, fix_altitude, fix_climb);
 
-        // Send data used for displaying the position in GCS
         IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",
-                MSG_DEST, // destination of receiver
-                MSG_NAME, // destination name
+                MSG_DEST,
+                MSG_NAME,
                 MSG_ID, // ac_id
                 0.0, // roll,
                 0.0, // pitch,
@@ -173,20 +124,6 @@ static void update_gps(struct gps_data_t *gpsdata,
                 gpsdata->fix.time,
                 0, // itow
                 0.0); // airspeed
- 
-        // Send GROUND_GPS message for data 
-        if(strcmp(ac, "NONE") != 0) {
-            IvySendMsg("%s GROUND_GPS %s %d %d %d %f %f %f %f %d", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), fix_speed, fix_climb, fix_track, gpsdata->fix.time, gpsdata->fix.mode);
-            if (verbose)
-                printf("sending GROUND_GPS for aircraft %s\n", ac);
-        }
-
-        // Move WP in case we know which waypoint and we know what to do with the data
-        if(strcmp(ac, "NONE") != 0 && strcmp(wp, "NONE") != 0) {
-		    IvySendMsg("%s MOVE_WP %s %s %d %d %d", "0", wp, ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(20. * 1000));
-            if (verbose)
-                printf("sending waypoint %s for aircraft %s\n", wp, ac);
-        }
 
         fix_time = gpsdata->fix.time;
     }
@@ -200,17 +137,12 @@ static void update_gps(struct gps_data_t *gpsdata,
 
 static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
 {
-    if (simulate){
-    	update_gps(gpsdata, NULL, 0);
-    }
-    else{
-		if (gps_waiting(gpsdata, 500)) {
-			if (gps_read (gpsdata) == -1) {
-				perror("gps read error");
-			} else {
-				update_gps(gpsdata, NULL, 0);
-			}
-		} 
+    if (gps_waiting (gpsdata, 500)) {
+        if (gps_read (gpsdata) == -1) {
+            perror("gps read error");
+        } else {
+            update_gps(gpsdata, NULL, 0);
+        }
     }
     return TRUE;
 }
@@ -218,11 +150,8 @@ static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
 gboolean parse_args(int argc, char** argv)
 {
     verbose = FALSE;
-    simulate = FALSE;
     server = "localhost";
     port = DEFAULT_GPSD_PORT;
-    ac = "NONE";
-    wp = "NONE";
 #ifdef __APPLE__
     ivy_bus = "224.255.255.255";
 #else
@@ -234,12 +163,9 @@ gboolean parse_args(int argc, char** argv)
         " Options :\n"
         "   -h --help                              Display this help\n"
         "   -v --verbose                           Print verbose information\n"
-        "   -s --simulate                          Simulate GPS Position\n"
         "   --server <gpsd server>                 e.g. localhost\n"
         "   --port <gpsd port>                     e.g. 2947\n"
-        "   --ivy_bus <ivy bus>                    e.g. 127.255.255.255\n"
-        "   --ac <ac_id>                           e.g. 17\n"
-        "   --wp <wp_id>                           e.g. 2\n";
+        "   --ivy_bus <ivy bus>                    e.g. 127.255.255.255\n";
 
     while (1) {
 
@@ -247,11 +173,8 @@ gboolean parse_args(int argc, char** argv)
             {"ivy_bus", 1, NULL, 0},
             {"server", 1, NULL, 0},
             {"port", 1, NULL, 0},
-            {"ac", 1, NULL, 0},
-            {"wp", 1, NULL, 0},
             {"help", 0, NULL, 'h'},
             {"verbose", 0, NULL, 'v'},
-			{"simulate", 0, NULL, 's'},
             {0, 0, 0, 0}
         };
         int option_index = 0;
@@ -269,10 +192,6 @@ gboolean parse_args(int argc, char** argv)
                         server = strdup(optarg); break;
                     case 2:
                         port = strdup(optarg); break;
-                    case 3:
-                        ac = strdup(optarg); break;
-                    case 4:
-                        wp = strdup(optarg); break;
                     default:
                         break;
                 }
@@ -281,10 +200,6 @@ gboolean parse_args(int argc, char** argv)
             case 'v':
                 verbose = TRUE;
                 break;
-
-            case 's':
-            	simulate = TRUE;
-            	break;
 
             case 'h':
                 fprintf(stderr, usage, argv[0]);
@@ -302,6 +217,7 @@ gboolean parse_args(int argc, char** argv)
 int main(int argc, char** argv)
 {
     int ret = 0;
+
     if (!parse_args(argc, argv))
         return 1;
 
@@ -317,7 +233,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    gps_stream(gpsdata, WATCH_ENABLE | WATCH_JSON, NULL);
+    gps_stream(gpsdata, WATCH_ENABLE, NULL);
 
     IvyInit ("GPSd2Ivy", "GPSd2Ivy READY", NULL, NULL, NULL, NULL);
     IvyStart(ivy_bus);

@@ -90,7 +90,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   if (!ins_gp.ltp_initialized) {
     ins_reset_local_origin();
   }
-  printf("Position has been set in gps thingy\n");
+
   /* simply scale and copy pos/speed from gps */
   struct NedCoor_i gps_pos_cm_ned;
   ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_gp.ltp_def, &gps_s->ecef_pos);

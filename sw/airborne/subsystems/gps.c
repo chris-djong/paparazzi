@@ -45,7 +45,6 @@
 #include "math/pprz_geodetic_wgs84.h"
 #include "math/pprz_geodetic.h"
 
-
 #ifndef PRIMARY_GPS
 #error "PRIMARY_GPS not set!"
 #else
@@ -68,7 +67,10 @@ PRINT_CONFIG_VAR(SECONDARY_GPS)
 #define TIME_TO_SWITCH 5000 //ten s in ms
 
 struct GpsState gps;
+
 struct GpsTimeSync gps_time_sync;
+struct GpsRelposNED gps_relposned;
+struct RtcmMan rtcm_man;
 
 #ifdef SECONDARY_GPS
 static uint8_t current_gps_id = GpsId(PRIMARY_GPS);
@@ -122,7 +124,6 @@ static inline void send_svinfo_available(struct transport_tx *trans, struct link
 
 static void send_gps(struct transport_tx *trans, struct link_device *dev)
 {
-
   uint8_t zero = 0;
   int16_t climb = -gps.ned_vel.z;
   int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
@@ -137,7 +138,6 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
   msg.component_id = 0;
   pprzlink_msg_send_GPS(&msg,
 #else
-
   pprz_msg_send_GPS(trans, dev, AC_ID,
 #endif
                     &gps.fix,
@@ -146,6 +146,31 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
                     &gps.week, &gps.tow, &utm.zone, &zero);
   // send SVINFO for available satellites that have new data
   send_svinfo_available(trans, dev);
+}
+
+static void send_gps_rtk(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_GPS_RTK(trans, dev, AC_ID,
+                        &gps_relposned.iTOW,
+                        &gps_relposned.refStationId,
+                        &gps_relposned.relPosN, &gps_relposned.relPosE, &gps_relposned.relPosD,
+                        &gps_relposned.relPosHPN, &gps_relposned.relPosHPE, &gps_relposned.relPosHPD,
+                        &gps_relposned.accN, &gps_relposned.accE, &gps_relposned.accD,
+                        &gps_relposned.carrSoln,
+                        &gps_relposned.relPosValid,
+                        &gps_relposned.diffSoln,
+                        &gps_relposned.gnssFixOK);
+}
+
+static void send_gps_rxmrtcm(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_GPS_RXMRTCM(trans, dev, AC_ID,
+                            &rtcm_man.Cnt105,
+                            &rtcm_man.Cnt177,
+                            &rtcm_man.Cnt187,
+                            &rtcm_man.Crc105,
+                            &rtcm_man.Crc177,
+                            &rtcm_man.Crc187);
 }
 
 static void send_gps_int(struct transport_tx *trans, struct link_device *dev)
@@ -314,7 +339,18 @@ void gps_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_LLA, send_gps_lla);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_SOL, send_gps_sol);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SVINFO, send_svinfo);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_RTK, send_gps_rtk);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_RXMRTCM, send_gps_rxmrtcm);
 #endif
+
+  // Initializing counter variables to count the number of Rtcm msgs in the input stream(for each msg type)
+  rtcm_man.Cnt105 = 0;
+  rtcm_man.Cnt177 = 0;
+  rtcm_man.Cnt187 = 0;
+  // Initializing counter variables to count the number of messages that failed Crc Check
+  rtcm_man.Crc105 = 0;
+  rtcm_man.Crc177 = 0;
+  rtcm_man.Crc187 = 0;
 }
 
 uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
@@ -343,6 +379,7 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
  * Default parser for GPS injected data
  */
 void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t length __attribute__((unused)), uint8_t *data __attribute__((unused))){
+
 }
 
 /**
@@ -351,26 +388,27 @@ void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t len
 #include "state.h"
 struct UtmCoor_f utm_float_from_gps(struct GpsState *gps_s, uint8_t zone)
 {
-
   struct UtmCoor_f utm = {.east = 0., .north=0., .alt=0., .zone=zone};
+
   if (bit_is_set(gps_s->valid_fields, GPS_VALID_POS_UTM_BIT)) {
-	/* A real UTM position is available, use the correct zone */
-	UTM_FLOAT_OF_BFP(utm, gps_s->utm_pos);
+    /* A real UTM position is available, use the correct zone */
+    UTM_FLOAT_OF_BFP(utm, gps_s->utm_pos);
   } else if (bit_is_set(gps_s->valid_fields, GPS_VALID_POS_LLA_BIT))
   {
-	/* Recompute UTM coordinates in this zone */
-	struct UtmCoor_i utm_i;
-	utm_i.zone = zone;
-	utm_of_lla_i(&utm_i, &gps_s->lla_pos);
-	UTM_FLOAT_OF_BFP(utm, utm_i);
+    /* Recompute UTM coordinates in this zone */
+    struct UtmCoor_i utm_i;
+    utm_i.zone = zone;
+    utm_of_lla_i(&utm_i, &gps_s->lla_pos);
+    UTM_FLOAT_OF_BFP(utm, utm_i);
 
-	/* set utm.alt in hsml */
-	if (bit_is_set(gps_s->valid_fields, GPS_VALID_HMSL_BIT)) {
-	  utm.alt = gps_s->hmsl/1000.;
-	} else {
-	  utm.alt = wgs84_ellipsoid_to_geoid_i(gps_s->lla_pos.lat, gps_s->lla_pos.lon)/1000.;
-	}
+    /* set utm.alt in hsml */
+    if (bit_is_set(gps_s->valid_fields, GPS_VALID_HMSL_BIT)) {
+      utm.alt = gps_s->hmsl/1000.;
+    } else {
+      utm.alt = wgs84_ellipsoid_to_geoid_i(gps_s->lla_pos.lat, gps_s->lla_pos.lon)/1000.;
+    }
   }
+
   return utm;
 }
 

@@ -39,25 +39,21 @@
 #include <Ivy/ivyglibloop.h>
 #include <rtcm3.h>              // Used to decode RTCM3 messages
 #include <CRC24Q.h>             // Used to verify CRC checks
+#include <time.h>
 #include <math/pprz_geodetic_float.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <termios.h>
 
 #include "std.h"
+#include "serial_port.h"
 
 /** Used variables **/
-int serial_fd;
+struct SerialPort *serial_port;
 
 /* ubx structure definitions*/
 msg_state_t msg_state;
-rtcm3_msg_callbacks_node_t rtcm3_4072_node;
 rtcm3_msg_callbacks_node_t rtcm3_1005_node;
 rtcm3_msg_callbacks_node_t rtcm3_1077_node;
 rtcm3_msg_callbacks_node_t rtcm3_1087_node;
-rtcm3_msg_callbacks_node_t rtcm3_1097_node;
-rtcm3_msg_callbacks_node_t rtcm3_1127_node;
+rtcm3_msg_callbacks_node_t rtcm3_4072_node;
 rtcm3_msg_callbacks_node_t rtcm3_1230_node;
 
 rtcm3_msg_callbacks_node_t ubx_nav_svin_node;
@@ -70,13 +66,8 @@ uint32_t serial_baud  = B115200;
 uint32_t packet_size  = 100;    // 802.15.4 (Series 1) XBee 100 Bytes payload size
 uint32_t ivy_size     = 0;
 
-// Allocate memory for ac_ids up to 255
-#define IVY_MSG_HEAD "0 GPS_INJECT 1"
-// char *ivy_msg_head = (char*)malloc(16 * sizeof(char));
-// sprintf(ivy_msg_head, "0 GPS_INJECT %i", ac_id);
-
-
 #define PACKET_MAX_SIZE	512
+#define IVY_MSG_HEAD    "rtcm2ivy RTCM_INJECT"
 
 /** Debugging options */
 bool verbose          = FALSE;
@@ -93,6 +84,22 @@ char *ivy_bus                   = "224.255.255.255";
 char *ivy_bus                   = "127.255.255.255"; // 192.168.1.255   127.255.255.255
 #endif
 
+/*
+ * Read bytes from the uBlox UART connection
+ * This is a wrapper functions used in the librtcm3 library
+ */
+static uint32_t uart_read(unsigned char(*buff)[], uint32_t n)  //, void *context __attribute__((unused))
+{
+  int ret = read(serial_port->fd, buff, n);
+  if (ret > 0) {
+    return ret;
+  } else {
+    return 0;
+  }
+}
+
+static struct timespec wait = { .tv_sec = 0, .tv_nsec = 50000000 }; // 0.05 seconds wait between messages to awoid saturation
+
 static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
 {
   char number[5];
@@ -102,46 +109,29 @@ static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
 
   while (offset < len) { // fragment if necessary
 
-    snprintf(gps_packet, ivy_size, IVY_MSG_HEAD" %d %02X", packet_id, msg[offset]);
+    snprintf(gps_packet, ivy_size, IVY_MSG_HEAD" %d %d", packet_id, msg[offset]);
 
     cpt = 1;
     // max cpt = packet_size - array size (1 byte) - rtcm type (1 byte) - pprzlink header (4 bytes in v2)
     //         = packet_size - 6
     while ((cpt < (packet_size - 6)) && (cpt < (len-offset))) {
-      snprintf(number, 5, ",%02X", msg[cpt+offset]); // coma + (000..255) + '\0' = 5 chars
+      snprintf(number, 5, ",%d", msg[cpt+offset]); // coma + (000..255) + '\0' = 5 chars
       strcat(gps_packet, number);
       cpt++;
     }
 
+    nanosleep(&wait, NULL);
     printf_debug("%s\n\n", gps_packet);
     IvySendMsg("%s", gps_packet);
     offset += (packet_size-6);
-    usleep(50000);
 
     if (logger == TRUE) {
       pFile = fopen("./RTCM3_log.txt", "a");
       fprintf(pFile, "%s\n", gps_packet);
       fclose(pFile);
     }
-    printf("Ivy send: %s\n", gps_packet);
+    printf_debug("Ivy send: %s\n", gps_packet);
   }
-}
-
-/*
- * Callback for the 4072 message to send it trough RTCM_INJECT
- */
-static void rtcm3_4072_callback(uint8_t len, uint8_t msg[])
-{
-  if (len > 0) {
-    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
-      ivy_send_message(RTCM3_MSG_4072, len, msg);
-      msg_cnt++;
-    } else {
-      ivy_send_message(RTCM3_MSG_4072, len, msg);
-      printf("Skipping 4072 message (CRC check failed)\n");
-    }
-  }
-  printf_debug("Parsed 4072 callback\n");
 }
 
 /*
@@ -166,7 +156,7 @@ static void rtcm3_1005_callback(uint8_t len, uint8_t msg[])
       posEcef.y      = RTCMgetbits_38(msg, 24 + 74) * 0.0001;
       posEcef.z      = RTCMgetbits_38(msg, 24 + 114) * 0.0001;
       lla_of_ecef_f(&posLla, &posEcef);
-      // printf_debug("Lat: %f, Lon: %f, Alt: %f\n", posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, posLla.alt);
+      printf_debug("Lat: %f, Lon: %f, Alt: %f\n", posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, posLla.alt);
       // Send spoof gpsd message to GCS to plot groundstation position
       IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f", "ground", "FLIGHT_PARAM", "GCS", 0.0, 0.0, 0.0,
                  posLla.lat / (2 * M_PI) * 360, posLla.lon / (2 * M_PI) * 360, 0.0, 0.0, posLla.alt, 0.0, 0.0, 0.0, 0,  0.0);
@@ -207,47 +197,31 @@ static void rtcm3_1087_callback(uint8_t len, uint8_t msg[])
       ivy_send_message(RTCM3_MSG_1087, len, msg);
       msg_cnt++;
     } else {
-      printf("Skipping 1087 message (CRC check failed)\n");
+     printf("Skipping 1087 message (CRC check failed)\n");
     }
   }
   printf_debug("Parsed 1087 callback\n");
 }
 
 /*
- * Callback for the 1097 message to send it trough RTCM_INJECT
+ * Callback for the 4072 message to send it trough RTCM_INJECT
  */
-static void rtcm3_1097_callback(uint8_t len, uint8_t msg[])
+static void rtcm3_4072_callback(uint8_t len, uint8_t msg[])
 {
   if (len > 0) {
     if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
-      ivy_send_message(RTCM3_MSG_1097, len, msg);
+      ivy_send_message(RTCM3_MSG_4072, len, msg);
       msg_cnt++;
     } else {
-      printf("Skipping 1097 message (CRC check failed)\n");
+      ivy_send_message(RTCM3_MSG_4072, len, msg);
+      printf("Skipping 4072 message (CRC check failed)\n");
     }
   }
-  printf_debug("Parsed 1097 callback\n");
+  printf_debug("Parsed 4072 callback\n");
 }
 
 /*
- * Callback for the 1127 message to send it trough RTCM_INJECT
- */
-static void rtcm3_1127_callback(uint8_t len, uint8_t msg[])
-{
-  if (len > 0) {
-    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
-      ivy_send_message(RTCM3_MSG_1127, len, msg);
-      msg_cnt++;
-    } else {
-      ivy_send_message(RTCM3_MSG_1127, len, msg);
-      printf("Skipping 1127 message (CRC check failed)\n");
-    }
-  }
-  printf_debug("Parsed 1127 callback\n");
-}
-
-/*
- * Callback for the 1230 message to send it trough RTCM_INJECT
+ * Callback for the 4072 message to send it trough RTCM_INJECT
  */
 static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
 {
@@ -263,51 +237,41 @@ static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
   printf_debug("Parsed 1230 callback\n");
 }
 
+
 /*
  * Callback for UBX survey-in message
  */
-// static void ubx_navsvin_callback(uint8_t len, uint8_t msg[])
-// {
-//   if (len > 0) {
-//     u32 iTow      = UBX_NAV_SVIN_ITOW(msg);
-//     u32 dur       = UBX_NAV_SVIN_dur(msg);
-//     float meanAcc = (float) 0.1 * UBX_NAV_SVIN_meanACC(msg);
-//     u8 valid      = UBX_NAV_SVIN_Valid(msg);
-//     u8 active     = UBX_NAV_SVIN_Active(msg);
-//     printf("iTow: %u \t dur: %u \t meaAcc: %f \t valid: %u \t active: %u \n", iTow, dur, meanAcc, valid, active);
-//   }
-// }
-
+static void ubx_navsvin_callback(uint8_t len, uint8_t msg[])
+{
+  if (len > 0) {
+    u32 iTow      = UBX_NAV_SVIN_ITOW(msg);
+    u32 dur       = UBX_NAV_SVIN_dur(msg);
+    float meanAcc = (float) 0.1 * UBX_NAV_SVIN_meanACC(msg);
+    u8 valid      = UBX_NAV_SVIN_Valid(msg);
+    u8 active     = UBX_NAV_SVIN_Active(msg);
+    printf("iTow: %u \t dur: %u \t meaAcc: %f \t valid: %u \t active: %u \n", iTow, dur, meanAcc, valid, active);
+  }
+}
 /**
  * Parse the tty data when bytes are available
  */
-extern int rd_msg_len;
 static gboolean parse_device_data(GIOChannel *chan, GIOCondition cond, gpointer data)
 {
-  char buf[1024];
-  gsize bytes_read;
-  GError *_err = NULL;
-  GIOStatus st = g_io_channel_read_chars(chan, buf, 1024, &bytes_read, &_err);
-  // printf_debug("Bytes read: %lu %d %d %d\r\n", bytes_read, msg_state.msg_class, msg_state.state, rd_msg_len);
-  if (!_err) {
-    if (st == G_IO_STATUS_NORMAL) {
-      for(uint16_t i = 0; i < bytes_read; i++) {
-        if (msg_state.msg_class == RTCM_CLASS) {  // Are we already reading a RTCM message?
-          rtcm3_process(&msg_state, buf[i]);     // If so continue reading RTCM
-        } else if (msg_state.msg_class == UBX_CLASS) { // Are we already reading a UBX message?
-          ubx_process(&msg_state, buf[i]);       // If so continue reading UBX
-        } else {
-          msg_state.state = UNINIT;           // Not reading anything yet
-          rtcm3_process(&msg_state, buf[i]);     // Try to process preamble as RTCM
-          if (msg_state.msg_class != RTCM_CLASS) { // If it wasn't a RTCM preamble
-            ubx_process(&msg_state, buf[i]);     // Check for UBX preamble
-          }
-        }
+  unsigned char buff[1000];
+  int c;
+  c = uart_read(&buff, 1);
+  if (c > 0) {                // Have we read anything?
+    if (msg_state.msg_class == RTCM_CLASS) {  // Are we already reading a RTCM message?
+      rtcm3_process(&msg_state, buff[0]);     // If so continue reading RTCM
+    } else if (msg_state.msg_class == UBX_CLASS) { // Are we already reading a UBX message?
+      ubx_process(&msg_state, buff[0]);       // If so continue reading UBX
+    } else {
+      msg_state.state = UNINIT;           // Not reading anything yet
+      rtcm3_process(&msg_state, buff[0]);     // Try to process preamble as RTCM
+      if (msg_state.msg_class != RTCM_CLASS) { // If it wasn't a RTCM preamble
+        ubx_process(&msg_state, buff[0]);     // Check for UBX preamble
       }
     }
-  } else {
-    fprintf(stderr, "error reading serial: %s\n", _err->message);
-    g_error_free(_err);
   }
   return TRUE;
 }
@@ -326,45 +290,6 @@ void print_usage(int argc __attribute__((unused)), char **argv)
     "   -b <baud_rate>            The device baud rate(default: B9600)\n"
     "   -p <packet_size>          The payload size (default:100, max:4146))\n\n";
   fprintf(stderr, usage, argv[0]);
-}
-
-int init_serial_dev(const char *device)
-{
-  if ((serial_fd = open(device, O_RDWR | O_NONBLOCK)) < 0) {
-    printf("opening %s (%s)\n", device, strerror(errno));
-    return -1;
-  }
-  struct termios termios;
-  termios.c_iflag = 0; // properly initialize variable
-  /* input modes  */
-  termios.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | INPCK | ISTRIP | INLCR | IGNCR
-                       | ICRNL | IUCLC | IXON | IXANY | IXOFF | IMAXBEL);
-  termios.c_iflag |= IGNPAR;
-
-  termios.c_cflag = 0; // properly initialize variable
-  /* control modes*/
-  termios.c_cflag &= ~(CSIZE | PARENB | CRTSCTS | PARODD | HUPCL);
-  termios.c_cflag |= CREAD | CS8 | CSTOPB | CLOCAL;
-
-  termios.c_lflag = 0; // properly initialize variable
-  /* local modes  */
-  termios.c_lflag &= ~(ISIG | ICANON | IEXTEN | ECHO | FLUSHO | PENDIN);
-  termios.c_lflag |= NOFLSH;
-  /* speed        */
-  speed_t speed = B115200;
-
-  if (cfsetispeed(&termios, speed)) {
-    printf("setting term speed (%s)\n", strerror(errno));
-    return -1;
-  }
-  if (tcsetattr(serial_fd, TCSADRAIN, &termios)) {
-    printf("setting term attributes (%s)\n", strerror(errno));
-    return -1;
-  }
-  GIOChannel *channel = g_io_channel_unix_new(serial_fd);
-  g_io_channel_set_encoding(channel, NULL, NULL);
-  g_io_add_watch(channel, G_IO_IN , parse_device_data, NULL);
-  return 0;
 }
 
 int main(int argc, char **argv)
@@ -401,7 +326,6 @@ int main(int argc, char **argv)
         break;
       case 'i':
         ac_id = atoi(optarg);
-        //sprintf(ivy_msg_head, "0 GPS_INJECT %i", ac_id);
         break;
       case '?':
         if (optopt == 'p' || optopt == 'd' || optopt == 'b' || optopt == 'i') {
@@ -424,9 +348,11 @@ int main(int argc, char **argv)
 
   // Start the tty device
   printf_debug("Opening tty device %s...\n", serial_device);
-  int ret = init_serial_dev(serial_device);
+  serial_port = serial_port_new();
+  int ret = serial_port_open_raw(serial_port, serial_device, serial_baud);
   if (ret != 0) {
     fprintf(stderr, "Error opening %s code %d\n", serial_device, ret);
+    serial_port_free(serial_port);
     exit(EXIT_FAILURE);
   }
 
@@ -434,14 +360,17 @@ int main(int argc, char **argv)
   printf_debug("Setup RTCM3 callbacks...\n");
   msg_state_init(&msg_state);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_4072, &rtcm3_4072_callback, &rtcm3_4072_node);
+  rtcm3_register_callback(&msg_state, RTCM3_MSG_1230, &rtcm3_1230_callback, &rtcm3_1230_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1005, &rtcm3_1005_callback, &rtcm3_1005_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1077, &rtcm3_1077_callback, &rtcm3_1077_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1087, &rtcm3_1087_callback, &rtcm3_1087_node);
-  //rtcm3_register_callback(&msg_state, RTCM3_MSG_1097, &rtcm3_1097_callback, &rtcm3_1097_node);
-  //rtcm3_register_callback(&msg_state, RTCM3_MSG_1127, &rtcm3_1127_callback, &rtcm3_1127_node);
-  rtcm3_register_callback(&msg_state, RTCM3_MSG_1230, &rtcm3_1230_callback, &rtcm3_1230_node);
+  rtcm3_register_callback(&msg_state, UBX_NAV_SVIN, &ubx_navsvin_callback, &ubx_nav_svin_node);
 
-  //rtcm3_register_callback(&msg_state, UBX_NAV_SVIN, &ubx_navsvin_callback, &ubx_nav_svin_node);
+
+  // Add IO watch for tty connection
+  printf_debug("Adding IO watch...\n");
+  GIOChannel *sk = g_io_channel_unix_new(serial_port->fd);
+  g_io_add_watch(sk, G_IO_IN, parse_device_data, NULL);
 
   // Run the main loop
   printf_debug("Started rtcm2ivy for aircraft id %d!\n", ac_id);

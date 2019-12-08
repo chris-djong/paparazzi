@@ -34,7 +34,7 @@ from pprzlink.ivy import IvyMessagesInterface
 
 WIDTH = 300
 BARH = 140
-CHANNEL = 40
+CHANNEL = 16
 
 
 def QIColour(qi):
