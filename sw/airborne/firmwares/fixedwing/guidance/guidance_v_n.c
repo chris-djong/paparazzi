@@ -31,7 +31,6 @@
 #include "firmwares/fixedwing/nav.h"
 #include "generated/airframe.h"
 #include "autopilot.h"
-#include "modules/ctrl/follow_me.h"  // required so that FOLLOW_ME_H is defined
 
 /* mode */
 uint8_t v_ctl_mode;
@@ -318,6 +317,7 @@ static inline void v_ctl_set_throttle(void)
 // Airspeed control loop (input: [airspeed controlled, climb_setpoint], output: [throttle controlled, pitch setpoint])
 static inline void v_ctl_set_airspeed(void)
 {
+	printf("Setting airspeed\n");
   static float last_err_vz = 0.;
   static float last_err_as = 0.;
 
@@ -385,13 +385,7 @@ static inline void v_ctl_set_airspeed(void)
 static inline void v_ctl_set_groundspeed(void)
 {
   static float last_err_ground = 0;
-#ifdef FOLLOW_ME_H
-  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
-  struct NedCoor_f *ned_speed = stateGetSpeedNed_f();
-  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - fabs(ned_speed->x));
-#else
   float err_groundspeed = v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f();
-#endif
 
   float d_err_groundspeed = err_groundspeed - last_err_ground;
   v_ctl_auto_groundspeed_sum_err += err_groundspeed;

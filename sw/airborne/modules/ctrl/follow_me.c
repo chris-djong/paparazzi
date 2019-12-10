@@ -61,6 +61,7 @@ uint8_t follow_me_height = 10;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
 uint8_t dist_follow2 = 250;
+float average_airspeed_sp;  // average airspeed setpoint
 
 // Roll PID
 float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
@@ -71,20 +72,25 @@ float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
 
+
+// can be removed later only for tuning
+float term1=0;
+float term2=0;
+float term3=0;
+
 // Throttle PID
-float ground_speed_diff_sum_err = 0.0;
-float ground_speed_diff_limit = 1.5; // maximum and minimum allowable change in ground speed compared to desired value from gps
+float airspeed_sum_err = 0.0;
 
 // Energy control defines FW_V_CTL_ENERGY_H
 #ifdef FW_V_CTL_ENERGY_H
-float ground_speed_diff_pgain = 0.6;
-float ground_speed_diff_igain = 0.02;
-float ground_speed_diff_dgain = 0.01;
+float airspeed_pgain = 0.6;
+float airspeed_igain = 0.02;
+float airspeed_dgain = 0.01;
 #else
 // New control does not define FW_V_CTL_ENERY_H
-float ground_speed_diff_pgain = 0.5;
-float ground_speed_diff_igain = 0.1;
-float ground_speed_diff_dgain = 0.015;
+float airspeed_pgain = 0.04;
+float airspeed_igain = 0.003;
+float airspeed_dgain = 1.4;
 #endif
 
 
@@ -95,7 +101,6 @@ float ground_speed_diff_dgain = 0.015;
 float average_follow_me_distance;
 float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
-float ground_speed_diff = 0; // difference that is added to the desired ground speed
 float lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
@@ -118,6 +123,51 @@ struct FloatVect3 wp_follow_enu; // global because file logger needs access
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
 
+
+
+/*********************************
+  Average heading calculator
+*********************************/
+
+// Calculate the average gps heading in order to predict where the boat is going
+// This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
+// The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
+#define MAX_SPEED_SIZE 1
+float all_speed[MAX_SPEED_SIZE]={V_CTL_AUTO_AIRSPEED_SETPOINT};
+int8_t front_speed=-1,rear_speed=-1, count_speed=0;
+float AverageAirspeed(float);
+//function definition
+float AverageAirspeed(float speed)
+{
+	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
+	// Count = int8_t
+	if (count_speed<MAX_SPEED_SIZE){
+		count_speed += 1;
+	}
+    float Sum = 0;
+
+    if(front_speed ==(rear_speed+1)%MAX_SPEED_SIZE)
+    {
+        if(front_speed==rear_speed)
+            front_speed=rear_speed=-1;
+        else
+            front_speed = (front_speed+1)%MAX_SPEED_SIZE;
+    }
+    if(front_speed==-1)
+        front_speed=rear_speed=0;
+    else
+        rear_speed=(rear_speed+1)%MAX_SPEED_SIZE;
+
+    all_speed[rear_speed] = speed;
+
+
+    for (int i=0; i<MAX_SPEED_SIZE; i++){
+    	Sum = Sum + all_speed[i];
+    }
+
+    return ((float)Sum/fmin(MAX_SPEED_SIZE, count_speed));
+
+}
 
 
 
@@ -351,7 +401,7 @@ void follow_me_soar_here(void){
 
 // Variables that are send through IVY
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_groundspeed_setpoint);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_airspeed_setpoint, &term1, &term2, &term3);
 }
 
 // Called at compiling of module
@@ -372,7 +422,7 @@ void follow_me_startup(void){
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
     follow_me_height = pos_Utm->alt;
     ground_set = false;
-    v_ctl_speed_mode = V_CTL_SPEED_GROUNDSPEED;
+    v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
     	nav_mode = NAV_MODE_FOLLOW;
     	lateral_mode = LATERAL_MODE_FOLLOW;
@@ -426,15 +476,6 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 }
 
 
-// Manage the throttle so that the groundspeed of both the boat and the uav are equivalent
-void follow_me_set_groundspeed(void);
-void follow_me_set_groundspeed(void){
-	v_ctl_auto_groundspeed_setpoint = ground_speed + ground_speed_diff;
-	if (v_ctl_auto_groundspeed_setpoint < 0){
-		v_ctl_auto_groundspeed_setpoint = 0;
-	}
-}
-
 // Roll angle controller
 void follow_me_roll_pid(void);
 void follow_me_roll_pid(void){
@@ -459,7 +500,7 @@ void follow_me_roll_pid(void){
 
 
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-	// Bound groundspeed diff by limits
+	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
 	}
@@ -471,16 +512,23 @@ void follow_me_roll_pid(void){
 // Throttle controller
 void follow_me_throttle_pid(void);
 void follow_me_throttle_pid(void){
-	// Ground speed controller
-	ground_speed_diff_sum_err += dist_wp_follow.y;
-	BoundAbs(ground_speed_diff_sum_err, 20);
-	ground_speed_diff = +ground_speed_diff_pgain*dist_wp_follow.y + ground_speed_diff_igain*ground_speed_diff_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*ground_speed_diff_dgain;
-	// Bound groundspeed diff by limits
-	if (ground_speed_diff > ground_speed_diff_limit){
-		ground_speed_diff = ground_speed_diff_limit;
-	}
-	else if (ground_speed_diff < -ground_speed_diff_limit){
-		ground_speed_diff = -ground_speed_diff_limit;
+
+	// Airspeed controller
+	airspeed_sum_err += dist_wp_follow.y;
+	BoundAbs(airspeed_sum_err, 20);
+
+	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
+
+	// Added terms for tuning, can be removed later
+	term1 = +airspeed_pgain*dist_wp_follow.y;
+	term2 = airspeed_igain*airspeed_sum_err;
+	term3 = (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
+
+	// Add airspeed inc to average airspeed
+	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
+
+	if (v_ctl_auto_airspeed_setpoint < 0){
+		v_ctl_auto_airspeed_setpoint = 0;
 	}
 }
 
@@ -572,8 +620,7 @@ int follow_me_call(void){
 	follow_me_roll_pid();
 	follow_me_throttle_pid();
 
-    // Set heading and groundspeed and move to the correct location
-	follow_me_set_groundspeed();
+    // Move to the correct location
 	follow_me_go();
 
 
@@ -588,8 +635,7 @@ int follow_me_call(void){
 
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
-	ground_speed_diff = 0;
-	v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT; // set to 100 in order to ensure the the groundspeed loop is not executed anymore in energy control
+	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	h_ctl_roll_setpoint_follow_me = 0;
 	nav_mode = NAV_MODE_COURSE;
 	lateral_mode = LATERAL_MODE_COURSE;

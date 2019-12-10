@@ -69,7 +69,6 @@
 #include "subsystems/abi.h"
 #include <stdio.h>
 
-#include "modules/ctrl/follow_me.h"  // required so that FOLLOW_ME_H is defined
 
 
 /////// DEFAULT GUIDANCE_V NECESSITIES //////
@@ -356,12 +355,7 @@ void v_ctl_climb_loop(void)
   if (v_ctl_speed_mode == V_CTL_SPEED_GROUNDSPEED){
 	  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
 	  // Base it on enu speed for the follow me module (throttle only increases forward speed not sideways)
-#ifdef FOLLOW_ME_H
-	  struct NedCoor_f *ned_speed = stateGetSpeedNed_f();
-	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - fabs(ned_speed->x));
-#else
 	  float err_groundspeed = (v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f());
-#endif
 	  float d_err = err_groundspeed - v_ctl_auto_groundspeed_last_err;
 	  v_ctl_auto_groundspeed_last_err = err_groundspeed;
 	  v_ctl_auto_groundspeed_sum_err += err_groundspeed;

@@ -41,9 +41,9 @@ extern uint16_t follow_me_region;
 extern float follow_me_heading;
 extern float lateral_offset;
 
-extern float ground_speed_diff_igain;
-extern float ground_speed_diff_pgain;
-extern float ground_speed_diff_dgain;
+extern float airspeed_igain;
+extern float airspeed_pgain;
+extern float airspeed_dgain;
 
 extern float roll_diff_igain;
 extern float roll_diff_pgain;

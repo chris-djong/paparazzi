@@ -88,12 +88,12 @@
         <arg flag="-d" constant="180"/> <!-- Wind direction -->
       </program>
       <program name="Real-time Plotter">
-       <!--  <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>-->
+        <!-- <arg flag="-n"/>
         <arg flag="-g" constant="2000x300-0+520"/>
         <arg flag="-t" constant="Tuning Course"/>
         <arg flag="-u" constant="0.1"/>
@@ -110,7 +110,7 @@
         <arg flag="-t" constant="Tuning Pitch"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>
+        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/> -->
         
       </program>
     </session>
@@ -129,12 +129,12 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-               <!--  <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>-->
+        <!-- <arg flag="-n"/>
         <arg flag="-g" constant="2000x300-0+520"/>
         <arg flag="-t" constant="Tuning Course"/>
         <arg flag="-u" constant="0.1"/>
@@ -151,7 +151,7 @@
         <arg flag="-t" constant="Tuning Pitch"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>
+        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/> -->
       </program>
       
     </session>
@@ -169,12 +169,12 @@
         <arg flag="--ac" constant="1"/>
       </program>
       <program name="Real-time Plotter">
-       <!--  <arg flag="-g" constant="2000x500-0+520"/>
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>
-        <arg flag="-n"/>-->
+        <!-- <arg flag="-n"/>
         <arg flag="-g" constant="2000x300-0+520"/>
         <arg flag="-t" constant="Tuning Course"/>
         <arg flag="-u" constant="0.1"/>
@@ -191,7 +191,7 @@
         <arg flag="-t" constant="Tuning Pitch"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:DESIRED:pitch:1"/>
-        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/>
+        <arg flag="-c" constant="*:telemetry:ATTITUDE:theta:1"/> -->
       </program>
     </session>
     
