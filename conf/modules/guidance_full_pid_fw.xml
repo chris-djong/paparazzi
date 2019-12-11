@@ -54,6 +54,7 @@
             <strip_button name="AS" value="1" group="speed_mode"/>
             <strip_button name="GS" value="2" group="speed_mode"/>
           </dl_setting>
+          <dl_setting max="50" min="5" step="0.5" var="v_ctl_auto_airspeed_setpoint" shortname="v_ctl_airspeed"/> 
           <dl_setting MAX="1" MIN="0.0" STEP="0.05" VAR="v_ctl_auto_throttle_min_cruise_throttle" shortname="min cruise thr" module="guidance/guidance_v" param="V_CTL_AUTO_THROTTLE_MIN_CRUISE_THROTTLE"/>
           <dl_setting MAX="1" MIN="0.0" STEP="0.05" VAR="v_ctl_auto_throttle_max_cruise_throttle" shortname="max cruise thr" module="guidance/guidance_v" param="V_CTL_AUTO_THROTTLE_MAX_CRUISE_THROTTLE"/>
           <dl_setting MAX="1" MIN="0.0" STEP="0.05" VAR="v_ctl_auto_throttle_cruise_throttle" shortname="Nom crui throt" module="guidance/guidance_v" handler="SetCruiseThrottle" param="V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE"/>
