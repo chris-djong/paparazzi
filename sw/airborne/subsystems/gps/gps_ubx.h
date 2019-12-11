@@ -58,7 +58,7 @@ struct GpsUbx {
 
   uint8_t status;
   uint16_t len;
-  uint16_t msg_idx;
+  uint8_t msg_idx;
   uint8_t ck_a, ck_b;
   uint8_t send_ck_a, send_ck_b;
   uint8_t error_cnt;
