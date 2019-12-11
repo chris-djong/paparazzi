@@ -18,26 +18,16 @@
     <target name="ap" board="disco">    
       <module name="radio_control" type="sbus"/>
       <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
-      <module name="airspeed" type="ms45xx_i2c">
-        <!-- Send the result of this sensor to the state interface -->
-        <define name="USE_AIRSPEED_MS45XX" value="1"/>
-        <!-- Device -->
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        
-        <!-- MS45xx output Type.  0 = Output Type A with 10% to 90% 1 = Output Type B with 5% to 95% -->
-        <define name="MS45XX_OUTPUT_TYPE" value="0"/>
-        
+      <module name="airspeed" type="ms45xx_i2c">        
         <!-- Pressured offset  -->
         <!-- <define name="MS45XX_PRESSURE_SCALE" value="1.05" /> This is done internally using a formula in airspeed_ms45xx_i2c.c -->
         <!-- <define name="MS45XX_PRESSURE_OFFSET" value="8549.0"/>  <!-- 8542.0--> 
         
         <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
-        <define name="USE_AIRSPEED_LOWPASS_FILTER" value="1"/>  <!-- Start using the filter -->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- Tweak the filter -->
         
         <!-- Pressure range, defined by datasheet -->
         <!--  This also defined the PRESSURE_SCALE -->
-        <define name="MS45XX_PRESSURE_RANGE" value="1"/>       
       </module>
       
       <module name="logger_file">
