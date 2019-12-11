@@ -60,7 +60,7 @@
 #endif
 
 #if STABILIZATION_INDI_USE_ADAPTIVE
-#warning "Use caution with adaptive indi. See the wiki for more info"
+#warning WARNING: Use caution with adaptive indi. See the wiki for more info
 #endif
 
 #ifndef STABILIZATION_INDI_MAX_R
