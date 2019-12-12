@@ -48,6 +48,7 @@ extern void gps_ubx_event(void);
 
 #define gps_ubx_periodic_check() gps_periodic_check(&gps_ubx.state)
 
+#define GPS_UBX_NB_CHANNELS 40
 
 #define GPS_UBX_MAX_PAYLOAD 512
 struct GpsUbx {
