@@ -75,7 +75,6 @@
 #include CTRL_TYPE_H
 #include "autopilot.h"
 
-
 /* outer loop parameters */
 float h_ctl_course_setpoint; /* rad, CW/north */
 float h_ctl_course_pre_bank;
@@ -388,7 +387,7 @@ void h_ctl_course_loop(void)
                         + h_ctl_course_pgain * speed_depend_nav * err
                         + h_ctl_course_dgain * d_err;
   // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
-  if (nav_mode == NAV_MODE_FOLLOW){
+  if (1){
     h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
   }
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);

@@ -317,7 +317,6 @@ static inline void v_ctl_set_throttle(void)
 // Airspeed control loop (input: [airspeed controlled, climb_setpoint], output: [throttle controlled, pitch setpoint])
 static inline void v_ctl_set_airspeed(void)
 {
-	printf("Setting airspeed\n");
   static float last_err_vz = 0.;
   static float last_err_as = 0.;
 

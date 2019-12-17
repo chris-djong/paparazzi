@@ -38,7 +38,6 @@
 #define LATERAL_MODE_ROLL      2
 #define LATERAL_MODE_COURSE    3
 #define LATERAL_MODE_NB        4
-#define LATERAL_MODE_FOLLOW    5 // for follow me module
 extern uint8_t lateral_mode;
 
 // ap copy of fbw readings

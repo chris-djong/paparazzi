@@ -50,6 +50,7 @@ extern float roll_diff_pgain;
 extern float roll_diff_dgain;
 extern float roll_enable;
 extern float roll_disable;
+extern uint8_t follow_me_roll;
 
 /************************************************
   Variables used by internal file logger

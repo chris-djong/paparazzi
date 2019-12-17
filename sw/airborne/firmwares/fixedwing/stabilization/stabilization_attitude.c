@@ -313,12 +313,17 @@ void h_ctl_course_loop(void)
   float roll_setpoint = cmd + h_ctl_course_pre_bank_correction * h_ctl_course_pre_bank;
 
 #ifdef H_CTL_ROLL_SLEW
+
   float diff_roll = roll_setpoint - h_ctl_roll_setpoint;
   BoundAbs(diff_roll, h_ctl_roll_slew);
   h_ctl_roll_setpoint += diff_roll;
 #else
   h_ctl_roll_setpoint = roll_setpoint;
 #endif
+  // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
+  if (nav_mode == NAV_MODE_FOLLOW){
+	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+  }
 
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }
@@ -335,10 +340,7 @@ void h_ctl_attitude_loop(void)
 #ifdef H_CTL_ROLL_ATTITUDE_GAIN
 inline static void h_ctl_roll_loop(void)
 {
-  // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
-  if (nav_mode == NAV_MODE_FOLLOW){
-	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
-  }
+
   float err = stateGetNedToBodyEulers_f()->phi - h_ctl_roll_setpoint;
   struct FloatRates *body_rate = stateGetBodyRates_f();
 #ifdef SITL

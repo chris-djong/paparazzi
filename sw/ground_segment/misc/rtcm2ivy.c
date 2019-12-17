@@ -221,40 +221,6 @@ static void rtcm3_4072_callback(uint8_t len, uint8_t msg[])
 }
 
 /*
- * Callback for the 4072 message to send it trough RTCM_INJECT
- */
-static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
-{
-  if (len > 0) {
-    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
-      ivy_send_message(RTCM3_MSG_1230, len, msg);
-      msg_cnt++;
-    } else {
-      ivy_send_message(RTCM3_MSG_1230, len, msg);
-      printf("Skipping 1230 message (CRC check failed)\n");
-    }
-  }
-  printf_debug("Parsed 1230 callback\n");
-}
-
-/*
- * Callback for the 4072 message to send it trough RTCM_INJECT
- */
-static void rtcm3_4072_callback(uint8_t len, uint8_t msg[])
-{
-  if (len > 0) {
-    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
-      ivy_send_message(RTCM3_MSG_4072, len, msg);
-      msg_cnt++;
-    } else {
-      ivy_send_message(RTCM3_MSG_4072, len, msg);
-      printf("Skipping 4072 message (CRC check failed)\n");
-    }
-  }
-  printf_debug("Parsed 4072 callback\n");
-}
-
-/*
  * Callback for the 1230 message to send it trough RTCM_INJECT
  */
 static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
@@ -270,7 +236,6 @@ static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
   }
   printf_debug("Parsed 1230 callback\n");
 }
-
 
 /*
  * Callback for UBX survey-in message

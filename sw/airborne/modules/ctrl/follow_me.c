@@ -71,6 +71,7 @@ float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
+uint8_t follow_me_roll = 1; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 
 // can be removed later only for tuning
@@ -126,12 +127,10 @@ struct UtmCoor_f ground_utm;  // global because required for file logger and cal
 
 
 /*********************************
-  Average heading calculator
+  Average speed calculator
 *********************************/
 
-// Calculate the average gps heading in order to predict where the boat is going
-// This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
-// The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
+// Calculate the average speed in order to obtain a general prediction of the speed of the ground station
 #define MAX_SPEED_SIZE 1
 float all_speed[MAX_SPEED_SIZE]={V_CTL_AUTO_AIRSPEED_SETPOINT};
 int8_t front_speed=-1,rear_speed=-1, count_speed=0;
@@ -413,7 +412,6 @@ void follow_me_init(void){
 void follow_me_startup(void){
 #ifdef RL_SOARING_H
 	if (!rl_started){
-
     }
 #endif
 	// follow_me_soar_here();
@@ -424,11 +422,9 @@ void follow_me_startup(void){
     ground_set = false;
     v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
-    	nav_mode = NAV_MODE_FOLLOW;
-    	lateral_mode = LATERAL_MODE_FOLLOW;
+    	follow_me_roll = 1;
     } else {
-    	nav_mode = NAV_MODE_COURSE;
-    	lateral_mode = LATERAL_MODE_COURSE;
+    	follow_me_roll = 0;
     }
 }
 
@@ -484,22 +480,22 @@ void follow_me_roll_pid(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
-		nav_mode = NAV_MODE_FOLLOW;
-		lateral_mode = LATERAL_MODE_FOLLOW;
+		follow_me_roll = 1;
 	} else if (((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
-		nav_mode = NAV_MODE_COURSE;
-		lateral_mode = LATERAL_MODE_COURSE;
+		follow_me_roll = 0;
 	}
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
 	if (dist_wp_follow.y > 2*follow_me_distance){
-		nav_mode = NAV_MODE_COURSE;
-	    lateral_mode = LATERAL_MODE_COURSE;
+		follow_me_roll = 0;
 	}
 	roll_diff_sum_err += dist_wp_follow.x;
 	BoundAbs(roll_diff_sum_err, 20);
 
-
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+	printf("ROll setpoint is given by %f\n", h_ctl_roll_setpoint);
+	term1 = +roll_diff_pgain*dist_wp_follow.x;
+	term2 = roll_diff_igain*roll_diff_sum_err;
+    term3 = (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
 	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
@@ -512,7 +508,6 @@ void follow_me_roll_pid(void){
 // Throttle controller
 void follow_me_throttle_pid(void);
 void follow_me_throttle_pid(void){
-
 	// Airspeed controller
 	airspeed_sum_err += dist_wp_follow.y;
 	BoundAbs(airspeed_sum_err, 20);
@@ -520,9 +515,9 @@ void follow_me_throttle_pid(void){
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Added terms for tuning, can be removed later
-	term1 = +airspeed_pgain*dist_wp_follow.y;
-	term2 = airspeed_igain*airspeed_sum_err;
-	term3 = (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
+	// term1 = +airspeed_pgain*dist_wp_follow.y;
+	// term2 = airspeed_igain*airspeed_sum_err;
+	// term3 = (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
@@ -541,7 +536,6 @@ void follow_me_set_wp(void){
 		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
 		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 		lla.alt = ((float)(ground_lla.alt))/1000.;
-
 		// Convert LLA to UTM in oder to set watpoint in UTM system
 		ground_utm.zone = nav_utm_zone0;
 		utm_of_lla_f(&ground_utm, &lla);
@@ -636,9 +630,8 @@ int follow_me_call(void){
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
+	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
-	nav_mode = NAV_MODE_COURSE;
-	lateral_mode = LATERAL_MODE_COURSE;
 	v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 }
 
