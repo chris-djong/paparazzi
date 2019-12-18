@@ -71,7 +71,7 @@ float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
-uint8_t follow_me_roll = 1; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 
 // can be removed later only for tuning

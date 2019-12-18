@@ -17,7 +17,6 @@
    
     <target name="ap" board="disco">    
       <module name="radio_control" type="sbus"/>
-      <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
       <module name="airspeed" type="ms45xx_i2c">        
         <!-- Pressured offset  -->
         <!-- <define name="MS45XX_PRESSURE_SCALE" value="1.05" /> This is done internally using a formula in airspeed_ms45xx_i2c.c -->
@@ -41,11 +40,11 @@
           <configure name="MODEM_BAUD" value="B57600"/>
       </module>-->
             
-      <!-- Option 1 EKF2  NOT WORKING YET --> 
-      <module name="ins" type="alt_float"/> 
+      <!-- Option 1 EKF2  NOT WORKING YET  
+      <module name="ins" type="ekf2"/> --> 
       
       <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro -->
-      <!-- <module name="ins" type="alt_float"/> -->
+      <module name="ins" type="alt_float"/>
     </target>
     
     <!-- ************************************************
@@ -123,7 +122,8 @@
                SERVO COMMANDS
     ************************************************  -->
   <commands>
-    <axis name="THROTTLE" failsafe_value="0"/>
+    <!-- These are the failsafe attitude commands that the aircraft will keep in case GPS is lost for example -->
+    <axis name="THROTTLE" failsafe_value="0"/>  
     <axis name="ROLL" failsafe_value="0"/>
     <axis name="PITCH" failsafe_value="0"/>
   </commands>
@@ -226,7 +226,9 @@
                BATTERY DEFINITIONS
     ************************************************  -->
   <section name="BAT">
-    <define name="CATASTROPHIC_BAT_LEVEL" value="9.3" unit="V"/>
+    <define name="MAX_BAT_LEVEL" value="12.5" unit="V"/> <!-- Max bat level only used to scale display in GCS -->
+    <define name="LOW_BAT_LEVEL" value="10" unit="V"/> <!-- Used to display battery warning in GCS -->
+    <define name="CATASTROPHIC_BAT_LEVEL" value="9.3" unit="V"/>  <!-- Warning: Kill mode is engaged in case this battery level is reached -->
     <define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>
   </section>
 
@@ -236,10 +238,11 @@
   <section name="MISC">
     <define name="NOMINAL_AIRSPEED" value="12." unit="m/s"/>
     <define name="CARROT" value="5." unit="s"/>
-    <define name="KILL_MODE_DISTANCE" value="(1.5*MAX_DIST_FROM_HOME)"/>
+    <define name="KILL_MODE_DISTANCE" value="(1.5*MAX_DIST_FROM_HOME)"/> <!-- Kill mode is engaged in case this distance is reached. -->
     <define name="DEFAULT_CIRCLE_RADIUS" value="80."/>
 
-    <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
+    <!--  <define name="UNLOCKED_HOME_MODE" value="TRUE"/>  This will unlock home mode and make it possible to fly outside of home in Auto1 and Manual / Not required!--> 
+    <!-- <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>  Go into AUTO2 in case RC is lost / if this variable is not set, HOME mode is triggered by default / Not required!-->
 
     <define name="APP_ANGLE" value="8" unit="deg"/>
   </section>
@@ -359,6 +362,7 @@
   <!-- ************************************************
                FAILSAFE DEFINITIONS
     ************************************************  -->
+  <!-- These are the definition are engaged in case a failsafe is triggered (like GPS lost for example) -->
   <section name="FAILSAFE" prefix="FAILSAFE_">
     <define name="DELAY_WITHOUT_GPS" value="2" unit="s"/>
     <define name="DEFAULT_THROTTLE" value="0.0" unit="%"/>
