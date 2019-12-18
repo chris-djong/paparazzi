@@ -237,6 +237,7 @@ static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
   printf_debug("Parsed 1230 callback\n");
 }
 
+
 /*
  * Callback for UBX survey-in message
  */

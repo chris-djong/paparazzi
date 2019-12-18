@@ -369,9 +369,11 @@ s8 rtcm3_process(msg_state_t *s, unsigned char buff)
           case 1077: s->msg_type = RTCM3_MSG_1077; break;
           case 1087: s->msg_type = RTCM3_MSG_1087; break;
           case 1230: s->msg_type = RTCM3_MSG_1230; break;
+          default:
 #ifdef DEBUG_PRINT_PACKAGE
-          default  : printf("Unknown message type %u\n", RTCMgetbitu(s->msg_buff, 24 + 0, 12)); return RTCM_OK_CALLBACK_UNDEFINED;
+          printf("Unknown message type %u\n", RTCMgetbitu(s->msg_buff, 24 + 0, 12));
 #endif
+          return RTCM_OK_CALLBACK_UNDEFINED;
         }
         s->n_read++;
         s->msg_len   = s->n_read;
