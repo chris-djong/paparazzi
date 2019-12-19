@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="10" ground_alt="0" lat0="49.523999" lon0="6.287878" max_dist_from_home="500" qfu="190" name="Never Landing Drone" security_height="50">
+<flight_plan alt="10" ground_alt="0" lat0="49.523999" lon0="6.287878" max_dist_from_home="1000" qfu="190" name="Never Landing Drone" security_height="50">
 
 <header>
 #include "subsystems/datalink/datalink.h"
@@ -10,14 +10,14 @@
     <!--  FOLLOW = 3 / AF = 5 / TD = 6 / FLARE = 7 -->
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="STDBY" x="50" y="0" height="50"/>
-    <waypoint name="1" x="50" y="0" height="50"/>
-    <waypoint name="2" x="50" y="-50" height="50"/>
-    <waypoint name="FOLLOW" x="0" y="0" height="10"/>
-    <waypoint name="FOLLOW2" x="0" y="0" height="10"/>
+    <waypoint name="1" x="75" y="0" height="50"/>
+    <waypoint name="2" x="100" y="0" height="50"/>
+    <waypoint name="FOLLOW" x="0" y="50" height="10"/>
+    <waypoint name="FOLLOW2" x="0" y="75" height="10"/>
     <waypoint name="CLIMB" x="0" y="-200"/>
-    <waypoint name="AF" x="100" y="100" height="50"/> <!--  Start of landing procedure -->
-    <waypoint name="TD" x="100" y="0"/>  <!--Touchdown-->
-    <waypoint name="FLARE" x="90" y="0"/> <!--Flare waypoint (engine off and landing after touchdown has been obtained) --> 
+    <waypoint name="AF" x="0" y="-50" height="50"/> <!--  Start of landing procedure -->
+    <waypoint name="TD" x="0" y="-100"/>  <!--Touchdown-->
+    <waypoint name="FLARE" x="0" y="75"/> <!--Flare waypoint (engine off and landing after touchdown has been obtained) --> 
     
     <!--  Allowable Flying region -->
     <waypoint name="FR_TL" x="-200" y="200"/> <!--  Top Left -->
@@ -36,8 +36,8 @@
   </sectors>
 
   <exceptions>
-      <exception cond="datalink_time > 60" deroute="Standby"/>
-      <!-- <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>  exception removed from here because it standby error at startup-->  
+      <exception cond="datalink_time > 60" deroute="Standby"/> 
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> <!-- exception removed from here because it standby error at startup-->  
   </exceptions>
 
   <!-- *********** Initial setup *********** -->
