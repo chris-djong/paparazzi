@@ -11,7 +11,8 @@
   <settings>
     <dl_settings>
       <dl_settings name="FollowMe">
-        <dl_setting var="follow_me_distance" min="0" max="100" step="1" shortname="Distance" unit="m"/>
+        <dl_setting var="follow_me_distance" min="0" max="255" step="1" shortname="Follow distance" unit="m"/>
+        <dl_setting var="stdby_distance" min="0" max="255" step="1" shortname="Stdby distance" unit="m"/>
         <dl_setting var="follow_me_heading" min="0." max="360." step="1.0" shortname="Heading"/>
         <dl_setting var="follow_me_height" min="5" max="50" step="1" shortname="Height"/>
         <dl_setting var="follow_me_region" min="10" max="1000" step="1" shortname="Fly Region"/>

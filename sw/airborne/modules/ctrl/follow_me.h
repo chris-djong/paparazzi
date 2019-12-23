@@ -35,7 +35,8 @@
   Variables used by the settings
 *************************************************/
 
-extern float follow_me_distance;
+extern uint8_t follow_me_distance;
+extern uint8_t stdby_distance;
 extern uint8_t follow_me_height;
 extern uint16_t follow_me_region;
 extern float follow_me_heading;
