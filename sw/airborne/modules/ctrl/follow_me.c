@@ -66,7 +66,7 @@ float average_airspeed_sp;  // average airspeed setpoint
 // Roll PID
 float roll_enable = 5; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 0.5; // when the x distance is lower the roll PID is disabled again
-float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.11;
@@ -116,10 +116,8 @@ struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
 // Variables initialised in functions themselves
 static bool ground_set; // boolean to decide whether GPS message was received
 static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
-float ground_speed; // ground speed received by the GPS message
-static float ground_timestamp; // only executed set wp function if we received a newer timestamp
-static float old_ground_timestamp;  // to compare it to the new timestamp
-int fix_mode;  // GPS mode use for logging
+static uint32_t ground_timestamp; // only executed set wp function if we received a newer timestamp
+static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct FloatVect3 wp_follow_enu; // global because file logger needs access
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
@@ -193,6 +191,8 @@ float AverageHeading(float diffx, float diffy)
     float Sum_x = 0;
     float Sum_y = 0;
 
+
+
     if(front_heading ==(rear_heading+1)%MAX_HEADING_SIZE)
     {
         if(front_heading==rear_heading)
@@ -216,14 +216,14 @@ float AverageHeading(float diffx, float diffy)
 
     float heading = 0.0;
     // First check cases which divide by 0
-    if (diffy == 0){
-    	if (diffx > 0){
+    if (Sum_y == 0){
+    	if (Sum_x > 0){
     		heading = 90.0;
-    	} else if (diffx < 0){
+    	} else if (Sum_x < 0){
     		heading = -90.0;
     	}
     } else {
-        heading = atan2(diffx, diffy)*180.0/M_PI;
+        heading = atan2(Sum_x, Sum_y)*180.0/M_PI;
     }
     return heading;
 }
@@ -454,12 +454,12 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
-	ground_speed = DL_GROUND_GPS_speed(buf);
+	// ground_speed = DL_GROUND_GPS_speed(buf);
 	// ground_climb = DL_GROUND_GPS_climb(buf);
 	// ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
-	fix_mode = DL_GROUND_GPS_mode(buf);
+	// fix_mode = DL_GROUND_GPS_mode(buf);
 	ground_set = true;
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)

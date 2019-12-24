@@ -106,7 +106,6 @@
     
     <!-- Control Algorithms -->
     <module name="control" type="new"/> 
-    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.00"/> <!-- Set pitch airspeed to 0 as airspeed is changing a lot during follow me -->
   </firmware>
 
 
@@ -281,7 +280,7 @@
     <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.1"/>
     <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.12"/>
     <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.0"/>
-    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.06"/>
+    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.0"/>
     <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.0"/>
     <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.02"/>
     <define name="AIRSPEED_MAX" value="30"/>

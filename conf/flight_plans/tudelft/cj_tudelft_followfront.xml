@@ -1,5 +1,7 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
+ <!-- lat0="49.523999" lon0="6.287878" 
+ lat0="49.512248" lon0="6.279989"--> 
 <flight_plan alt="10" ground_alt="0" lat0="49.523999" lon0="6.287878" max_dist_from_home="1000" qfu="190" name="Never Landing Drone" security_height="50">
 
 <header>

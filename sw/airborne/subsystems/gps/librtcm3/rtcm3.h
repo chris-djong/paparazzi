@@ -38,6 +38,7 @@
 #define UBX_PREAMBLE1       0xB5                // Sync 1
 #define UBX_PREAMBLE2       0x62                // Sync 2
 #define UBX_NAV_SVIN        0x3B
+#define UBX_NAV_POSLLH      0x02  // for gpsd2ivy during rtcm2ivy execution
 #define GPS_UBX_MAX_PAYLOAD 255
 
 #define GPS_UBX_ERR_NONE         0
@@ -51,7 +52,7 @@
 #define RTCM_CLASS 1
 #define UBX_CLASS  2
 
-
+// ()
 #define UBX_NAV_SVIN_VERSION(_ubx_payload) (uint8_t)(*((uint8_t*)_ubx_payload+0))
 #define UBX_NAV_SVIN_RES1(_ubx_payload) (uint8_t)(*((uint8_t*)_ubx_payload+1))
 #define UBX_NAV_SVIN_RES2(_ubx_payload) (uint16_t)(*((uint8_t*)_ubx_payload+2)|*((uint8_t*)_ubx_payload+1+2)<<8)
@@ -70,6 +71,13 @@
 #define UBX_NAV_SVIN_Active(_ubx_payload) (uint8_t)(*((uint8_t*)_ubx_payload+37))
 #define UBX_NAV_SVIN_RES4(_ubx_payload) (uint16_t)(*((uint8_t*)_ubx_payload+38)|*((uint8_t*)_ubx_payload+1+38)<<8)
 
+#define UBX_NAV_POSLLH_ITOW(_ubx_payload) (uint32_t)(*((uint8_t*)_ubx_payload+0)|*((uint8_t*)_ubx_payload+1+0)<<8|((uint32_t)*((uint8_t*)_ubx_payload+2+0))<<16|((uint32_t)*((uint8_t*)_ubx_payload+3+0))<<24)
+#define UBX_NAV_POSLLH_meanX(_ubx_payload) (int32_t)(*((uint8_t*)_ubx_payload+4)|*((uint8_t*)_ubx_payload+1+4)<<8|((int32_t)*((uint8_t*)_ubx_payload+2+4))<<16|((int32_t)*((uint8_t*)_ubx_payload+3+4))<<24)
+#define UBX_NAV_POSLLH_meanY(_ubx_payload) (int32_t)(*((uint8_t*)_ubx_payload+8)|*((uint8_t*)_ubx_payload+1+8)<<8|((int32_t)*((uint8_t*)_ubx_payload+2+8))<<16|((int32_t)*((uint8_t*)_ubx_payload+3+8))<<24)
+#define UBX_NAV_POSLLH_meanZ(_ubx_payload) (int32_t)(*((uint8_t*)_ubx_payload+12)|*((uint8_t*)_ubx_payload+1+12)<<8|((int32_t)*((uint8_t*)_ubx_payload+2+12))<<16|((int32_t)*((uint8_t*)_ubx_payload+3+12))<<24)
+#define UBX_NAV_POSLLH_HMSL(_ubx_payload) (int32_t)(*((uint8_t*)_ubx_payload+16)|*((uint8_t*)_ubx_payload+1+16)<<8|((int32_t)*((uint8_t*)_ubx_payload+2+16))<<16|((int32_t)*((uint8_t*)_ubx_payload+3+16))<<24)
+#define UBX_NAV_POSLLH_HACC(_ubx_payload) (uint32_t)(*((uint8_t*)_ubx_payload+20)|*((uint8_t*)_ubx_payload+1+20)<<8|((uint32_t)*((uint8_t*)_ubx_payload+2+20))<<16|((uint32_t)*((uint8_t*)_ubx_payload+3+20))<<24)
+#define UBX_NAV_POSLLH_VACC(_ubx_payload) (uint32_t)(*((uint8_t*)_ubx_payload+24)|*((uint8_t*)_ubx_payload+1+24)<<8|((uint32_t)*((uint8_t*)_ubx_payload+2+24))<<16|((uint32_t)*((uint8_t*)_ubx_payload+3+24))<<24)
 
 #include <errno.h>
 #include "common.h"
