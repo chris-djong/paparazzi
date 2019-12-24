@@ -8,7 +8,6 @@
   <firmware name="fixedwing">  
    <!-- Define default radius for oval eight and stdby -->
    <module name="follow_me"/> 
-   <module name="tune_airspeed"/>
     
    
     <!-- ************************************************
@@ -69,6 +68,7 @@
     <!-- Airspeed definitions  -->
     <define name="USE_AIRSPEED" value="1"/>
     <define name="STALL_AIRSPEED" value="8"/>
+    
     <module name="air_data"/>
     
     <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
@@ -106,6 +106,7 @@
     
     <!-- Control Algorithms -->
     <module name="control" type="new"/> 
+    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.00"/> <!-- Set pitch airspeed to 0 as airspeed is changing a lot during follow me -->
   </firmware>
 
 

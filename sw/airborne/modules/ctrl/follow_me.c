@@ -56,15 +56,15 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Waypoint parameters
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
+uint8_t follow_me_distance_2 = 200;
 uint8_t stdby_distance = 80; // based on stbdy radius + 10
-uint8_t follow_me_height = 10;
+uint8_t follow_me_height = 30;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
-uint8_t dist_follow2 = 250;
 float average_airspeed_sp;  // average airspeed setpoint
 
 // Roll PID
-float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
+float roll_enable = 5; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 0.5; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_diff_pgain = 0.006;
@@ -492,7 +492,6 @@ void follow_me_roll_pid(void){
 	BoundAbs(roll_diff_sum_err, 20);
 
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-	printf("ROll setpoint is given by %f\n", h_ctl_roll_setpoint);
 	term1 = +roll_diff_pgain*dist_wp_follow.x;
 	term2 = roll_diff_igain*roll_diff_sum_err;
     term3 = (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
@@ -559,8 +558,8 @@ void follow_me_set_wp(void){
 		dist_wp_follow.z = wp_follow_enu.z;
 
 		// Follow 2 waypoint
-		int32_t x_follow2 = ground_utm.east  + dist_follow2*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = ground_utm.north + dist_follow2*cosf(follow_me_heading/180.*M_PI);
+		int32_t x_follow2 = ground_utm.east  + follow_me_distance_2*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+		int32_t y_follow2 = ground_utm.north + follow_me_distance_2*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
 		// Move stdby waypoint in front of the boat at the given distance
 		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
