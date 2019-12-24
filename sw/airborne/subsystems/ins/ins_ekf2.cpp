@@ -247,6 +247,10 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
 /* Initialize the EKF */
 void ins_ekf2_init(void)
 {
+
+  // Set ekf to fixedwing
+  ekf.set_is_fixed_wing(true);
+
   /* Get the ekf parameters */
   ekf_params = ekf.getParamHandle();
   ekf_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
@@ -394,7 +398,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
     float delta_q_reset[4];
     uint8_t quat_reset_counter;
     ekf.get_quat_reset(delta_q_reset, &quat_reset_counter);
-
+/*
     // If reset update the setpoint heading
     if (ekf2.quat_reset_counter < quat_reset_counter) {
       float psi = matrix::Eulerf(matrix::Quatf(delta_q_reset)).psi();
@@ -410,6 +414,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
       stabilization_attitude_enter();
       ekf2.quat_reset_counter = quat_reset_counter;
     }
+    */
 
     /* Get in-run gyro bias */
     struct FloatRates body_rates;

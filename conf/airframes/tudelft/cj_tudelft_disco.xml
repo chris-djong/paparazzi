@@ -39,11 +39,11 @@
           <configure name="MODEM_BAUD" value="B57600"/>
       </module>
             
-      <!-- Option 1 EKF2  NOT WORKING YET  
-      <module name="ins" type="ekf2"/> --> 
+      <!-- Option 1 EKF2  NOT WORKING YET -->
+      <module name="ins" type="ekf2"/> 
       
       <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro -->
-      <module name="ins" type="alt_float"/>
+      <!-- <module name="ins" type="alt_float"/> -->
     </target>
     
     <!-- ************************************************
