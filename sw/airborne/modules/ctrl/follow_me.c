@@ -64,8 +64,8 @@ float follow_me_heading = 0;
 float average_airspeed_sp;  // average airspeed setpoint
 
 // Roll PID
-float roll_enable = 5; // when this x distance is exceeded the roll PID is enabled
-float roll_disable = 0.5; // when the x distance is lower the roll PID is disabled again
+float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
+float roll_disable = 0.2; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
@@ -106,7 +106,7 @@ float lateral_offset = 0; // Amount in meters which the waypoint should be moved
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
-int heading_calc_counter = 30; // in case counter reaches heading_calc_counter the heading is calculated
+int heading_calc_counter = 5; // in case counter reaches heading_calc_counter the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
@@ -479,13 +479,13 @@ void follow_me_roll_pid(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (((dist_wp_follow.x > roll_enable && dist_wp_follow_old.x <= roll_enable)  || (dist_wp_follow.x < -roll_enable && dist_wp_follow_old.x >= -roll_enable))){
+	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 		follow_me_roll = 1;
-	} else if (((dist_wp_follow.x <= roll_disable && dist_wp_follow_old.x > roll_disable) || (dist_wp_follow.x >= -roll_disable && dist_wp_follow_old.x < - roll_disable))) {
+	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
-	if (dist_wp_follow.y > 2*follow_me_distance){
+	if (fabs(dist_wp_follow.y) > 2*follow_me_distance){
 		follow_me_roll = 0;
 	}
 	roll_diff_sum_err += dist_wp_follow.x;

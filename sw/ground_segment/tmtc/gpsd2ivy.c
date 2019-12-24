@@ -88,7 +88,7 @@ float sim_altitude = 0;
 float sim_climb = 0;
 int sim_time = 0;
 
-int change_state_at = 50000;
+int change_state_at = 500;
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
