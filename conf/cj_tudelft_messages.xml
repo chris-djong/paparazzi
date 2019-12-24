@@ -1514,7 +1514,18 @@
       <field name="accel_vibe_hf" type="float">Accel high frequency vibe = filtered length of (delta_velocity - prev_delta_velocity)</field>
     </message>
     
-    <!-- 171 is free -->
+   <message name="AHRS_BIAS" id="171">
+      <field name="accel_x" type="float" unit="m/s^2">Accelerometer bias x-axis</field>
+      <field name="accel_y" type="float" unit="m/s^2">Accelerometer bias y-axis</field>
+      <field name="accel_z" type="float" unit="m/s^2">Accelerometer bias z-axis</field>
+      <field name="gyro_p" type="float" unit="rad/sec">Gyrometer bias roll rate</field>
+      <field name="gyro_q" type="float" unit="rad/sec">Gyrometer bias pitch rate</field>
+      <field name="gyro_r" type="float" unit="rad/sec">Gyrometer bias yaw rate</field>
+      <field name="mag_x" type="float" unit="mGauss">Magnetometer x-bias in mGauss</field>
+      <field name="mag_y" type="float" unit="mGauss">Magnetometer y-bias in mGauss</field>
+      <field name="mag_z" type="float" unit="mGauss">Magnetometer z-bias in mGauss</field>
+    </message>
+    
     <!-- 172 is free -->
 
     <message name="AHRS_EULER" id="173">
