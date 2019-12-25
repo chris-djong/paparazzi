@@ -214,18 +214,23 @@ float AverageHeading(float diffx, float diffy)
     	Sum_y = Sum_y + all_diff_y[i];
     }
 
-    float heading = 0.0;
-    // First check cases which divide by 0
-    if (Sum_y == 0){
-    	if (Sum_x > 0){
-    		heading = 90.0;
-    	} else if (Sum_x < 0){
-    		heading = -90.0;
-    	}
+    // Check for condition in which we are not moving
+    if ((Sum_x < 5) && (Sum_y < 5)){
+    	return 0.0;
     } else {
-        heading = atan2(Sum_x, Sum_y)*180.0/M_PI;
+		float heading = 0.0;
+		// First check cases which divide by 0
+		if (Sum_y == 0.0){
+			if (Sum_x > 0.0){
+				heading = 90.0;
+			} else if (Sum_x < 0.0){
+				heading = -90.0;
+			}
+		} else {
+			heading = atan2(Sum_x, Sum_y)*180.0/M_PI;
+		}
+		return heading;
     }
-    return heading;
 }
 
 
