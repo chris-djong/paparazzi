@@ -131,16 +131,13 @@
         <arg flag="-speech"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
-      <program name="GPSd position display">
-        <arg flag="--ac" constant="1"/>
-      </program>
-      <program name="Real-time Plotter">
-        <!-- <arg flag="-g" constant="2000x500-0+520"/>
+     <!-- <program name="Real-time Plotter">
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/> 
-        <arg flag="-n"/> -->
+        <arg flag="-n"/> 
         <arg flag="-g" constant="2000x300-0+520"/>
         <arg flag="-t" constant="Tuning Course"/>
         <arg flag="-u" constant="0.1"/>
@@ -166,7 +163,7 @@
         <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
         <arg flag="-c" constant="*:telemetry:GPS:speed:1"/>
       </program>
-      
+      -->
     </session>
     
     <session name="Flight UDP">
@@ -178,16 +175,13 @@
         <arg flag="-speech"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
-      <program name="GPSd position display">
-        <arg flag="--ac" constant="1"/>
-      </program>
-      <program name="Real-time Plotter">
-        <!-- <arg flag="-g" constant="2000x500-0+520"/>
+ <!-- <program name="Real-time Plotter">
+        <arg flag="-g" constant="2000x500-0+520"/>
         <arg flag="-t" constant="Distance WP"/>
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_x:1"/>
         <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/> 
-        <arg flag="-n"/> -->
+        <arg flag="-n"/> 
         <arg flag="-g" constant="2000x300-0+520"/>
         <arg flag="-t" constant="Tuning Course"/>
         <arg flag="-u" constant="0.1"/>
@@ -212,7 +206,7 @@
         <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>
         <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
         <arg flag="-c" constant="*:telemetry:GPS:speed:1"/>
-      </program>
+      </program> -->
     </session>
     
   </section>
