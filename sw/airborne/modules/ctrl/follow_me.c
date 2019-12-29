@@ -59,6 +59,7 @@ uint8_t follow_me_distance = 20; // distance from which the follow me points are
 uint8_t follow_me_distance_2 = 200;
 uint8_t stdby_distance = 80; // based on stbdy radius + 10
 uint8_t follow_me_height = 30;
+printf("Follow me height has been set to 30 due to initial setup\n");
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
 float average_airspeed_sp;  // average airspeed setpoint
@@ -129,11 +130,11 @@ struct UtmCoor_f ground_utm;  // global because required for file logger and cal
 *********************************/
 
 // Calculate the average speed in order to obtain a general prediction of the speed of the ground station
-#define MAX_SPEED_SIZE 1
+#define MAX_SPEED_SIZE 5
 float all_speed[MAX_SPEED_SIZE]={V_CTL_AUTO_AIRSPEED_SETPOINT};
 int8_t front_speed=-1,rear_speed=-1, count_speed=0;
 float AverageAirspeed(float);
-//function definition
+// Function definition
 float AverageAirspeed(float speed)
 {
 	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
@@ -215,8 +216,9 @@ float AverageHeading(float diffx, float diffy)
     }
 
     // Check for condition in which we are not moving
-    if ((Sum_x < 5) && (Sum_y < 5)){
-    	return 0.0;
+    // In case we are not moving return the heading that is not present
+    if ((fabs(Sum_x) < 2) && (fabs(Sum_y) < 2)){
+    	return follow_me_heading;
     } else {
 		float heading = 0.0;
 		// First check cases which divide by 0
@@ -424,10 +426,12 @@ void follow_me_startup(void){
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
     follow_me_height = pos_Utm->alt;
+    printf("Follow me height is set to pos utm alt due to startup and given by %f\n", follow_me_height);
     ground_set = false;
-    v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
+    // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
-    	follow_me_roll = 1;
+    	follow_me_roll = 0;
+    	printf("Follow me roll is disabled\n");
     } else {
     	follow_me_roll = 0;
     }
@@ -459,6 +463,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
+	printf("Ground altitude of GPS message is given by %f\n", ground_lla.alt);
 	// ground_speed = DL_GROUND_GPS_speed(buf);
 	// ground_climb = DL_GROUND_GPS_climb(buf);
 	// ground_course = DL_GROUND_GPS_course(buf);
@@ -485,7 +490,8 @@ void follow_me_roll_pid(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
-		follow_me_roll = 1;
+		follow_me_roll = 0;
+		printf("FOllow me roll is disabled\n");
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
@@ -556,7 +562,7 @@ void follow_me_set_wp(void){
 
 		wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
-		// Dist wp follows using ENU system
+		// Dist wp follows using ENU system (used for file logger currently)
 		dist_wp_follow_old = dist_wp_follow;
 		dist_wp_follow.x = wp_follow_enu.x;
 		dist_wp_follow.y = wp_follow_enu.y;
@@ -571,16 +577,16 @@ void follow_me_set_wp(void){
 		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
         // Update STBDY HOME AND FOLLOW ME WPS
-		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height);
+		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height );
 		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
 		nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
 		nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_height + 20);
 
 		// Update allowable Flying Region
-		nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_height);
-		nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_height);
+		nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_height + 20);
+		nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_height + 20);
+		nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_height + 20);
+		nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_height + 20);
 
 		// Reset the ground boolean
 	    ground_set = false;
@@ -636,6 +642,6 @@ void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
-	v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
+	// v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 }
 

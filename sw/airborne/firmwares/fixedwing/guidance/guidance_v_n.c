@@ -123,7 +123,7 @@ void v_ctl_init(void)
 {
   /* mode */
   v_ctl_mode = V_CTL_MODE_MANUAL;
-  v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
+  v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
 
   /* outer loop */
   v_ctl_altitude_setpoint = 0.;
