@@ -58,8 +58,8 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t follow_me_distance_2 = 200;
 uint8_t stdby_distance = 80; // based on stbdy radius + 10
-uint8_t follow_me_height = 30;
-printf("Follow me height has been set to 30 due to initial setup\n");
+uint8_t follow_me_height = 30; // desired height above ground station
+float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
 float average_airspeed_sp;  // average airspeed setpoint
@@ -412,6 +412,7 @@ static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
 
 // Called at compiling of module
 void follow_me_init(void){
+	ground_set = false;
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FOLLOW_ME, send_follow_me);
 }
 
@@ -425,9 +426,13 @@ void follow_me_startup(void){
     follow_me_set_wp();
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-    follow_me_height = pos_Utm->alt;
-    printf("Follow me height is set to pos utm alt due to startup and given by %f\n", follow_me_height);
-    ground_set = false;
+    // In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
+    if (ground_set){
+    	follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
+    }
+    else {
+    	follow_me_altitude = pos_Utm->alt;
+    }
     // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
     	follow_me_roll = 0;
@@ -463,18 +468,17 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
-	printf("Ground altitude of GPS message is given by %f\n", ground_lla.alt);
 	// ground_speed = DL_GROUND_GPS_speed(buf);
 	// ground_climb = DL_GROUND_GPS_climb(buf);
 	// ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
 	// fix_mode = DL_GROUND_GPS_mode(buf);
-	ground_set = true;
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_set_wp();
+		ground_set = true;
 	}
 
 	// Set heading here so that it can be calculated already during stdby or Manual execution
@@ -539,73 +543,69 @@ void follow_me_throttle_pid(void){
 
 // Sets all the waypoints based on GPS coordinates received by ground segment
 void follow_me_set_wp(void){
-	if(ground_set) {
+	// Obtain lat lon coordinates for conversion
+	struct LlaCoor_f lla;
+	lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
+	lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
+	lla.alt = ((float)(ground_lla.alt))/1000.;
 
-		// Obtain lat lon coordinates for conversion
-		struct LlaCoor_f lla;
-		lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
-		lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
-		lla.alt = ((float)(ground_lla.alt))/1000.;
-		// Convert LLA to UTM in oder to set watpoint in UTM system
-		ground_utm.zone = nav_utm_zone0;
-		utm_of_lla_f(&ground_utm, &lla);
-        ground_utm_new = ground_utm;
+	follow_me_altitude = lla.alt + follow_me_height;
+	// Convert LLA to UTM in oder to set watpoint in UTM system
+	ground_utm.zone = nav_utm_zone0;
+	utm_of_lla_f(&ground_utm, &lla);
+	ground_utm_new = ground_utm;
 
-		// Follow waypoint
-		int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
-		int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
+	// Follow waypoint
+	int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+	int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
-		struct FloatVect3 wp_follow_utm;
-		wp_follow_utm.x = x_follow;
-		wp_follow_utm.y = y_follow;
-		wp_follow_utm.z = follow_me_height;
+	struct FloatVect3 wp_follow_utm;
+	wp_follow_utm.x = x_follow;
+	wp_follow_utm.y = y_follow;
+	wp_follow_utm.z = follow_me_altitude;
 
-		wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
+	wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
 
-		// Dist wp follows using ENU system (used for file logger currently)
-		dist_wp_follow_old = dist_wp_follow;
-		dist_wp_follow.x = wp_follow_enu.x;
-		dist_wp_follow.y = wp_follow_enu.y;
-		dist_wp_follow.z = wp_follow_enu.z;
+	// Dist wp follows using ENU system (used for file logger currently)
+	dist_wp_follow_old = dist_wp_follow;
+	dist_wp_follow.x = wp_follow_enu.x;
+	dist_wp_follow.y = wp_follow_enu.y;
+	dist_wp_follow.z = wp_follow_enu.z;
 
-		// Follow 2 waypoint
-		int32_t x_follow2 = ground_utm.east  + follow_me_distance_2*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
-		int32_t y_follow2 = ground_utm.north + follow_me_distance_2*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
+	// Follow 2 waypoint
+	int32_t x_follow2 = ground_utm.east  + follow_me_distance_2*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+	int32_t y_follow2 = ground_utm.north + follow_me_distance_2*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
-		// Move stdby waypoint in front of the boat at the given distance
-		int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
-		int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
+	// Move stdby waypoint in front of the boat at the given distance
+	int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
+	int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
 
-        // Update STBDY HOME AND FOLLOW ME WPS
-		nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_height );
-		nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_height);
-		nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_height + 20); // Set STBDY and HOME waypoint so that they are above the boat
-		nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_height + 20);
+	// Update STBDY HOME AND FOLLOW ME WPS
+	nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_altitude );
+	nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_altitude);
+	nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_altitude + 20); // Set STBDY and HOME waypoint so that they are above the boat
+	nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_altitude + 20);
 
-		// Update allowable Flying Region
-		nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_height + 20);
-		nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_height + 20);
-		nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_height + 20);
-		nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_height + 20);
-
-		// Reset the ground boolean
-	    ground_set = false;
+	// Update allowable Flying Region
+	nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_altitude + 20);
 
 #ifdef RL_SOARING_H
-	    if (rl_started){
-			average_follow_me_distance = AverageDistance(dist_wp_follow.y);
-			if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
-				hand_rl[hand_rl_idx] = 1;
-			} else {
-				hand_rl[hand_rl_idx] = 0;
-			}
-			hand_rl_idx++;
-			if (hand_rl_idx>HAND_RL_SIZE-1){
-				hand_rl_idx = 0;
-			}
-	    }
-#endif
+	if (rl_started){
+		average_follow_me_distance = AverageDistance(dist_wp_follow.y);
+		if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
+			hand_rl[hand_rl_idx] = 1;
+		} else {
+			hand_rl[hand_rl_idx] = 0;
+		}
+		hand_rl_idx++;
+		if (hand_rl_idx>HAND_RL_SIZE-1){
+			hand_rl_idx = 0;
+		}
 	}
+#endif
 	return;
 }
 
@@ -614,7 +614,7 @@ void follow_me_set_wp(void){
 void follow_me_go(void);
 void follow_me_go(void){
 	NavGotoWaypoint(WP_FOLLOW2);
-    NavVerticalAltitudeMode(follow_me_height, 0.);
+    NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
 
 
