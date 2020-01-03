@@ -78,12 +78,6 @@ float roll_diff_dgain = 0.11;
 float roll_diff_sum_err = 0.0;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
-
-// can be removed later only for tuning
-float term1=0;
-float term2=0;
-float term3=0;
-
 // Throttle PID
 float airspeed_sum_err = 0.0;
 
@@ -409,7 +403,7 @@ void follow_me_soar_here(void){
 
 // Variables that are send through IVY
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_airspeed_setpoint, &term1, &term2, &term3);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_airspeed_setpoint);
 }
 
 // Called at compiling of module
@@ -511,9 +505,7 @@ void follow_me_roll_pid(void){
 	BoundAbs(roll_diff_sum_err, 20);
 
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-	term1 = +roll_diff_pgain*dist_wp_follow.x;
-	term2 = roll_diff_igain*roll_diff_sum_err;
-    term3 = (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+
 	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
@@ -628,7 +620,7 @@ int follow_me_call(void){
 
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
-	if (dist_wp_follow2.x > 20 && dist_wp_follow2.y > 20){
+	if (dist_wp_follow2.x > 30 && dist_wp_follow2.y > 30){
 		follow_me_throttle_pid();
 		follow_me_roll_pid();
 	} else {

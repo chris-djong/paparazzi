@@ -29,10 +29,10 @@
       <message name="IMU_ACCEL"           period=".8"/>
       <message name="IMU_GYRO"            period=".6"/>
       <message name="IMU_MAG"             period="1.3"/>
-      <message name="CAM"                 period="0.5"/>
-      <message name="CAM_POINT"           period="1.0"/>
-      <message name="COMMANDS"            period="5"/>
-      <message name="FBW_STATUS"          period="2"/>
+      <!-- <message name="CAM"                 period="0.5"/> -->
+      <!-- <message name="CAM_POINT"           period="1.0"/> -->
+      <!-- <message name="COMMANDS"            period="5"/> -->
+      <!-- <message name="FBW_STATUS"          period="2"/> -->
       <message name="AIR_DATA"            period="1.3"/>
       <message name="FOLLOW_ME"           period="1"/>
       <!-- <message name="INS_EKF2"            period=".25"/> -->
