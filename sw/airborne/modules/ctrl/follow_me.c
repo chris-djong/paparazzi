@@ -626,15 +626,14 @@ int follow_me_call(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
-    printf("Follow2 %f %f %f\n", dist_wp_follow2.x, dist_wp_follow2.y, dist_wp_follow2.z);
-
     // Loop through controller
-	follow_me_roll_pid();
-
+    // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
 	if (dist_wp_follow2.x > 20 && dist_wp_follow2.y > 20){
 		follow_me_throttle_pid();
+		follow_me_roll_pid();
 	} else {
 		v_ctl_auto_airspeed_setpoint = 10;
+		follow_me_roll = 0;
 	}
     // Move to the correct location
 	follow_me_go();
