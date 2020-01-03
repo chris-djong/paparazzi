@@ -103,7 +103,7 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
 extern int follow_me_call(void);
 
 // Used by telemetry for reception of ground gps
-extern void follow_me_set_wp(void);
+//extern void follow_me_set_wp(void);
 
 // Used by flight plan
 void follow_me_soar_here(void);

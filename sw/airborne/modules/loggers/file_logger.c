@@ -92,7 +92,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,h_ctl_roll_setpoint_follow_me, dist_wp_follow.x,dist_wp_follow.y,ground_utm.east,ground_utm.north,ground_utm.alt,wp_follow_enu.x,wp_follow_enu.y,wp_follow_enu.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,h_ctl_roll_setpoint_follow_me,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft\n"
 #endif
     );
   }
@@ -143,7 +143,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -166,14 +166,12 @@ void file_logger_periodic(void)
 		  h_ctl_aileron_setpoint, // int
 		  h_ctl_elevator_setpoint, // int
 		  h_ctl_roll_setpoint_follow_me, // float
-		  dist_wp_follow.x, // float
-		  dist_wp_follow.y, // float
 		  ground_utm.east, // float
 		  ground_utm.north, // float
 		  ground_utm.alt, // float
-		  wp_follow_enu.x, // float
-		  wp_follow_enu.y, // float
-		  wp_follow_enu.z, // float
+		  dist_wp_follow.x, // float
+		  dist_wp_follow.y, // float
+		  dist_wp_follow.z, // float
 		  pos_Utm->east, // float
 		  pos_Utm->north, // float
 		  pos_Utm->alt, // float

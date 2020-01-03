@@ -63,6 +63,10 @@ float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
 float average_airspeed_sp;  // average airspeed setpoint
+int32_t x_follow;
+int32_t y_follow;
+int32_t x_follow2;
+int32_t y_follow2;
 
 // Roll PID
 float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
@@ -103,6 +107,7 @@ float airspeed_dgain = 1.4;
 float average_follow_me_distance;
 float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
+struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
 float lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
@@ -119,10 +124,7 @@ static bool ground_set; // boolean to decide whether GPS message was received
 static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
 static uint32_t ground_timestamp; // only executed set wp function if we received a newer timestamp
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
-struct FloatVect3 wp_follow_enu; // global because file logger needs access
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
-
-
 
 
 /*********************************
@@ -423,7 +425,6 @@ void follow_me_startup(void){
     }
 #endif
 	// follow_me_soar_here();
-    follow_me_set_wp();
     // Set the default altitude of waypoints to the current height so that the drone keeps the height
     struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
     // In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
@@ -459,6 +460,9 @@ void follow_me_set_heading(void){
     }
 }
 
+void follow_me_compute_wp(void);
+
+
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
@@ -477,7 +481,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
 	if (ground_timestamp > old_ground_timestamp){
-		follow_me_set_wp();
+		follow_me_compute_wp();
 		ground_set = true;
 	}
 
@@ -495,7 +499,7 @@ void follow_me_roll_pid(void){
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 		follow_me_roll = 0;
-		printf("FOllow me roll is disabled\n");
+		printf("Follow me roll is disabled\n");
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
@@ -528,11 +532,6 @@ void follow_me_throttle_pid(void){
 
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
-	// Added terms for tuning, can be removed later
-	// term1 = +airspeed_pgain*dist_wp_follow.y;
-	// term2 = airspeed_igain*airspeed_sum_err;
-	// term3 = (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
-
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
 
@@ -541,14 +540,28 @@ void follow_me_throttle_pid(void){
 	}
 }
 
+// Function that computes distance of UAV toward a certain UTM position
+struct FloatVect3 compute_dist_to_utm(float, float, float);
+struct FloatVect3 compute_dist_to_utm(float utm_x, float utm_y, float utm_z){
+	struct FloatVect3 wp_follow_utm;
+	wp_follow_utm.x = utm_x;
+	wp_follow_utm.y = utm_y;
+	wp_follow_utm.z = utm_z;
+
+	struct FloatVect3 distance = UTM_to_ENU(&wp_follow_utm);
+
+	return distance;
+}
+
+
+
 // Sets all the waypoints based on GPS coordinates received by ground segment
-void follow_me_set_wp(void){
+void follow_me_compute_wp(void){
 	// Obtain lat lon coordinates for conversion
 	struct LlaCoor_f lla;
 	lla.lat = RadOfDeg((float)(ground_lla.lat / 1e7));
 	lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 	lla.alt = ((float)(ground_lla.alt))/1000.;
-
 	follow_me_altitude = lla.alt + follow_me_height;
 	// Convert LLA to UTM in oder to set watpoint in UTM system
 	ground_utm.zone = nav_utm_zone0;
@@ -556,25 +569,12 @@ void follow_me_set_wp(void){
 	ground_utm_new = ground_utm;
 
 	// Follow waypoint
-	int32_t x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
-	int32_t y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
-
-	struct FloatVect3 wp_follow_utm;
-	wp_follow_utm.x = x_follow;
-	wp_follow_utm.y = y_follow;
-	wp_follow_utm.z = follow_me_altitude;
-
-	wp_follow_enu = UTM_to_ENU(&wp_follow_utm);
-
-	// Dist wp follows using ENU system (used for file logger currently)
-	dist_wp_follow_old = dist_wp_follow;
-	dist_wp_follow.x = wp_follow_enu.x;
-	dist_wp_follow.y = wp_follow_enu.y;
-	dist_wp_follow.z = wp_follow_enu.z;
+	x_follow = ground_utm.east + follow_me_distance*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+	y_follow = ground_utm.north + follow_me_distance*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
 	// Follow 2 waypoint
-	int32_t x_follow2 = ground_utm.east  + follow_me_distance_2*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
-	int32_t y_follow2 = ground_utm.north + follow_me_distance_2*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
+	x_follow2 = ground_utm.east  + follow_me_distance_2*sinf(follow_me_heading/180.*M_PI) + lateral_offset*cosf(-follow_me_heading/180.*M_PI);
+	y_follow2 = ground_utm.north + follow_me_distance_2*cosf(follow_me_heading/180.*M_PI) + lateral_offset*sinf(-follow_me_heading/180.*M_PI);
 
 	// Move stdby waypoint in front of the boat at the given distance
 	int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
@@ -620,10 +620,22 @@ void follow_me_go(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
+	// Compute errors towards waypoint
+	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
+	dist_wp_follow_old = dist_wp_follow;
+	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
+    dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
+
+    printf("Follow2 %f %f %f\n", dist_wp_follow2.x, dist_wp_follow2.y, dist_wp_follow2.z);
+
     // Loop through controller
 	follow_me_roll_pid();
-	follow_me_throttle_pid();
 
+	if (dist_wp_follow2.x > 20 && dist_wp_follow2.y > 20){
+		follow_me_throttle_pid();
+	} else {
+		v_ctl_auto_airspeed_setpoint = 10;
+	}
     // Move to the correct location
 	follow_me_go();
 
