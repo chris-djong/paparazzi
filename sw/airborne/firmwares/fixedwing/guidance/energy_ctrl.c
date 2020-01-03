@@ -60,16 +60,12 @@
  *  @enddot
  *
  */
-#include <stdio.h>
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 #include "state.h"
 #include "firmwares/fixedwing/nav.h"
 #include "generated/airframe.h"
 #include "autopilot.h"
 #include "subsystems/abi.h"
-#include <stdio.h>
-
-
 
 /////// DEFAULT GUIDANCE_V NECESSITIES //////
 
@@ -374,7 +370,6 @@ void v_ctl_climb_loop(void)
   }
   // Airspeed outerloop: positive means we need to accelerate
   float speed_error = v_ctl_auto_airspeed_controlled - stateGetAirspeed_f();
-  //printf("The desired airspeed is given by %f and the actual airspeed by %f\n", v_ctl_auto_airspeed_controlled, stateGetAirspeed_f());
   // Speed Controller to PseudoControl: gain 1 -> 5m/s error = 0.5g acceleration
   v_ctl_desired_acceleration = speed_error * v_ctl_airspeed_pgain / 9.81f;
   BoundAbs(v_ctl_desired_acceleration, v_ctl_max_acceleration);
@@ -443,7 +438,6 @@ void v_ctl_climb_loop(void)
 
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
-  //printf("Overal pitch setpoint %f of v_ctl_of_vz and %f of nav_pitch\n\n\n\n", v_ctl_pitch_of_vz, nav_pitch);
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
   Bound(v_ctl_pitch_setpoint, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT)
 
