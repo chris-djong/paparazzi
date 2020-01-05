@@ -524,6 +524,8 @@ void follow_me_throttle_pid(void){
 
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
+	printf("Throttle loop wants to increase airspeed by %f because of dist of %f\n", airspeed_inc, dist_wp_follow.y);
+
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
 
@@ -620,10 +622,11 @@ int follow_me_call(void){
 
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
-	if (dist_wp_follow2.x > 30 && dist_wp_follow2.y > 30){
+	if (fabs(dist_wp_follow2.x) > 30 && fabs(dist_wp_follow2.y) > 30){
 		follow_me_throttle_pid();
 		follow_me_roll_pid();
 	} else {
+		printf("Setpoint to 10 because follow2x = %f follow2y = %f\n", dist_wp_follow2.x, dist_wp_follow2.y);
 		v_ctl_auto_airspeed_setpoint = 10;
 		follow_me_roll = 0;
 	}
