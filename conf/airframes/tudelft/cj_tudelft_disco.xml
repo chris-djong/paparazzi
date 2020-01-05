@@ -33,7 +33,7 @@
       </module>
 
       <!-- Type of telemetry -->
-      <!--  <module name="telemetry" type="transparent_udp"/> -->
+      <!-- <module name="telemetry" type="transparent_udp"/> -->
       <module name="telemetry" type="transparent">
           <configure name="MODEM_PORT" value="UART2"/>
           <configure name="MODEM_BAUD" value="B57600"/>
