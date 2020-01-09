@@ -58,7 +58,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 uint8_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t follow_me_distance_2 = 200;
 uint8_t stdby_distance = 80; // based on stbdy radius + 10
-uint8_t follow_me_height = 30; // desired height above ground station
+int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
@@ -371,7 +371,6 @@ int8_t check_handover_rl(void){
   Follow me functions
 ***********************************************************************************************************************/
 
-
 //void follow_me_soar_here(void);
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
@@ -384,18 +383,23 @@ void follow_me_soar_here(void){
 		// Obtain current UTM position
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 		struct FloatVect3 point;
+
 		point.x = pos_Utm->east;
 		point.y = pos_Utm->north;
 		point.z = pos_Utm->alt;
 
 		// Translate frame
 		transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
+        printf("Translation gives (%f %f)\n", transformation.x, transformation.y);
 
 		// Then rotate frame
 		transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
+        printf("Rotation gives (%f %f)\n", transformation.x, transformation.y);
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
+		printf("Based on pos (%f %f) and grond (%f %f)\n", point.x, point.y, ground_utm.east, ground_utm.north);
+		printf("A soar here transformation of a distance of %d and lateral offset of %f is obtained\n", follow_me_distance, lateral_offset);
 
 	}
 }
@@ -524,8 +528,6 @@ void follow_me_throttle_pid(void){
 
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
-	printf("Throttle loop wants to increase airspeed by %f because of dist of %f\n", airspeed_inc, dist_wp_follow.y);
-
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
 
@@ -620,13 +622,13 @@ int follow_me_call(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
+
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
 	if (fabs(dist_wp_follow2.x) > 30 && fabs(dist_wp_follow2.y) > 30){
 		follow_me_throttle_pid();
 		follow_me_roll_pid();
 	} else {
-		printf("Setpoint to 10 because follow2x = %f follow2y = %f\n", dist_wp_follow2.x, dist_wp_follow2.y);
 		v_ctl_auto_airspeed_setpoint = 10;
 		follow_me_roll = 0;
 	}
