@@ -56,7 +56,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Waypoint parameters
 int16_t follow_me_distance = 20; // distance from which the follow me points are created
-int16_t follow_me_distance_2 = 200;
+uint8_t follow_me_distance_2 = 200; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
 int16_t stdby_distance = 80; // based on stbdy radius + 10
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
@@ -458,8 +458,6 @@ void follow_me_set_heading(void){
 }
 
 void follow_me_compute_wp(void);
-
-
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
