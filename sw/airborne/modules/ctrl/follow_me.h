@@ -35,13 +35,13 @@
   Variables used by the settings
 *************************************************/
 
-extern uint8_t follow_me_distance;
-extern uint8_t follow_me_distance_2;
-extern uint8_t stdby_distance;
+extern int16_t follow_me_distance;
+extern int16_t follow_me_distance_2;
+extern int16_t stdby_distance;
 extern int16_t follow_me_height;
 extern uint16_t follow_me_region;
 extern float follow_me_heading;
-extern float lateral_offset;
+extern int8_t lateral_offset;
 
 extern float airspeed_igain;
 extern float airspeed_pgain;

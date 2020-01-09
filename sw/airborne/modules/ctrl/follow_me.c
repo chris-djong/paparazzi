@@ -55,9 +55,9 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 *********************************/
 
 // Waypoint parameters
-uint8_t follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t follow_me_distance_2 = 200;
-uint8_t stdby_distance = 80; // based on stbdy radius + 10
+int16_t follow_me_distance = 20; // distance from which the follow me points are created
+int16_t follow_me_distance_2 = 200;
+int16_t stdby_distance = 80; // based on stbdy radius + 10
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
@@ -102,7 +102,7 @@ float average_follow_me_distance;
 float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
 struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
-float lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
+int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
@@ -393,13 +393,18 @@ void follow_me_soar_here(void){
         printf("Translation gives (%f %f)\n", transformation.x, transformation.y);
 
 		// Then rotate frame
-		transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
+		transformation = rotate_frame(&transformation, -follow_me_heading*M_PI/180);
+
+		// Bound transformation values
         printf("Rotation gives (%f %f)\n", transformation.x, transformation.y);
+
+        BoundAbs(transformation.x, 32766); // 16 bit signed integer
+        BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
 		printf("Based on pos (%f %f) and grond (%f %f)\n", point.x, point.y, ground_utm.east, ground_utm.north);
-		printf("A soar here transformation of a distance of %d and lateral offset of %f is obtained\n", follow_me_distance, lateral_offset);
+		printf("A soar here transformation of a distance of %d and lateral offset of %d is obtained\n", follow_me_distance, lateral_offset);
 
 	}
 }
