@@ -390,22 +390,16 @@ void follow_me_soar_here(void){
 
 		// Translate frame
 		transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
-        printf("Translation gives (%f %f)\n", transformation.x, transformation.y);
 
 		// Then rotate frame
 		transformation = rotate_frame(&transformation, -follow_me_heading*M_PI/180);
 
 		// Bound transformation values
-        printf("Rotation gives (%f %f)\n", transformation.x, transformation.y);
-
         BoundAbs(transformation.x, 32766); // 16 bit signed integer
         BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
-		printf("Based on pos (%f %f) and grond (%f %f)\n", point.x, point.y, ground_utm.east, ground_utm.north);
-		printf("A soar here transformation of a distance of %d and lateral offset of %d is obtained\n", follow_me_distance, lateral_offset);
-
 	}
 }
 
