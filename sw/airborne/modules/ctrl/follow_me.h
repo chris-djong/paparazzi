@@ -36,7 +36,7 @@
 *************************************************/
 
 extern int16_t follow_me_distance;
-extern int16_t follow_me_distance_2;
+extern uint8_t follow_me_distance_2;
 extern int16_t stdby_distance;
 extern int16_t follow_me_height;
 extern uint16_t follow_me_region;
