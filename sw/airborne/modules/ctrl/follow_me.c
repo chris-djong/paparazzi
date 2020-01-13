@@ -55,10 +55,10 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 *********************************/
 
 // Waypoint parameters
-uint8_t follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t follow_me_distance_2 = 200;
-uint8_t stdby_distance = 80; // based on stbdy radius + 10
-uint8_t follow_me_height = 30; // desired height above ground station
+int16_t follow_me_distance = 20; // distance from which the follow me points are created
+uint8_t follow_me_distance_2 = 200; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
+int16_t stdby_distance = 80; // based on stbdy radius + 10
+int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
@@ -102,7 +102,7 @@ float average_follow_me_distance;
 float actual_enu_speed;
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
 struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
-float lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
+int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
@@ -371,7 +371,6 @@ int8_t check_handover_rl(void){
   Follow me functions
 ***********************************************************************************************************************/
 
-
 //void follow_me_soar_here(void);
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
@@ -384,6 +383,7 @@ void follow_me_soar_here(void){
 		// Obtain current UTM position
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 		struct FloatVect3 point;
+
 		point.x = pos_Utm->east;
 		point.y = pos_Utm->north;
 		point.z = pos_Utm->alt;
@@ -392,11 +392,14 @@ void follow_me_soar_here(void){
 		transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
 
 		// Then rotate frame
-		transformation = rotate_frame(&transformation, follow_me_heading*M_PI/180);
+		transformation = rotate_frame(&transformation, -follow_me_heading*M_PI/180);
+
+		// Bound transformation values
+        BoundAbs(transformation.x, 32766); // 16 bit signed integer
+        BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
-
 	}
 }
 
@@ -455,8 +458,6 @@ void follow_me_set_heading(void){
 }
 
 void follow_me_compute_wp(void);
-
-
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
@@ -523,8 +524,6 @@ void follow_me_throttle_pid(void){
 	BoundAbs(airspeed_sum_err, 20);
 
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
-
-	printf("Throttle loop wants to increase airspeed by %f because of dist of %f\n", airspeed_inc, dist_wp_follow.y);
 
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
@@ -620,13 +619,13 @@ int follow_me_call(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
+
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
 	if (fabs(dist_wp_follow2.x) > 30 && fabs(dist_wp_follow2.y) > 30){
 		follow_me_throttle_pid();
 		follow_me_roll_pid();
 	} else {
-		printf("Setpoint to 10 because follow2x = %f follow2y = %f\n", dist_wp_follow2.x, dist_wp_follow2.y);
 		v_ctl_auto_airspeed_setpoint = 10;
 		follow_me_roll = 0;
 	}
