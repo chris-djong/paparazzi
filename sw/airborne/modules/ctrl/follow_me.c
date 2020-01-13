@@ -430,7 +430,7 @@ void follow_me_startup(void){
     }
     // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
-    	follow_me_roll = 0;
+    	follow_me_roll = 1;
     	printf("Follow me roll is disabled\n");
     } else {
     	follow_me_roll = 0;
@@ -492,7 +492,7 @@ void follow_me_roll_pid(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
-		follow_me_roll = 0;
+		follow_me_roll = 1;
 		printf("Follow me roll is disabled\n");
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
