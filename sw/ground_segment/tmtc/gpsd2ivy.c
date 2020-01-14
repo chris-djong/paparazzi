@@ -111,6 +111,8 @@ static void update_gps(struct gps_data_t *gpsdata,
 	    	sim_lat_speed = -200*1e-8;
 	        sim_lon_speed = 200*1e-8;
 	    }
+	    sim_lat_speed = 150*1e-8;
+	    sim_lon_speed = 0;
 	    // Simulate heading change
 	    sim_lat += sim_lat_speed;
 	    sim_lon += sim_lon_speed;

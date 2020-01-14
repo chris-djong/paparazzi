@@ -106,7 +106,7 @@ int8_t lateral_offset = 0; // Amount in meters which the waypoint should be move
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
 int counter; // counter which counts function executions
-int heading_calc_counter = 5; // in case counter reaches heading_calc_counter the heading is calculated
+int heading_calc_counter = 10; // in case counter reaches heading_calc_counter the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
@@ -187,8 +187,6 @@ float AverageHeading(float diffx, float diffy)
 	}
     float Sum_x = 0;
     float Sum_y = 0;
-
-
 
     if(front_heading ==(rear_heading+1)%MAX_HEADING_SIZE)
     {
@@ -372,9 +370,13 @@ int8_t check_handover_rl(void){
 ***********************************************************************************************************************/
 
 //void follow_me_soar_here(void);
+// Sets all follow me parameters like the current
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
+        // Set heading first so that we transformations are correct
+		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
+
 		// Based on the current Utm position and follow_me_heading we have to change the reference frame
 		// such that it`s y axis is orthogonal to the heading and the origin is at the boat location
 		// Create return vector for the function
@@ -384,8 +386,8 @@ void follow_me_soar_here(void){
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 		struct FloatVect3 point;
 
-		point.x = pos_Utm->east;
-		point.y = pos_Utm->north;
+		point.x = pos_Utm->east + 25*sinf(follow_me_heading/180.*M_PI);
+		point.y = pos_Utm->north + 25*cosf(follow_me_heading/180.*M_PI);
 		point.z = pos_Utm->alt;
 
 		// Translate frame
@@ -400,6 +402,7 @@ void follow_me_soar_here(void){
 
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
+
 	}
 }
 
@@ -432,9 +435,8 @@ void follow_me_startup(void){
     	follow_me_altitude = pos_Utm->alt;
     }
     // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
-    if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
+    if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
     	follow_me_roll = 1;
-    	printf("Follow me roll is disabled\n");
     } else {
     	follow_me_roll = 0;
     }
@@ -454,6 +456,7 @@ void follow_me_set_heading(void){
 		// Note atan2 gives results between -180 and 180
 		follow_me_heading = AverageHeading(diff_x, diff_y);
 		ground_utm_old = ground_utm_new;
+
     }
 }
 
@@ -494,19 +497,17 @@ void follow_me_roll_pid(void){
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 		follow_me_roll = 1;
-		printf("Follow me roll is disabled\n");
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
-	if (fabs(dist_wp_follow.y) > 2*follow_me_distance){
+	if (fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)){
 		follow_me_roll = 0;
 	}
 	roll_diff_sum_err += dist_wp_follow.x;
 	BoundAbs(roll_diff_sum_err, 20);
 
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
-
 	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
@@ -619,12 +620,11 @@ int follow_me_call(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
-
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
-	if (fabs(dist_wp_follow2.x) > 30 && fabs(dist_wp_follow2.y) > 30){
-		follow_me_throttle_pid();
+	if (fabs(dist_wp_follow2.y) > 30){
 		follow_me_roll_pid();
+		follow_me_throttle_pid();
 	} else {
 		v_ctl_auto_airspeed_setpoint = 10;
 		follow_me_roll = 0;
@@ -646,6 +646,7 @@ int follow_me_call(void){
 void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
+
 	h_ctl_roll_setpoint_follow_me = 0;
 	// v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 }
