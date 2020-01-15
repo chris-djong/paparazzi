@@ -434,7 +434,6 @@ void follow_me_startup(void){
     // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.y > roll_enable) || (dist_wp_follow.y < -roll_enable)){
     	follow_me_roll = 1;
-    	printf("Follow me roll is disabled\n");
     } else {
     	follow_me_roll = 0;
     }
@@ -494,7 +493,6 @@ void follow_me_roll_pid(void){
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 		follow_me_roll = 1;
-		printf("Follow me roll is disabled\n");
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
@@ -545,8 +543,6 @@ struct FloatVect3 compute_dist_to_utm(float utm_x, float utm_y, float utm_z){
 
 	return distance;
 }
-
-
 
 // Sets all the waypoints based on GPS coordinates received by ground segment
 void follow_me_compute_wp(void){
@@ -602,14 +598,12 @@ void follow_me_compute_wp(void){
 	return;
 }
 
-
 // Sets the general heading in the direction of FOLLOW2 (waypoint located far in front of the boat)
 void follow_me_go(void);
 void follow_me_go(void){
 	NavGotoWaypoint(WP_FOLLOW2);
     NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
-
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
@@ -618,7 +612,6 @@ int follow_me_call(void){
 	dist_wp_follow_old = dist_wp_follow;
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
-
 
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
@@ -629,9 +622,9 @@ int follow_me_call(void){
 		v_ctl_auto_airspeed_setpoint = 10;
 		follow_me_roll = 0;
 	}
-    // Move to the correct location
-	follow_me_go();
 
+	// Move to the correct location
+	follow_me_go();
 
 #ifdef RL_SOARING_H
 	if (check_handover_rl()){
