@@ -36,7 +36,6 @@
 #include "subsystems/navigation/common_nav.h"
 #include "generated/modules.h"
 #include "firmwares/fixedwing/nav.h"
-#include "firmwares/fixedwing/guidance/guidance_v_n.h"
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include <Ivy/ivy.h> // for go to block
@@ -81,17 +80,10 @@ uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_set
 // Throttle PID
 float airspeed_sum_err = 0.0;
 
-// Energy control defines FW_V_CTL_ENERGY_H
-#ifdef FW_V_CTL_ENERGY_H
-float airspeed_pgain = 0.6;
-float airspeed_igain = 0.02;
-float airspeed_dgain = 0.01;
-#else
-// New control does not define FW_V_CTL_ENERY_H
+
 float airspeed_pgain = 0.04;
 float airspeed_igain = 0.003;
 float airspeed_dgain = 1.4;
-#endif
 
 
 /*********************************
@@ -386,8 +378,8 @@ void follow_me_soar_here(void){
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 		struct FloatVect3 point;
 
-		point.x = pos_Utm->east + 25*sinf(follow_me_heading/180.*M_PI);
-		point.y = pos_Utm->north + 25*cosf(follow_me_heading/180.*M_PI);
+		point.x = pos_Utm->east + 5*sinf(follow_me_heading/180.*M_PI);
+		point.y = pos_Utm->north + 5*cosf(follow_me_heading/180.*M_PI);
 		point.z = pos_Utm->alt;
 
 		// Translate frame
@@ -434,7 +426,6 @@ void follow_me_startup(void){
     else {
     	follow_me_altitude = pos_Utm->alt;
     }
-    // v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
     if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
     	follow_me_roll = 1;
     } else {
@@ -642,8 +633,6 @@ int follow_me_call(void){
 void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
-
 	h_ctl_roll_setpoint_follow_me = 0;
-	// v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 }
 
