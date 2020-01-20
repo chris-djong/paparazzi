@@ -78,8 +78,8 @@ char* ac;
 char* wp;
 
 // Parameters for simulation
-float sim_lon = 6.287878;
-float sim_lat = 49.52399;
+float sim_lon = 4.4125881;
+float sim_lat = 52.1681543;
 float sim_lat_speed = -200*1e-8;
 float sim_lon_speed = -200*1e-8;
 float sim_course = 0;
@@ -111,11 +111,11 @@ static void update_gps(struct gps_data_t *gpsdata,
 	    	sim_lat_speed = -200*1e-8;
 	        sim_lon_speed = 200*1e-8;
 	    }
-	    sim_lat_speed = 150*1e-8;
-	    sim_lon_speed = 0;
 	    // Simulate heading change
 	    sim_lat += sim_lat_speed;
 	    sim_lon += sim_lon_speed;
+
+	    printf("%f %f\n\n", sim_lat, sim_lon);
 
 		gpsdata->fix.latitude = sim_lat;
 		gpsdata->fix.longitude = sim_lon;
