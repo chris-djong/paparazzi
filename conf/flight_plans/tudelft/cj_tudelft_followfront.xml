@@ -1,8 +1,9 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
  <!-- Elleng lat0="49.523999" lon0="6.287878" 
-  Mondorf lat0="49.512248" lon0="6.279989"--> 
-<flight_plan alt="10" ground_alt="0" lat0="49.523999" lon0="6.287878" max_dist_from_home="1000" qfu="190" name="Never Landing Drone" security_height="50">
+  Mondorf lat0="49.512248" lon0="6.279989"
+  Valkenburg lat0="52.1681543" lon0="4.4125881"--> 
+<flight_plan alt="10" ground_alt="0" lat0="52.1681543" lon0="4.4125881" max_dist_from_home="1000" qfu="190" name="Never Landing Drone" security_height="50">
 
 <header>
 #include "subsystems/datalink/datalink.h"

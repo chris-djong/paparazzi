@@ -33,11 +33,11 @@
       </module>
 
       <!-- Type of telemetry -->
-      <!-- <module name="telemetry" type="transparent_udp"/> -->
-      <module name="telemetry" type="transparent">
+      <!--<module name="telemetry" type="transparent_udp"/> --> 
+       <module name="telemetry" type="transparent">
           <configure name="MODEM_PORT" value="UART2"/>
           <configure name="MODEM_BAUD" value="B57600"/>
-      </module> 
+      </module>
             
       <!-- Option 1 EKF2  NOT WORKING YET -->
       <module name="ins" type="alt_float"/> 
@@ -76,7 +76,11 @@
     <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- Make sure is callibrated if set to TRUE -->
     
     <!-- Increase Pitch trim for PH-4HM Disco -->
-    <define name="COMMAND_PITCH_TRIM" value="880"/>    
+    <!--  New control:
+    <define name="COMMAND_PITCH_TRIM" value="880"/>    -->
+    
+    <!-- Energy -->
+    <define name="COMMAND_PITCH_TRIM" value="1000"/>
     
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
@@ -104,9 +108,8 @@
     <module name="gps" type="ubx_ucenter"/>
     <module name="navigation"/>
     
-    
     <!-- Control Algorithms -->
-    <module name="control" type="new"/> 
+    <module name="control" type="energy"/> 
   </firmware>
 
 
@@ -191,7 +194,7 @@
     <!-- End of 29 0f November 2019 calibration -->
 
     <define name="BODY_TO_IMU_PHI" value="0"/>
-    <define name="BODY_TO_IMU_THETA" value="0"/>
+    <define name="BODY_TO_IMU_THETA" value="0.02"/>
     <define name="BODY_TO_IMU_PSI" value="0"/>
     
     
@@ -207,15 +210,15 @@
     <define name="H_Y" value=" 0.0099463"/>
     <define name="H_Z" value="0.921915"/> -->
     
-    <!-- Values for Den Helder NL
+    <!-- Values for Den Helder NL -->
     <define name="H_X" value="0.377011"/>
     <define name="H_Y" value="0.0102128"/>
-    <define name="H_Z" value="0.926152"/> -->
+    <define name="H_Z" value="0.926152"/> 
     
-    <!-- Values for Mondorf-les-Bains LUX -->
+    <!-- Values for Mondorf-les-Bains LUX 
     <define name="H_X" value="0.420013"/>
     <define name="H_Y" value=" 0.0157474"/>
-    <define name="H_Z" value="0.907381"/>    
+    <define name="H_Z" value="0.907381"/>  -->  
   </section>
   
   <!-- ************************************************
@@ -255,7 +258,7 @@
                VERTICAL CONTROL DEFINITIONS
     ************************************************  -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">    
-    <!-- New Control Algorithm -->
+    <!-- New Control Algorithm 
     <define name="ALTITUDE_PGAIN" value="0.12"/>
     <define name="ALTITUDE_MAX_CLIMB" value="3"/>
     <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
@@ -295,43 +298,89 @@
     <define name="PITCH_LOITER_TRIM" value="0." unit="deg"/>
     <define name="PITCH_DASH_TRIM" value="0." unit="deg"/>
 
-    <define name="THROTTLE_SLEW" value="0.1"/> 
+    <define name="THROTTLE_SLEW" value="0.1"/> -->
      
     <!-- --------------------------------------------------------------------------- -->
     
-    <!-- Energy Control Algorithm 
+    <!-- Energy Control Algorithm -->
+    <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
+    
     <define name="ALTITUDE_PGAIN" value="0.15"/>
     <define name="AIRSPEED_PGAIN" value="0.19"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.11"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.5"/>
     
     <define name="ALTITUDE_MAX_CLIMB" value="3.0"/>
     <define name="GLIDE_RATIO" value="7.0"/>
     
-    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.01"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.003"/>
-    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.03"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_PGAIN" value="0.0"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_IGAIN" value="0.0"/>
+    <define name="AUTO_PITCH_OF_AIRSPEED_DGAIN" value="0.0"/>
 
-    <define name="ENERGY_TOT_PGAIN" value="0.35"/>
-    <define name="ENERGY_TOT_IGAIN" value="0.20"/>
-    <define name="ENERGY_DIFF_PGAIN" value="0.40"/>
-    <define name="ENERGY_DIFF_IGAIN" value="0.10"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.0"/>
+    <define name="ENERGY_TOT_IGAIN" value="0.0"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.0"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.0"/>
 
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.39" unit="%/(m/s)"/>
     
-    <define name="AUTO_GROUNDSPEED_SETPOINT" value="12"/>
-    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.01"/>
+    <!-- <define name="AUTO_GROUNDSPEED_SETPOINT" value="0"/>
+    <define name="AUTO_GROUNDSPEED_PGAIN" value="0.0"/>
      <define name="AUTO_GROUNDSPEED_IGAIN" value="0.00"/>
-     <define name="AUTO_GROUNDSPEED_DGAIN" value="0.008"/>
+     <define name="AUTO_GROUNDSPEED_DGAIN" value="0.00"/> -->
     
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.06"/>
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.01"/> -->
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.12"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.004"/> 
   </section>
 
   <!-- ************************************************
                HORIZONTAL CONTROL DEFINITIONS
     ************************************************  -->
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
+  <!--  These gains were taken from erik for energy? -->
+  
+     <define name="COURSE_PGAIN" value="1.25"/><!-- TODO: Tune values -->
+     <define name="COURSE_DGAIN" value="0.2"/><!-- TODO: Tune values -->
+     <define name="COURSE_TAU" value="0.5"/><!-- TODO: Tune values -->
+     <!--
+     The prebank is an adjustment to the roll setting which is performed when the aircraft is
+     trying to do a circle and when it is close to the circumference of the circle. This way
+     it does not fly straight into the circumference but instead it starts to make a roll as
+     the one needed to fly in circles.
+     There is a value in the airframe file COURSE_PRE_BANK_CORRECTION which can be used to
+     increase o decrease the effect. If set to 1 then the normal prebank is done.
+     If set to 0.5 then half of the additional roll is done. This causes the aircraft to not roll
+     enough in order to fly the intended circle and it ends up flying in a larger circle.
+     A value > 1 makes it fly a smaller circle.
+
+    https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/nav.c#L132
+    -->
+    <define name="COURSE_PRE_BANK_CORRECTION" value="0.98"/>
+
+    <define name="ROLL_MAX_SETPOINT" value="75" unit="deg"/>
+    <define name="PITCH_MAX_SETPOINT" value="60" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-60" unit="deg"/>
+
+    <define name="PITCH_PGAIN" value="4808"/>
+    <define name="PITCH_DGAIN" value="0"/>
+    <define name="PITCH_IGAIN" value="30"/>
+    <define name="PITCH_KFFA" value="10."/>
+    <define name="PITCH_KFFD" value="0."/>
+
+    <define name="ELEVATOR_OF_ROLL" value="500" unit="PPRZ_MAX"/>
+    <define name="ROLL_SLEW" value="0.5"/><!-- TODO: Determine best value-->
+    <define name="ROLL_ATTITUDE_GAIN" value="15000."/>
+    <define name="ROLL_RATE_GAIN" value="972"/>
+    <define name="ROLL_IGAIN" value="100."/>
+    <define name="ROLL_KFFA" value="100"/>
+    <define name="ROLL_KFFD" value="0"/>
+
+    <!--<define name="PITCH_OF_ROLL" value="4." unit="deg"/>--><!-- TODO: : ?-->
+    <define name="AILERON_OF_THROTTLE" value="0.0"/><!-- TODO: : ?-->
+  
+  
+  
+  <!-- These gains work for new control
     <define name="COURSE_PGAIN" value="0.743"/>
     <define name="COURSE_TAU" value="0.5"/>
     <define name="ROLL_MAX_SETPOINT" value="45." unit="deg"/>
@@ -353,7 +402,8 @@
 
     <define name="PITCH_OF_ROLL" value="1." unit="deg"/>
     <define name="AILERON_OF_THROTTLE" value="0.0"/>
-    <define name="ELEVATOR_OF_ROLL" value="1400"/>
+    <define name="ELEVATOR_OF_ROLL" value="1400"/> -->
+    
   </section>
 
   <!-- ************************************************
