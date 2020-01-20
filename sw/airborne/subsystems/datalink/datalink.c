@@ -70,7 +70,6 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
     // Check that the message is really a datalink message
     if (pprzlink_get_msg_class_id(buf) == DL_datalink_CLASS_ID) {
 #endif
-
       /* parse datalink messages coming from ground station */
       switch (msg_id) {
         case  DL_PING: {
@@ -133,7 +132,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
 #ifdef RADIO_CONTROL_DATALINK_LED
           LED_TOGGLE(RADIO_CONTROL_DATALINK_LED);
 #endif
-         parse_rc_3ch_datalink(
+          parse_rc_3ch_datalink(
             DL_RC_3CH_throttle_mode(buf),
             DL_RC_3CH_roll(buf),
             DL_RC_3CH_pitch(buf));
@@ -151,9 +150,9 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
           }
           break;
 #endif // RADIO_CONTROL_TYPE_DATALINK
-#if USE_GPS // TRUE, verified by printing
-        case DL_GPS_INJECT : {     // DL_GPS_INJECT = 153
 
+#if USE_GPS
+        case DL_GPS_INJECT : {
           // Check if the GPS is for this AC
           if (DL_GPS_INJECT_ac_id(buf) != AC_ID) { break; }
 
@@ -165,8 +164,8 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
           );
         }
         break;
-#if USE_GPS_UBX_RTCM // True verified by printing
-        case DL_RTCM_INJECT : {   // DL_RTCM_INJECT = 157
+#if USE_GPS_UBX_RTCM
+        case DL_RTCM_INJECT : {
           // GPS parse data
           gps_inject_data(DL_RTCM_INJECT_packet_id(buf),
                           DL_RTCM_INJECT_data_length(buf),
@@ -175,6 +174,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 #endif  // USE_GPS_UBX_RTCM
 #endif  // USE_GPS
+
         default:
           break;
       }
