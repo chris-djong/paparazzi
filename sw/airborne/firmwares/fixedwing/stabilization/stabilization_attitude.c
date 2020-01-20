@@ -321,7 +321,7 @@ void h_ctl_course_loop(void)
   h_ctl_roll_setpoint = roll_setpoint;
 #endif
   // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
-  if (nav_mode == NAV_MODE_FOLLOW){
+  if (follow_me_roll){
 	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
   }
 

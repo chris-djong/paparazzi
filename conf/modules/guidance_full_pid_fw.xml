@@ -81,7 +81,6 @@
           
           <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_pgain" shortname="Ground p" />
           <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_igain" shortname="Ground i" />
-          <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="v_ctl_auto_groundspeed_dgain" shortname="Ground d" />
         </dl_settings>
       </dl_settings>
     </dl_settings>

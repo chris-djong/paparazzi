@@ -112,7 +112,6 @@ float v_ctl_auto_airspeed_pitch_sum_err;
 float v_ctl_auto_groundspeed_setpoint;
 float v_ctl_auto_groundspeed_pgain;
 float v_ctl_auto_groundspeed_igain;
-float v_ctl_auto_groundspeed_dgain;
 float v_ctl_auto_groundspeed_sum_err;
 #define V_CTL_AUTO_AIRSPEED_PITCH_MAX_SUM_ERR (RadOfDeg(15.))
 #define V_CTL_AUTO_AIRSPEED_THROTTLE_MAX_SUM_ERR 0.2
@@ -123,7 +122,7 @@ void v_ctl_init(void)
 {
   /* mode */
   v_ctl_mode = V_CTL_MODE_MANUAL;
-  v_ctl_speed_mode = V_CTL_SPEED_AIRSPEED;
+  v_ctl_speed_mode = V_CTL_SPEED_THROTTLE;
 
   /* outer loop */
   v_ctl_altitude_setpoint = 0.;
@@ -173,11 +172,6 @@ void v_ctl_init(void)
   v_ctl_auto_groundspeed_setpoint = V_CTL_AUTO_GROUNDSPEED_SETPOINT;
   v_ctl_auto_groundspeed_pgain = V_CTL_AUTO_GROUNDSPEED_PGAIN;
   v_ctl_auto_groundspeed_igain = V_CTL_AUTO_GROUNDSPEED_IGAIN;
-#ifdef V_CTL_AUTO_GROUNDSPEED_DGAIN // this has been added by chris for tuning of the follow me module
-  v_ctl_auto_groundspeed_dgain = V_CTL_AUTO_GROUNDSPEED_DGAIN;
-#else
-  v_ctl_auto_groundspeed_dgain = 0;
-#endif
   v_ctl_auto_groundspeed_sum_err = 0.;
 #endif
 
@@ -187,7 +181,6 @@ void v_ctl_init(void)
 
 void v_ctl_guidance_loop(void)
 {
-
   if (v_ctl_mode == V_CTL_MODE_AUTO_ALT) {
     v_ctl_altitude_loop();
   }
@@ -282,6 +275,7 @@ static inline void v_ctl_set_pitch(void)
                          + v_ctl_auto_pitch_pgain * err
                          + v_ctl_auto_pitch_dgain * d_err
                          + v_ctl_auto_pitch_igain * v_ctl_auto_pitch_sum_err;
+
 }
 
 static inline void v_ctl_set_throttle(void)
@@ -383,15 +377,12 @@ static inline void v_ctl_set_airspeed(void)
 
 static inline void v_ctl_set_groundspeed(void)
 {
-  static float last_err_ground = 0;
+  // Ground speed control loop (input: groundspeed error, output: airspeed controlled)
   float err_groundspeed = v_ctl_auto_groundspeed_setpoint - stateGetHorizontalSpeedNorm_f();
-
-  float d_err_groundspeed = err_groundspeed - last_err_ground;
   v_ctl_auto_groundspeed_sum_err += err_groundspeed;
   BoundAbs(v_ctl_auto_groundspeed_sum_err, V_CTL_AUTO_GROUNDSPEED_MAX_SUM_ERR);
-  v_ctl_auto_airspeed_setpoint = err_groundspeed * v_ctl_auto_groundspeed_pgain + v_ctl_auto_groundspeed_sum_err * v_ctl_auto_groundspeed_igain + v_ctl_auto_groundspeed_dgain*d_err_groundspeed;
-  last_err_ground = err_groundspeed;
-
+  v_ctl_auto_airspeed_setpoint = err_groundspeed * v_ctl_auto_groundspeed_pgain + v_ctl_auto_groundspeed_sum_err *
+                                 v_ctl_auto_groundspeed_igain;
 
 }
 #endif
@@ -399,9 +390,7 @@ static inline void v_ctl_set_groundspeed(void)
 void v_ctl_climb_loop(void)
 {
 
-
   switch (v_ctl_speed_mode) {
-
     case V_CTL_SPEED_THROTTLE:
       // Set pitch
       v_ctl_set_pitch();

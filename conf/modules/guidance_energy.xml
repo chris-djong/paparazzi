@@ -56,7 +56,6 @@
           <dl_setting max="40" min="5" step="0.1" var="v_ctl_auto_groundspeed_setpoint" shortname="gs_sp"  module="guidance/energy_ctrl" param="V_CTL_AUTO_GROUNDSPEED_SETPOINT"/>
           <dl_setting max="0.4" min="0" step="0.001" var="v_ctl_auto_groundspeed_pgain" shortname="gs_pgain" param="V_CTL_AUTO_GROUNDSPEED_PGAIN"/>
           <dl_setting max="0.4" min="0" step="0.0001" var="v_ctl_auto_groundspeed_igain" shortname="gs_igain" param="V_CTL_AUTO_GROUNDSPEED_IGAIN"/>
-          <dl_setting max="0.4" min="0" step="0.0001" var="v_ctl_auto_groundspeed_dgain" shortname="gs_dgain" param="V_CTL_AUTO_GROUNDSPEED_DGAIN"/>
         </dl_settings>
       </dl_settings>
     </dl_settings>
