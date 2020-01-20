@@ -519,9 +519,12 @@ void follow_me_throttle_pid(void){
 
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
-
 	if (v_ctl_auto_airspeed_setpoint < 0){
 		v_ctl_auto_airspeed_setpoint = 0;
+	}
+
+	if (v_ctl_auto_airspeed_setpoint > 21){
+		v_ctl_auto_airspeed_setpoint = 21;
 	}
 }
 
