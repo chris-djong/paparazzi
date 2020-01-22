@@ -33,11 +33,11 @@
       </module>
 
       <!-- Type of telemetry -->
-      <!--<module name="telemetry" type="transparent_udp"/> --> 
-       <module name="telemetry" type="transparent">
+      <module name="telemetry" type="transparent_udp"/> 
+      <!-- <module name="telemetry" type="transparent">
           <configure name="MODEM_PORT" value="UART2"/>
           <configure name="MODEM_BAUD" value="B57600"/>
-      </module>
+      </module>--> 
             
       <!-- Option 1 EKF2  NOT WORKING YET -->
       <module name="ins" type="alt_float"/> 
@@ -80,7 +80,7 @@
     <define name="COMMAND_PITCH_TRIM" value="880"/>    -->
     
     <!-- Energy -->
-    <define name="COMMAND_PITCH_TRIM" value="1000"/>
+    <define name="COMMAND_PITCH_TRIM" value="3000"/>
     
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
@@ -361,7 +361,7 @@
     <define name="PITCH_MAX_SETPOINT" value="60" unit="deg"/>
     <define name="PITCH_MIN_SETPOINT" value="-60" unit="deg"/>
 
-    <define name="PITCH_PGAIN" value="4808"/>
+    <define name="PITCH_PGAIN" value="9000"/>
     <define name="PITCH_DGAIN" value="0"/>
     <define name="PITCH_IGAIN" value="30"/>
     <define name="PITCH_KFFA" value="10."/>

@@ -66,7 +66,7 @@
 #define MSG_NAME    "FLIGHT_PARAM"
 #define MSG_ID		"GCS"
 
-#define TIMEOUT_PERIOD 200
+#define TIMEOUT_PERIOD 10
 
 struct gps_data_t *gpsdata;
 gboolean verbose;
@@ -80,8 +80,8 @@ char* wp;
 // Parameters for simulation
 float sim_lon = 4.4125881;
 float sim_lat = 52.1681543;
-float sim_lat_speed = -200*1e-8;
-float sim_lon_speed = -200*1e-8;
+float sim_lat_speed = 0;
+float sim_lon_speed = 0;
 float sim_course = 0;
 float sim_speed = 0;
 float sim_altitude = 0;
@@ -94,7 +94,6 @@ static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
                        size_t len)
 {
-
 	if (simulate){
 		// Increase time step
 	    sim_time += 1;
@@ -126,6 +125,7 @@ static void update_gps(struct gps_data_t *gpsdata,
 	    gpsdata->fix.climb = sim_climb;
 	    gpsdata->fix.time = sim_time;
 	    gpsdata->fix.mode = 3;
+	    printf("Simulating\n");
 	}
 
     static double fix_time = 0;
@@ -207,6 +207,7 @@ static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
     }
     else{
 		if (gps_waiting(gpsdata, 500)) {
+			printf("waiting\n");
 			if (gps_read (gpsdata) == -1) {
 				perror("gps read error");
 			} else {

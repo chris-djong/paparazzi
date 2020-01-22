@@ -56,7 +56,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 // Waypoint parameters
 int16_t follow_me_distance = 20; // distance from which the follow me points are created
 uint8_t follow_me_distance_2 = 200; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
-int16_t stdby_distance = 80; // based on stbdy radius + 10
+int16_t stdby_distance = 90; // based on stbdy radius + 10
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
@@ -81,9 +81,9 @@ uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_set
 float airspeed_sum_err = 0.0;
 
 
-float airspeed_pgain = 0.04;
-float airspeed_igain = 0.003;
-float airspeed_dgain = 1.4;
+float airspeed_pgain = 1.0;
+float airspeed_igain = 0.00;
+float airspeed_dgain = 0.00;
 
 
 /*********************************
@@ -461,6 +461,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
+
+	//printf("Receiving lla coordinates lat %d lon %d alt %d\n", ground_lla.lat, ground_lla.lon, ground_lla.alt);
 	// ground_speed = DL_GROUND_GPS_speed(buf);
 	// ground_climb = DL_GROUND_GPS_climb(buf);
 	// ground_course = DL_GROUND_GPS_course(buf);
@@ -515,7 +517,7 @@ void follow_me_throttle_pid(void){
 	airspeed_sum_err += dist_wp_follow.y;
 	BoundAbs(airspeed_sum_err, 20);
 
-	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
+	float airspeed_inc = -airspeed_pgain*dist_wp_follow.y - airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
@@ -549,8 +551,9 @@ void follow_me_compute_wp(void){
 	lla.lon = RadOfDeg((float)(ground_lla.lon / 1e7));
 	lla.alt = ((float)(ground_lla.alt))/1000.;
 	follow_me_altitude = lla.alt + follow_me_height;
+
 	// Convert LLA to UTM in oder to set watpoint in UTM system
-	ground_utm.zone = nav_utm_zone0;
+	// ground_utm.zone = nav_utm_zone0;
 	utm_of_lla_f(&ground_utm, &lla);
 	ground_utm_new = ground_utm;
 
@@ -570,13 +573,13 @@ void follow_me_compute_wp(void){
 	nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_altitude );
 	nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_altitude);
 	nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_altitude + 20); // Set STBDY and HOME waypoint so that they are above the boat
-	nav_move_waypoint(WP_HOME, ground_utm.east, ground_utm.north, follow_me_altitude + 20);
+	nav_move_waypoint(WP_HOME, ground_utm.east , ground_utm.north , follow_me_altitude + 20);
 
 	// Update allowable Flying Region
-	nav_move_waypoint(WP_FR_TL, ground_utm.east - follow_me_region, ground_utm.north + follow_me_region, follow_me_altitude + 20);
-	nav_move_waypoint(WP_FR_TR, ground_utm.east + follow_me_region, ground_utm.north + follow_me_region, follow_me_altitude + 20);
-	nav_move_waypoint(WP_FR_BL, ground_utm.east - follow_me_region, ground_utm.north - follow_me_region, follow_me_altitude + 20);
-	nav_move_waypoint(WP_FR_BR, ground_utm.east + follow_me_region, ground_utm.north - follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_TL,  ground_utm.east - follow_me_region,  ground_utm.north + follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_TR,  ground_utm.east + follow_me_region,  ground_utm.north + follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_BL,  ground_utm.east - follow_me_region,  ground_utm.north - follow_me_region, follow_me_altitude + 20);
+	nav_move_waypoint(WP_FR_BR,  ground_utm.east + follow_me_region,  ground_utm.north - follow_me_region, follow_me_altitude + 20);
 
 #ifdef RL_SOARING_H
 	if (rl_started){
