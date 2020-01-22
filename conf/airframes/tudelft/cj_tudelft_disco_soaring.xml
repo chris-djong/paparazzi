@@ -118,8 +118,8 @@
     ************************************************  -->
   <servos>
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1450" max="1000"/> <!-- min is downward deflection-->
-    <servo name="AILEVON_LEFT" no="1" min="1000" neutral="1400" max="1900"/>  <!-- max is upward deflection-->
+    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1380" max="1000"/> <!-- min is downward deflection-->
+    <servo name="AILEVON_LEFT" no="1" min="1000" neutral="1480" max="1900"/>  <!-- max is upward deflection-->
   </servos>
 
   <!-- ************************************************
