@@ -392,9 +392,15 @@ void follow_me_soar_here(void){
         BoundAbs(transformation.x, 32766); // 16 bit signed integer
         BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
+        // Set Airspeed setpoint and the whole average array to current airspeed
+        float current_airspeed = stateGetAirspeed_f();
+        v_ctl_auto_airspeed_setpoint = current_airspeed;
+        for (i=0, i<MAX_SPEED_SIZE, i++){
+        	all_speed[i] = current_airspeed;
+        }
+
 		follow_me_distance = transformation.y;
 		lateral_offset = transformation.x;
-
 	}
 }
 
@@ -521,6 +527,7 @@ void follow_me_throttle_pid(void){
 
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
+
 	if (v_ctl_auto_airspeed_setpoint < 0){
 		v_ctl_auto_airspeed_setpoint = 0;
 	}
