@@ -68,7 +68,7 @@ int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
+float roll_enable = 254; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 0.2; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_diff_pgain = 0.006;
@@ -80,8 +80,8 @@ uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_set
 // Throttle PID
 float airspeed_sum_err = 0.0;
 
-
-float airspeed_pgain = 1.0;
+// Should be defined positive
+float airspeed_pgain = 0.14;
 float airspeed_igain = 0.00;
 float airspeed_dgain = 0.00;
 
@@ -118,7 +118,7 @@ struct UtmCoor_f ground_utm;  // global because required for file logger and cal
 *********************************/
 
 // Calculate the average speed in order to obtain a general prediction of the speed of the ground station
-#define MAX_SPEED_SIZE 5
+#define MAX_SPEED_SIZE 10
 float all_speed[MAX_SPEED_SIZE]={V_CTL_AUTO_AIRSPEED_SETPOINT};
 int8_t front_speed=-1,rear_speed=-1, count_speed=0;
 float AverageAirspeed(float);
@@ -130,8 +130,8 @@ float AverageAirspeed(float speed)
 	if (count_speed<MAX_SPEED_SIZE){
 		count_speed += 1;
 	}
-    float Sum = 0;
 
+    float Sum = 0;
     if(front_speed ==(rear_speed+1)%MAX_SPEED_SIZE)
     {
         if(front_speed==rear_speed)
@@ -312,6 +312,7 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	float heading = stateGetNedToBodyEulers_f()->psi;
 
 	transformation = rotate_frame(&transformation, heading);
+
 	// Return
 	return transformation;
 }
@@ -395,8 +396,9 @@ void follow_me_soar_here(void){
         // Set Airspeed setpoint and the whole average array to current airspeed
         float current_airspeed = stateGetAirspeed_f();
         v_ctl_auto_airspeed_setpoint = current_airspeed;
-        for (i=0, i<MAX_SPEED_SIZE, i++){
+        for (int i=0; i<MAX_SPEED_SIZE; i++){
         	all_speed[i] = current_airspeed;
+        	count_speed = MAX_SPEED_SIZE;
         }
 
 		follow_me_distance = transformation.y;
@@ -433,7 +435,7 @@ void follow_me_startup(void){
     	follow_me_altitude = pos_Utm->alt;
     }
     if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
-    	follow_me_roll = 1;
+    	follow_me_roll = 0;
     } else {
     	follow_me_roll = 0;
     }
@@ -495,7 +497,7 @@ void follow_me_roll_pid(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
-		follow_me_roll = 1;
+		follow_me_roll = 0;
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
@@ -523,17 +525,19 @@ void follow_me_throttle_pid(void){
 	airspeed_sum_err += dist_wp_follow.y;
 	BoundAbs(airspeed_sum_err, 20);
 
-	float airspeed_inc = -airspeed_pgain*dist_wp_follow.y - airspeed_igain*airspeed_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
-
+	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err - (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
+    printf("The terms are given by p %f and d %f %f\n", airspeed_pgain*dist_wp_follow.y, (dist_wp_follow.y-dist_wp_follow_old.y), airspeed_dgain);
+	printf("Based on a dist of %f we want to increase airspeed by %f\n", dist_wp_follow.y, airspeed_inc);
 	// Add airspeed inc to average airspeed
-	v_ctl_auto_airspeed_setpoint = AverageAirspeed(v_ctl_auto_airspeed_setpoint + airspeed_inc);
+	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f()) + airspeed_inc;
 
+	printf("THe airspeed setpoint is set to %f\n\n", v_ctl_auto_airspeed_setpoint);
 	if (v_ctl_auto_airspeed_setpoint < 0){
 		v_ctl_auto_airspeed_setpoint = 0;
 	}
 
-	if (v_ctl_auto_airspeed_setpoint > 21){
-		v_ctl_auto_airspeed_setpoint = 21;
+	if (v_ctl_auto_airspeed_setpoint > 18){
+		v_ctl_auto_airspeed_setpoint = 18;
 	}
 }
 
@@ -626,7 +630,7 @@ int follow_me_call(void){
 		follow_me_roll_pid();
 		follow_me_throttle_pid();
 	} else {
-		v_ctl_auto_airspeed_setpoint = 10;
+		v_ctl_auto_airspeed_setpoint = 12;
 		follow_me_roll = 0;
 	}
 

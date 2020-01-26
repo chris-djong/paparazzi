@@ -78,43 +78,43 @@ char* ac;
 char* wp;
 
 // Parameters for simulation
-float sim_lon = 4.4125881;
-float sim_lat = 52.1681543;
-float sim_lat_speed = 0;
-float sim_lon_speed = 0;
+float sim_lon = 4.5225881;
+float sim_lat = 52.8181543;
+float sim_lat_speed =  -90*1e-7;
+float sim_lon_speed =  -90*1e-7;
 float sim_course = 0;
 float sim_speed = 0;
 float sim_altitude = 0;
 float sim_climb = 0;
 int sim_time = 0;
 
-int change_state_at = 500;
+int change_state_at = 100000000;
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
                        size_t len)
 {
 	if (simulate){
+#undef TIMEOUT_PERIOD
+#define TIMEOUT_PERIOD 100
 		// Increase time step
 	    sim_time += 1;
 	    if (sim_time%(4*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	    	sim_lon_speed = -200*1e-8;
+	    	sim_lat_speed = -60*1e-7;
+	    	sim_lon_speed = -60*1e-7;
 	    } else if (sim_time%(3*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	    	sim_lon_speed = 200*1e-8;
+	    	sim_lat_speed = 60*1e-7;
+	    	sim_lon_speed = -60*1e-7;
 	    } else if (sim_time%(2*change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	        sim_lon_speed = -200*1e-8;
+	    	sim_lat_speed = 60*1e-7;
+	        sim_lon_speed = 60*1e-7;
 	    } else if (sim_time%(change_state_at) == 0){
-	    	sim_lat_speed = -200*1e-8;
-	        sim_lon_speed = 200*1e-8;
+	    	sim_lat_speed = -60*1e-7;
+	        sim_lon_speed = 60*1e-7;
 	    }
 	    // Simulate heading change
 	    sim_lat += sim_lat_speed;
 	    sim_lon += sim_lon_speed;
-
-	    printf("%f %f\n\n", sim_lat, sim_lon);
 
 		gpsdata->fix.latitude = sim_lat;
 		gpsdata->fix.longitude = sim_lon;
@@ -125,7 +125,6 @@ static void update_gps(struct gps_data_t *gpsdata,
 	    gpsdata->fix.climb = sim_climb;
 	    gpsdata->fix.time = sim_time;
 	    gpsdata->fix.mode = 3;
-	    printf("Simulating\n");
 	}
 
     static double fix_time = 0;

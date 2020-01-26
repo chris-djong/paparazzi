@@ -304,7 +304,7 @@
     
     <!-- Energy Control Algorithm -->
     <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.41"/>
+    <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
     <define name="ALTITUDE_PGAIN" value="0.15"/>
     <define name="AIRSPEED_PGAIN" value="0.19"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
