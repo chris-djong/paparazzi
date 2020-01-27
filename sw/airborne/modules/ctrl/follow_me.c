@@ -55,7 +55,8 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 
 // Waypoint parameters
 int16_t follow_me_distance = 20; // distance from which the follow me points are created
-uint8_t follow_me_distance_2 = 200; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
+// Follow me distance +30 because we want to fly just in front of the UAV. In case we fly closer by we follow flower like patterns
+int16_t follow_me_distance_2 = 20 + 30; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
 int16_t stdby_distance = 90; // based on stbdy radius + 10
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
@@ -68,12 +69,12 @@ int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-float roll_enable = 254; // when this x distance is exceeded the roll PID is enabled
-float roll_disable = 0.2; // when the x distance is lower the roll PID is disabled again
+float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
+float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_diff_pgain = 0.006;
 float roll_diff_igain = 0.0;
-float roll_diff_dgain = 0.11;
+float roll_diff_dgain = 0.0;
 float roll_diff_sum_err = 0.0;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
@@ -81,7 +82,7 @@ uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_set
 float airspeed_sum_err = 0.0;
 
 // Should be defined positive
-float airspeed_pgain = 0.14;
+float airspeed_pgain = 0.4;
 float airspeed_igain = 0.00;
 float airspeed_dgain = 0.00;
 
@@ -402,6 +403,7 @@ void follow_me_soar_here(void){
         }
 
 		follow_me_distance = transformation.y;
+		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = transformation.x;
 	}
 }
@@ -434,6 +436,9 @@ void follow_me_startup(void){
     else {
     	follow_me_altitude = pos_Utm->alt;
     }
+
+    follow_me_call();
+
     if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
     	follow_me_roll = 0;
     } else {
@@ -470,7 +475,6 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
 	ground_lla.alt = DL_GROUND_GPS_alt(buf);
 
-	//printf("Receiving lla coordinates lat %d lon %d alt %d\n", ground_lla.lat, ground_lla.lon, ground_lla.alt);
 	// ground_speed = DL_GROUND_GPS_speed(buf);
 	// ground_climb = DL_GROUND_GPS_climb(buf);
 	// ground_course = DL_GROUND_GPS_course(buf);
@@ -526,12 +530,10 @@ void follow_me_throttle_pid(void){
 	BoundAbs(airspeed_sum_err, 20);
 
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err - (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
-    printf("The terms are given by p %f and d %f %f\n", airspeed_pgain*dist_wp_follow.y, (dist_wp_follow.y-dist_wp_follow_old.y), airspeed_dgain);
-	printf("Based on a dist of %f we want to increase airspeed by %f\n", dist_wp_follow.y, airspeed_inc);
+
 	// Add airspeed inc to average airspeed
 	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f()) + airspeed_inc;
 
-	printf("THe airspeed setpoint is set to %f\n\n", v_ctl_auto_airspeed_setpoint);
 	if (v_ctl_auto_airspeed_setpoint < 0){
 		v_ctl_auto_airspeed_setpoint = 0;
 	}
@@ -626,7 +628,7 @@ int follow_me_call(void){
 
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
-	if (fabs(dist_wp_follow2.y) > 30){
+	if (fabs(dist_wp_follow2.y) >  10){
 		follow_me_roll_pid();
 		follow_me_throttle_pid();
 	} else {

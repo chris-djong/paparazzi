@@ -42,8 +42,6 @@
       <!-- Option 1 EKF2  NOT WORKING YET -->
       <module name="ins" type="alt_float"/> 
       
-      <!--  Option 2 alt_float 2 state Kalman filter for vertical position and vertical velocity from GPS and baro -->
-      <!-- <module name="ins" type="alt_float"/> -->
     </target>
     
     <!-- ************************************************
