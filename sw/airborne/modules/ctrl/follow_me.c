@@ -627,7 +627,7 @@ int follow_me_call(void){
     dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
     // Loop through controller
-    // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
+    // In case we have reached follow 2, simply increase the distance towards it so that it is never reached
     if (dist_wp_follow2.y <  10){
 		follow_me_distance_2 += 30;
     }
