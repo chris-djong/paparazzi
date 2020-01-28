@@ -16,7 +16,7 @@
     <waypoint name="1" x="75" y="0" height="50"/>
     <waypoint name="2" x="100" y="0" height="50"/>
     <waypoint name="FOLLOW" x="0" y="50" height="10"/>
-    <waypoint name="FOLLOW2" x="0" y="75" height="10"/>
+    <waypoint name="_FOLLOW2" x="0" y="75" height="10"/>
     <waypoint name="CLIMB" x="0" y="-200"/>
     <waypoint name="AF" x="0" y="-50" height="50"/> <!--  Start of landing procedure -->
     <waypoint name="TD" x="0" y="-100"/>  <!--Touchdown-->

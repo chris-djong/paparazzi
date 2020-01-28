@@ -584,7 +584,7 @@ void follow_me_compute_wp(void){
 
 	// Update STBDY HOME AND FOLLOW ME WPS
 	nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_altitude );
-	nav_move_waypoint(WP_FOLLOW2, x_follow2, y_follow2, follow_me_altitude);
+	nav_move_waypoint(WP__FOLLOW2, x_follow2, y_follow2, follow_me_altitude);
 	nav_move_waypoint(WP_STDBY, x_stdby, y_stdby, follow_me_altitude + 20); // Set STBDY and HOME waypoint so that they are above the boat
 	nav_move_waypoint(WP_HOME, ground_utm.east , ground_utm.north , follow_me_altitude + 20);
 
@@ -614,7 +614,7 @@ void follow_me_compute_wp(void){
 // Sets the general heading in the direction of FOLLOW2 (waypoint located far in front of the boat)
 void follow_me_go(void);
 void follow_me_go(void){
-	NavGotoWaypoint(WP_FOLLOW2);
+	NavGotoWaypoint(WP__FOLLOW2);
     NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
 
@@ -628,13 +628,13 @@ int follow_me_call(void){
 
     // Loop through controller
     // In case we have reached follow 2, simply use the nav fly_to_xy function to hover above FOLLOW2 with minimum airspeed and no roll
-	if (fabs(dist_wp_follow2.y) >  10){
-		follow_me_roll_pid();
-		follow_me_throttle_pid();
-	} else {
-		v_ctl_auto_airspeed_setpoint = 12;
-		follow_me_roll = 0;
-	}
+    if (dist_wp_follow2.y <  10){
+		follow_me_distance_2 += 30;
+    }
+
+    // Loop through controllers
+	follow_me_roll_pid();
+	follow_me_throttle_pid();
 
 	// Move to the correct location
 	follow_me_go();

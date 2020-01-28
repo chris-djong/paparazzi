@@ -406,7 +406,7 @@ void v_ctl_climb_loop(void)
                               + v_ctl_auto_throttle_of_airspeed_pgain * speed_error
                               + v_ctl_energy_total_pgain * en_tot_err;
 
-  if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
+/*  if ((controlled_throttle >= 1.0f) || (controlled_throttle <= 0.0f) || (autopilot_throttle_killed() == 1)) {
     // If your energy supply is not sufficient, then neglect the climb requirement
     en_dis_err = -vdot_err;
 
@@ -414,7 +414,7 @@ void v_ctl_climb_loop(void)
     if (v_ctl_climb_setpoint > 0) { v_ctl_climb_setpoint += - 30. * dt_attidude; }
     if (v_ctl_climb_setpoint < 0) { v_ctl_climb_setpoint +=   30. * dt_attidude; }
   }
-
+*/
 
   /* pitch pre-command */
   if (autopilot.launch && (v_ctl_mode >= V_CTL_MODE_AUTO_CLIMB)) {
