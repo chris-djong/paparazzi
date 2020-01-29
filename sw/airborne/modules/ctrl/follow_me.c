@@ -316,6 +316,8 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	// Then rotate frame
 	float heading = stateGetNedToBodyEulers_f()->psi;
 
+	heading = follow_me_heading/180*M_PI;
+
 	transformation = rotate_frame(&transformation, heading);
 
 	// Return
@@ -333,6 +335,11 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
 	float heading = stateGetNedToBodyEulers_f()->psi;
+	printf("Actual heading is given by %f\n", heading);
+
+    heading = follow_me_heading/180*M_PI;
+	printf("Follow me heading is given by %f\n", heading);
+
 
     // Rotate frame back
 	transformation = rotate_frame(point, -heading);
