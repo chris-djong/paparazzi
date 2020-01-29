@@ -98,10 +98,14 @@ struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
 int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
-int counter; // counter which counts function executions
+int counter_heading = 0; // counter which counts heading function executions
 int heading_calc_counter = 10; // in case counter reaches heading_calc_counter the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
+
+// Counter for the case gps is lost
+int counter_gps = 0;
+int gps_lost_count = 25;
 
 // Old location for D gains
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
@@ -450,9 +454,9 @@ void follow_me_startup(void){
 void follow_me_set_heading(void);
 void follow_me_set_heading(void){
 	// Obtain follow me heading based on position
-    counter++;
-    if (counter == heading_calc_counter){
-    	counter = 0;
+    counter_heading++;
+    if (counter_heading == heading_calc_counter){
+    	counter_heading = 0;
 		float diff_y = ground_utm_new.north - ground_utm_old.north;
 		float diff_x = ground_utm_new.east - ground_utm_old.east;
 
@@ -486,6 +490,8 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_compute_wp();
 		ground_set = true;
+		counter_gps = 0;
+
 	}
 
 	// Set heading here so that it can be calculated already during stdby or Manual execution
@@ -620,6 +626,14 @@ void follow_me_go(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
+
+	// Increase the gps counter to verify whether gps has been lost
+	counter_gps++;
+	// Go to STDBY in case the GPS has lost
+	if (counter_gps > gps_lost_count){
+		GotoBlock(5);
+	}
+
 	// Compute errors towards waypoint
 	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
 	dist_wp_follow_old = dist_wp_follow;
