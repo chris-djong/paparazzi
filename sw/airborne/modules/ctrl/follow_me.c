@@ -650,7 +650,7 @@ int follow_me_call(void){
     // Loop through controller
     // In case we have reached follow 2, simply increase the distance towards it so that it is never reached
     if (dist_wp_follow2.y <  10){
-		follow_me_distance_2 += 30;
+		follow_me_distance_2 += 20;
     }
 
     // Loop through controllers
