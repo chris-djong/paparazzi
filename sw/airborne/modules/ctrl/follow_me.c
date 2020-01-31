@@ -379,6 +379,17 @@ int8_t check_handover_rl(void){
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
+	    // Set the default altitude of waypoints to the current height so that the drone keeps the height
+	    struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+	    // In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
+	    if (ground_set){
+	    	follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
+	    }
+	    else {
+	    	follow_me_altitude = pos_Utm->alt;
+	    }
+
         // Set heading first so that we transformations are correct
 		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
 
@@ -387,8 +398,6 @@ void follow_me_soar_here(void){
 		// Create return vector for the function
 		struct FloatVect3 transformation;
 
-		// Obtain current UTM position
-		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 		struct FloatVect3 point;
 
 		point.x = pos_Utm->east + 5*sinf(follow_me_heading/180.*M_PI);
@@ -438,15 +447,8 @@ void follow_me_startup(void){
     }
 #endif
 	// follow_me_soar_here();
-    // Set the default altitude of waypoints to the current height so that the drone keeps the height
-    struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-    // In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
-    if (ground_set){
-    	follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
-    }
-    else {
-    	follow_me_altitude = pos_Utm->alt;
-    }
+
+
 
     follow_me_call();
 
