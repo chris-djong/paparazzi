@@ -447,9 +447,6 @@ void follow_me_startup(void){
     }
 #endif
 	// follow_me_soar_here();
-
-
-
     follow_me_call();
 
     if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
