@@ -62,21 +62,20 @@ int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
-float average_airspeed_sp;  // average airspeed setpoint
 int32_t x_follow;
 int32_t y_follow;
 int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
-float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
-float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float roll_diff_pgain = 0.006;
-float roll_diff_igain = 0.0;
-float roll_diff_dgain = 0.0;
-float roll_diff_sum_err = 0.0;
-uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+// float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
+// float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
+// float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+// float roll_diff_pgain = 0.006;
+// float roll_diff_igain = 0.0;
+// float roll_diff_dgain = 0.0;
+// float roll_diff_sum_err = 0.0;
+// uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Throttle PID
 float airspeed_sum_err = 0.0;
@@ -122,42 +121,13 @@ struct UtmCoor_f ground_utm;  // global because required for file logger and cal
   Average speed calculator
 *********************************/
 
-// Calculate the average speed in order to obtain a general prediction of the speed of the ground station
-#define MAX_SPEED_SIZE 10
-float all_speed[MAX_SPEED_SIZE]={V_CTL_AUTO_AIRSPEED_SETPOINT};
-int8_t front_speed=-1,rear_speed=-1, count_speed=0;
+
+uint8_t average_speed_size = 10;
 float AverageAirspeed(float);
-// Function definition
-float AverageAirspeed(float speed)
-{
-	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
-	// Count = int8_t
-	if (count_speed<MAX_SPEED_SIZE){
-		count_speed += 1;
-	}
-
-    float Sum = 0;
-    if(front_speed ==(rear_speed+1)%MAX_SPEED_SIZE)
-    {
-        if(front_speed==rear_speed)
-            front_speed=rear_speed=-1;
-        else
-            front_speed = (front_speed+1)%MAX_SPEED_SIZE;
-    }
-    if(front_speed==-1)
-        front_speed=rear_speed=0;
-    else
-        rear_speed=(rear_speed+1)%MAX_SPEED_SIZE;
-
-    all_speed[rear_speed] = speed;
-
-
-    for (int i=0; i<MAX_SPEED_SIZE; i++){
-    	Sum = Sum + all_speed[i];
-    }
-
-    return ((float)Sum/fmin(MAX_SPEED_SIZE, count_speed));
-
+// Calculates the average speed based on the previous average speed
+// It should be noted that this function is incorrect in case we have not enough measurements (at least average_speed_size measurements are required)
+float AverageAirspeed(float speed){
+    return (v_ctl_auto_airspeed_setpoint * (average_speed_size-1) + speed) / (average_speed_size);
 }
 
 
@@ -414,10 +384,6 @@ void follow_me_soar_here(void){
         // Set Airspeed setpoint and the whole average array to current airspeed
         float current_airspeed = stateGetAirspeed_f();
         v_ctl_auto_airspeed_setpoint = current_airspeed;
-        for (int i=0; i<MAX_SPEED_SIZE; i++){
-        	all_speed[i] = current_airspeed;
-        	count_speed = MAX_SPEED_SIZE;
-        }
 
 		follow_me_distance = transformation.y;
 		follow_me_distance_2 = follow_me_distance + 30;
@@ -446,11 +412,11 @@ void follow_me_startup(void){
 	// follow_me_soar_here();
     follow_me_call();
 
-    if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
-    	follow_me_roll = 0;
-    } else {
-    	follow_me_roll = 0;
-    }
+    // if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
+    // 	follow_me_roll = 0;
+    //  } else {
+    // 	follow_me_roll = 0;
+    // }
 }
 
 // Sets the heading based on the average over several GPS positions
@@ -501,7 +467,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	follow_me_set_heading();
 }
 
-
+/*
 // Roll angle controller
 void follow_me_roll_pid(void);
 void follow_me_roll_pid(void){
@@ -530,6 +496,7 @@ void follow_me_roll_pid(void){
 		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
 	}
 }
+*/
 
 // Throttle controller
 void follow_me_throttle_pid(void);
@@ -541,7 +508,7 @@ void follow_me_throttle_pid(void){
 	float airspeed_inc = +airspeed_pgain*dist_wp_follow.y + airspeed_igain*airspeed_sum_err - (dist_wp_follow.y-dist_wp_follow_old.y)*airspeed_dgain;
 
 	// Add airspeed inc to average airspeed
-	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f()) + airspeed_inc;
+	v_ctl_auto_airspeed_setpoint = AverageAirspeed(stateGetAirspeed_f() + airspeed_inc);
 
 	if (v_ctl_auto_airspeed_setpoint < 0){
 		v_ctl_auto_airspeed_setpoint = 0;
@@ -550,6 +517,7 @@ void follow_me_throttle_pid(void){
 	if (v_ctl_auto_airspeed_setpoint > 18){
 		v_ctl_auto_airspeed_setpoint = 18;
 	}
+
 }
 
 // Function that computes distance of UAV toward a certain UTM position
@@ -650,7 +618,7 @@ int follow_me_call(void){
     }
 
     // Loop through controllers
-	follow_me_roll_pid();
+	// follow_me_roll_pid();
 	follow_me_throttle_pid();
 
 	// Move to the correct location
@@ -668,7 +636,7 @@ int follow_me_call(void){
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
-	follow_me_roll = 0;
-	h_ctl_roll_setpoint_follow_me = 0;
+	// follow_me_roll = 0;
+	// h_ctl_roll_setpoint_follow_me = 0;
 }
 

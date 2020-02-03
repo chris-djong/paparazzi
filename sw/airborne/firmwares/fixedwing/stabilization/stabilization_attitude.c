@@ -52,7 +52,7 @@ bool h_ctl_auto1_rate;
 
 /* inner roll loop parameters */
 float  h_ctl_roll_setpoint;
-float h_ctl_roll_setpoint_follow_me;
+// float h_ctl_roll_setpoint_follow_me;
 float  h_ctl_roll_pgain;
 pprz_t h_ctl_aileron_setpoint;
 float  h_ctl_roll_slew;
@@ -321,9 +321,9 @@ void h_ctl_course_loop(void)
   h_ctl_roll_setpoint = roll_setpoint;
 #endif
   // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
-  if (follow_me_roll){
-	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
-  }
+//  if (follow_me_roll){
+//	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+//  }
 
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }

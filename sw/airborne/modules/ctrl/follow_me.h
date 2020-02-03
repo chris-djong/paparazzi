@@ -46,13 +46,15 @@ extern int8_t lateral_offset;
 extern float airspeed_igain;
 extern float airspeed_pgain;
 extern float airspeed_dgain;
+extern uint8_t average_speed_size;
 
+/*
 extern float roll_diff_igain;
 extern float roll_diff_pgain;
 extern float roll_diff_dgain;
 extern float roll_enable;
 extern float roll_disable;
-extern uint8_t follow_me_roll;
+extern uint8_t follow_me_roll;*/
 
 /************************************************
   Variables used by internal file logger
