@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Freek van Tienen <freek.v.tienen@gmail.com>
+ *               2019 Tom van Dijk <tomvand@users.noreply.github.com>
  *
  * This file is part of paparazzi.
  *
@@ -29,6 +30,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 #include "std.h"
 #include "modules/ctrl/follow_me.h"
 #include "subsystems/gps.h"
@@ -42,7 +44,16 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
+#include "mcu_periph/sys_time.h"
 #include "state.h"
+#include "generated/airframe.h"
+#ifdef COMMAND_THRUST
+#include "firmwares/rotorcraft/stabilization.h"
+#else
+#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
+#include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
+#endif
+
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
@@ -52,24 +63,74 @@
 /** The file pointer */
 static FILE *file_logger = NULL;
 
+
+/** Logging functions */
+
+/** Write CSV header
+ * Write column names at the top of the CSV file. Make sure that the columns
+ * match those in file_logger_write_row! Don't forget the \n at the end of the
+ * line.
+ * @param file Log file pointer
+ */
+static void file_logger_write_header(FILE *file) {
+  fprintf(file, "time,");
+  fprintf(file, "pos_x,pos_y,pos_z,");
+  fprintf(file, "vel_x,vel_y,vel_z,");
+  fprintf(file, "att_phi,att_theta,att_psi,");
+  fprintf(file, "rate_p,rate_q,rate_r,");
+#ifdef COMMAND_THRUST
+  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+#else
+  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+#endif
+}
+
+/** Write CSV row
+ * Write values at this timestamp to log file. Make sure that the printf's match
+ * the column headers of file_logger_write_header! Don't forget the \n at the
+ * end of the line.
+ * @param file Log file pointer
+ */
+static void file_logger_write_row(FILE *file) {
+  struct NedCoor_f *pos = stateGetPositionNed_f();
+  struct NedCoor_f *vel = stateGetSpeedNed_f();
+  struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+
+  fprintf(file, "%f,", get_sys_time_float());
+  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
+  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
+  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+#ifdef COMMAND_THRUST
+  fprintf(file, "%d,%d,%d,%d\n",
+      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+#else
+  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+#endif
+}
+
+
 /** Start the file logger and open a new file */
 void file_logger_start(void)
 {
-  // check if log path exists
-  struct stat s;
-  int err = stat(STRINGIFY(FILE_LOGGER_PATH), &s);
-
-  if(err < 0) {
-    // try to make the directory
-    mkdir(STRINGIFY(FILE_LOGGER_PATH), 0666);
+  // Create output folder if necessary
+  if (access(STRINGIFY(FILE_LOGGER_PATH), F_OK)) {
+    char save_dir_cmd[256];
+    sprintf(save_dir_cmd, "mkdir -p %s", STRINGIFY(FILE_LOGGER_PATH));
+    if (system(save_dir_cmd) != 0) {
+      printf("[file_logger] Could not create log file directory %s.\n", STRINGIFY(FILE_LOGGER_PATH));
+      return;
+    }
   }
 
-  // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+  // Get current date/time for filename
   char date_time[80];
   time_t now = time(0);
   struct tm  tstruct;
   tstruct = *localtime(&now);
-  strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
+  strftime(date_time, sizeof(date_time), "%Y%m%d-%H%M%S", &tstruct);
 
   uint32_t counter = 0;
   char filename[512];
@@ -97,6 +158,10 @@ void file_logger_start(void)
 #endif
     );
   }
+
+  printf("[file_logger] Start logging to %s...\n", filename);
+
+  file_logger_write_header(file_logger);
 }
 
 /** Stop the logger an nicely close the file */
