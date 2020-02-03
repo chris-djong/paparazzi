@@ -209,7 +209,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -231,8 +231,6 @@ void file_logger_periodic(void)
 	      imu.mag.z, // int
 		  h_ctl_aileron_setpoint, // int
 		  h_ctl_elevator_setpoint, // int
-		  follow_me_roll, // int
-		  h_ctl_roll_setpoint_follow_me, // float
 		  ground_utm.east, // float
 		  ground_utm.north, // float
 		  ground_utm.alt, // float
