@@ -34,16 +34,8 @@
 #include "paparazzi.h"
 #include "generated/airframe.h"
 
-extern float h_ctl_roll_sum_err;
-extern float h_ctl_pitch_sum_err;
-extern float h_ctl_roll_igain;
-extern float h_ctl_pitch_igain;
-extern float h_ctl_roll_Kffa;
-extern float h_ctl_roll_Kffd;
-extern float h_ctl_pitch_Kffa;
-extern float h_ctl_pitch_Kffd;
-extern float h_ctl_pitch_of_roll;
-extern float h_ctl_roll_setpoint_follow_me;
+extern void stabilization_init(void);
+extern void stabilization_filter_commands(void);
 
 #if H_CTL_YAW_LOOP
 extern float h_ctl_yaw_dgain;

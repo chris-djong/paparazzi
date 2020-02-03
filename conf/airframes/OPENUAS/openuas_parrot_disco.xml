@@ -545,12 +545,6 @@ The most crucial part for the magnetometer calibration:
     <define name="H_X" value="0.403761"/>
     <define name="H_Y" value="0.014826"/>
     <define name="H_Z" value="0.914744"/>
-    
-    <!-- Values for Valkenburg Zuid Holland NL 
-    <define name="H_X" value="0.387264"/>
-    <define name="H_Y" value=" 0.0099463"/>
-    <define name="H_Z" value="0.921915"/> -->
-    
   </section>
 
 <!-- ************************* INS ************************* -->

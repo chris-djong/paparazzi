@@ -17,8 +17,7 @@
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
     </target>
-        <module name="follow_me"/> 
-    <module name="rl_soaring"/>
+
     <module name="telemetry" type="transparent_udp"/>
 
     <module name="imu" type="disco"/>
