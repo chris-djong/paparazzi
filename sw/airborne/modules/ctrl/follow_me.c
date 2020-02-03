@@ -57,7 +57,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 int16_t follow_me_distance = 20; // distance from which the follow me points are created
 // Follow me distance +30 because we want to fly just in front of the UAV. In case we fly closer by we follow flower like patterns
 int16_t follow_me_distance_2 = 20 + 30; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
-int16_t stdby_distance = 90; // based on stbdy radius + 10
+int16_t stdby_distance = 110; // based on stbdy radius (80) + 30
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
