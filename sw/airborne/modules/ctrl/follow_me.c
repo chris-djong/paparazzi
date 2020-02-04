@@ -284,19 +284,18 @@ struct FloatVect3 UTM_to_ENU(struct FloatVect3 *point){
 	transformation = translate_frame(point, pos_Utm->east, pos_Utm->north, pos_Utm->alt);
 
 	// Then rotate frame
-	float heading = stateGetNedToBodyEulers_f()->psi;
+	float heading = follow_me_heading/180*M_PI;
 
-	heading = follow_me_heading/180*M_PI;
-
-	transformation = rotate_frame(&transformation, heading);
+	transformation = rotate_frame(&transformation, -heading);
 
 	// Return
 	return transformation;
 }
 
 
+
 /*Transformation from the Body system to the UTM coordinate system */
-struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point);
+/*struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point);
 struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	// Create return vector for the function
 	struct FloatVect3 transformation;
@@ -316,6 +315,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 	//Return
 	return transformation;
 }
+*/
 
 
 /***********************************************************************************************************************
@@ -520,9 +520,10 @@ void follow_me_throttle_pid(void){
 
 }
 
-// Function that computes distance of UAV toward a certain UTM position
+// Function that computes distance of UAV toward a certain UTM position (using follow me heading)
 struct FloatVect3 compute_dist_to_utm(float, float, float);
 struct FloatVect3 compute_dist_to_utm(float utm_x, float utm_y, float utm_z){
+
 	struct FloatVect3 wp_follow_utm;
 	wp_follow_utm.x = utm_x;
 	wp_follow_utm.y = utm_y;
