@@ -178,7 +178,7 @@ float AverageHeading(float diffx, float diffy)
 
     // Check for condition in which we are not moving
     // In case we are not moving return the heading that is not present
-    if ((fabs(Sum_x) < 2) && (fabs(Sum_y) < 2)){
+    if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
     	return follow_me_heading;
     } else {
 		float heading = 0.0;
@@ -254,7 +254,7 @@ struct FloatVect3 translate_frame(struct FloatVect3 *point, int trans_x, int tra
 	return transformation;
 }
 
-/*Rotate a point in a frame by an angle theta (clockwise positive)*/
+/*Rotate a point in a frame by an angle theta (clockwise positive) in radians*/
 struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta);
 struct FloatVect3 rotate_frame(struct FloatVect3 *point, float theta){
 	// Create return Vector for function
@@ -341,53 +341,63 @@ int8_t check_handover_rl(void){
   Follow me functions
 ***********************************************************************************************************************/
 
+
+// Compute both lateral offset and follow_me_distance
+// Also used by RL algorithm
+struct FloatVect3 compute_state(void);
+struct FloatVect3 compute_state(void){
+	// Obtain current position in order to calculate state as function of boat difference
+	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+	// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
+	if (ground_set){
+		follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
+	}
+	else {
+		follow_me_altitude = pos_Utm->alt;
+	}
+
+	// Set heading first so that we transformations are correct
+	float heading = follow_me_heading/180*M_PI;
+
+
+	// Based on the current Utm position and follow_me_heading we have to change the reference frame
+	// such that it`s y axis is orthogonal to the heading of the boat and the origin is at the boat location
+	// Create return vector for the function
+	struct FloatVect3 transformation;
+
+	// Create a point for the conversion
+	struct FloatVect3 point;
+	point.x = pos_Utm->east;
+	point.y = pos_Utm->north;
+	point.z = pos_Utm->alt;
+
+	// Translate frame
+	transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
+	// Then rotate frame
+	transformation = rotate_frame(&transformation, -heading);
+	// Bound transformation values
+	BoundAbs(transformation.x, 32766); // 16 bit signed integer
+	BoundAbs(transformation.y, 32766); // 16 bit signed integer
+
+	return transformation;
+}
+
+
 //void follow_me_soar_here(void);
 // Sets all follow me parameters like the current
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
-	    // Set the default altitude of waypoints to the current height so that the drone keeps the height
-	    struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
-
-	    // In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
-	    if (ground_set){
-	    	follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
-	    }
-	    else {
-	    	follow_me_altitude = pos_Utm->alt;
-	    }
-
-        // Set heading first so that we transformations are correct
-		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
-
-		// Based on the current Utm position and follow_me_heading we have to change the reference frame
-		// such that it`s y axis is orthogonal to the heading and the origin is at the boat location
-		// Create return vector for the function
-		struct FloatVect3 transformation;
-
-		struct FloatVect3 point;
-
-		point.x = pos_Utm->east + 5*sinf(follow_me_heading/180.*M_PI);
-		point.y = pos_Utm->north + 5*cosf(follow_me_heading/180.*M_PI);
-		point.z = pos_Utm->alt;
-
-		// Translate frame
-		transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
-
-		// Then rotate frame
-		transformation = rotate_frame(&transformation, -follow_me_heading*M_PI/180);
-
-		// Bound transformation values
-        BoundAbs(transformation.x, 32766); // 16 bit signed integer
-        BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
         // Set Airspeed setpoint and the whole average array to current airspeed
         float current_airspeed = stateGetAirspeed_f();
         v_ctl_auto_airspeed_setpoint = current_airspeed;
 
-		follow_me_distance = transformation.y;
+		struct FloatVect3 state_in_boat_frame = compute_state();
+		follow_me_distance = state_in_boat_frame.y;
 		follow_me_distance_2 = follow_me_distance + 30;
-		lateral_offset = transformation.x;
+		lateral_offset = state_in_boat_frame.x;
 	}
 }
 
@@ -453,6 +463,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	// ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
+	printf("Obtaining message with timestamp %d\n", ground_timestamp);
 	// fix_mode = DL_GROUND_GPS_mode(buf);
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
@@ -604,6 +615,7 @@ int follow_me_call(void){
 	// Go to STDBY in case the GPS has lost
 	if (counter_gps > gps_lost_count){
 		GotoBlock(5);
+		printf("Moving to stdby block because gps lost\n");
 	}
 
 	// Compute errors towards waypoint
