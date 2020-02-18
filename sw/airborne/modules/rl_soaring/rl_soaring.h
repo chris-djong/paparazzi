@@ -28,14 +28,6 @@
 
 #include "std.h"
 
-typedef struct{
-    // states
-	int dist_wp_idx;
-	int dist_wp_idx_old;
-} rl_state;
-
-
-
 // Functions
 extern void rl_soaring_init(void);
 extern void rl_soaring_start(void);

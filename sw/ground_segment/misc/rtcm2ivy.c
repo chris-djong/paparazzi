@@ -259,11 +259,11 @@ static void ubx_navsvin_callback(uint8_t len, uint8_t msg[])
 static void ubx_navposllh_callback(uint8_t len, uint8_t msg[])
 {
 	  if (len > 0) {
-		u32 iTow  = UBX_NAV_SVIN_ITOW(msg);
+	    u32 iTow  = UBX_NAV_SVIN_ITOW(msg);
 	    float meanX = UBX_NAV_POSLLH_meanX(msg);
 	    float meanY = UBX_NAV_POSLLH_meanY(msg);
 	    float meanZ = UBX_NAV_POSLLH_meanZ(msg);
-
+            printf("Sending message with timestamp %d\n", iTow);
 	    // Send data used for displaying the position in GCS
 	    IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",
 			   "ground",
@@ -289,7 +289,7 @@ static void ubx_navposllh_callback(uint8_t len, uint8_t msg[])
 /**
  * Parse the tty data when bytes are available
  */
-static gboolean parse_device_data(GIOChannel *chan, GIOCondition cond, gpointer data)
+static gboolean parse_device_data(gpointer data __attribute__ ((unused)))
 {
   unsigned char buff[1000];
   int c;
@@ -404,7 +404,9 @@ int main(int argc, char **argv)
   // Add IO watch for tty connection
   printf_debug("Adding IO watch...\n");
   GIOChannel *sk = g_io_channel_unix_new(serial_port->fd);
-  g_io_add_watch(sk, G_IO_IN, parse_device_data, NULL);
+  // g_io_add_watch(sk, G_IO_IN, parse_device_data, NULL);
+  g_timeout_add(0.25, parse_device_data, NULL);
+
 
   // Run the main loop
   printf_debug("Started rtcm2ivy for aircraft id %s!\n", ac_id);

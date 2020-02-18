@@ -349,14 +349,6 @@ struct FloatVect3 compute_state(void){
 	// Obtain current position in order to calculate state as function of boat difference
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
-	// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
-	if (ground_set){
-		follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
-	}
-	else {
-		follow_me_altitude = pos_Utm->alt;
-	}
-
 	// Set heading first so that we transformations are correct
 	float heading = follow_me_heading/180*M_PI;
 
@@ -389,6 +381,15 @@ struct FloatVect3 compute_state(void){
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
+		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+		// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
+		if (ground_set){
+			follow_me_height = pos_Utm->alt - ((float)(ground_lla.alt))/1000.;
+		}
+		else {
+			follow_me_altitude = pos_Utm->alt;
+		}
 
         // Set Airspeed setpoint and the whole average array to current airspeed
         float current_airspeed = stateGetAirspeed_f();
@@ -463,7 +464,6 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	// ground_course = DL_GROUND_GPS_course(buf);
 	old_ground_timestamp = ground_timestamp;
 	ground_timestamp = DL_GROUND_GPS_timestamp(buf);
-	printf("Obtaining message with timestamp %d\n", ground_timestamp);
 	// fix_mode = DL_GROUND_GPS_mode(buf);
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
@@ -554,6 +554,7 @@ void follow_me_compute_wp(void){
 	lla.alt = ((float)(ground_lla.alt))/1000.;
 	follow_me_altitude = lla.alt + follow_me_height;
 
+	printf("Follow me height is given by %d in compute wp\n", follow_me_height);
 	// Convert LLA to UTM in oder to set watpoint in UTM system
 	// ground_utm.zone = nav_utm_zone0;
 	utm_of_lla_f(&ground_utm, &lla);
@@ -570,6 +571,7 @@ void follow_me_compute_wp(void){
 	// Move stdby waypoint in front of the boat at the given distance
 	int32_t x_stdby = ground_utm.east + stdby_distance*sinf(follow_me_heading/180.*M_PI);
 	int32_t y_stdby = ground_utm.north + stdby_distance*cosf(follow_me_heading/180.*M_PI);
+
 
 	// Update STBDY HOME AND FOLLOW ME WPS
 	nav_move_waypoint(WP_FOLLOW, x_follow,  y_follow, follow_me_altitude );
@@ -607,9 +609,8 @@ void follow_me_go(void){
     NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
 
-// This is the main function executed by the follow_me_block
-int follow_me_call(void){
-
+void compute_follow_distances(void);
+void compute_follow_distances(void){
 	// Increase the gps counter to verify whether gps has been lost
 	counter_gps++;
 	// Go to STDBY in case the GPS has lost
@@ -622,13 +623,20 @@ int follow_me_call(void){
 	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
 	dist_wp_follow_old = dist_wp_follow;
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
-    dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
+	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
-    // Loop through controller
-    // In case we have reached follow 2, simply increase the distance towards it so that it is never reached
-    if (dist_wp_follow2.y <  10){
+	// Loop through controller
+	// In case we have reached follow 2, simply increase the distance towards it so that it is never reached
+	if (dist_wp_follow2.y <  10){
 		follow_me_distance_2 += 20;
-    }
+	}
+}
+
+// This is the main function executed by the follow_me_block
+int follow_me_call(void){
+
+
+	compute_follow_distances();
 
     // Loop through controllers
 	// follow_me_roll_pid();

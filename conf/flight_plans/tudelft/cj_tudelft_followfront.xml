@@ -107,11 +107,11 @@
       <call fun="follow_me_call()"/>
     </block>
     
-    <!-- <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
+    <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="rl_soaring_start()"/>
       <call fun="rl_soaring_call()"/>
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
-    </block> -->
+    </block> 
  
     
   <!-- *********** Land *********** -->
@@ -119,8 +119,5 @@
       <stay pre_call="follow_me_set_wp()" climb="-1" vmode="climb" wp="FOLLOW"/>
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
     </block>     -->
-  </blocks>
-  
-  
-  
+  </blocks>  
 </flight_plan>

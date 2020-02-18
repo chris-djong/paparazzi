@@ -39,6 +39,7 @@ extern int16_t follow_me_distance;
 extern int16_t follow_me_distance_2;
 extern int16_t stdby_distance;
 extern int16_t follow_me_height;
+extern float follow_me_altitude;
 extern uint16_t follow_me_region;
 extern float follow_me_heading;
 extern int8_t lateral_offset;
@@ -48,13 +49,6 @@ extern float airspeed_pgain;
 extern float airspeed_dgain;
 extern uint8_t average_speed_size;
 
-/*
-extern float roll_diff_igain;
-extern float roll_diff_pgain;
-extern float roll_diff_dgain;
-extern float roll_enable;
-extern float roll_disable;
-extern uint8_t follow_me_roll;*/
 
 /************************************************
   Variables used by internal file logger
@@ -104,11 +98,18 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
 // run function
 extern int follow_me_call(void);
 
+extern void compute_follow_distances(void);
+
+extern void follow_me_throttle_pid(void);
+
 // Used by telemetry for reception of ground gps
 //extern void follow_me_set_wp(void);
 
 // Used by flight plan
 void follow_me_soar_here(void);
+
+struct FloatVect3 compute_state(void);
+extern void follow_me_compute_wp(void);
 
 
 #endif
