@@ -261,7 +261,6 @@ void rl_soaring_init(void) {
 	srand(currentTime.tv_sec);
 
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_SOARING, send_rl_variables);
-
 }
 
 
