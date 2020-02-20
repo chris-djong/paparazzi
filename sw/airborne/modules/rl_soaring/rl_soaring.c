@@ -136,15 +136,15 @@ void update_policy(void);
 void update_q_value(struct Int8Vect3, struct Int8Vect3, float, struct Int8Vect3, struct Int8Vect3);
 
 
-struct Int8Vect3 state_to_idx();
+struct Int8Vect3 state_to_idx(void);
 struct Int8Vect3 state_to_idx(){
 	// Obtain current offsets
-    struct FloatVect3 current_state = compute_state();
+    struct FloatVect3 current_attitude = compute_state();
 
-    printf("Current state has been computed as (%f, %f %f)\n", current_state.x, current_state.y, current_state.z);
-    int8_t lateral_state = round((current_state.x - lateral_offset_reference)/state_accuracy);
-    int8_t forward_state = round((current_state.y - follow_me_distance_reference)/state_accuracy);
-    int8_t height_state = round((current_state.z - follow_me_height_reference)/state_accuracy);
+    printf("Current state has been computed as (%f, %f %f)\n", current_attitude.x, current_attitude.y, current_attitude.z);
+    int8_t lateral_state = round((current_attitude.x - lateral_offset_reference)/state_accuracy);
+    int8_t forward_state = round((current_attitude.y - follow_me_distance_reference)/state_accuracy);
+    int8_t height_state = round((current_attitude.z - follow_me_height_reference)/state_accuracy);
 
     if ((abs(ceil(lateral_state)) > state_size_lateral/2.) || (abs(ceil(height_state)) > state_size_height/2) ){
     	rl_episode_out_of_window = 0;
@@ -161,6 +161,7 @@ struct Int8Vect3 state_to_idx(){
     return idx;
 }
 
+struct FloatVect3 idx_to_state(struct Int8Vect3);
 struct FloatVect3 idx_to_state(struct Int8Vect3 idx){
 	printf("Performing idx_to_state calculation for idx (%d %d %d)\n", idx.x, idx.y, idx.z);
     struct FloatVect3 actual_state;
@@ -245,11 +246,11 @@ static void rl_write_Q_file(void){
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
      // When prompted, return all the telemetry variables
 	uint timestamp = 0;
-	uint episode = 0;
+	uint episodes = 0;
 	float old_distance = 0;
 	float current_distance = 0;
 	float foo = 0;
-    pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestamp, &episode, &old_distance, &current_distance, &foo);
+    pprz_msg_send_RL_SOARING(trans, dev, AC_ID, &timestamp, &episodes, &old_distance, &current_distance, &foo);
 
 }
 
@@ -493,7 +494,7 @@ int rl_soaring_call(void) {
 
 
 // Get either an action from the policy or a random action depending on the current epsilon greed
-struct Int8Vect3 rl_soaring_get_action(struct Int8Vect3 state){
+struct Int8Vect3 rl_soaring_get_action(struct Int8Vect3 actual_state){
     struct Int8Vect3 action;
     float epsilon = random_float_in_range(0,1);
     if (epsilon<rl_exploration_rate){
@@ -503,7 +504,7 @@ struct Int8Vect3 rl_soaring_get_action(struct Int8Vect3 state){
         printf("Obtaining random action (%d %d %d)\n", action.x, action.y, action.z);
     } else{
     	printf("Obtaining predefined action (%d %d %d)\n", action.x, action.y, action.z);
-        action = current_policy[state.x][state.z];
+        action = current_policy[actual_state.x][actual_state.z];
     }
     return action;
 }
