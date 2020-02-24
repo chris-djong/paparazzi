@@ -57,6 +57,7 @@ extern uint8_t average_speed_size;
 extern float ground_speed;
 extern float actual_enu_speed;
 extern struct FloatVect3 dist_wp_follow;
+extern struct FloatVect3 dist_wp_follow2;
 extern struct FloatVect3 wp_follow_enu;
 extern int fix_mode;
 extern struct UtmCoor_f ground_utm;

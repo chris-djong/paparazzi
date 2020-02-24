@@ -349,9 +349,6 @@ struct FloatVect3 compute_state(void){
 	// Obtain current position in order to calculate state as function of boat difference
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
-	// Set heading first so that we transformations are correct
-	float heading = follow_me_heading/180*M_PI;
-
 
 	// Based on the current Utm position and follow_me_heading we have to change the reference frame
 	// such that it`s y axis is orthogonal to the heading of the boat and the origin is at the boat location
@@ -366,6 +363,9 @@ struct FloatVect3 compute_state(void){
 
 	// Translate frame
 	transformation = translate_frame(&point, ground_utm.east, ground_utm.north, ground_utm.alt);
+
+	// Set heading first so that the transformations are correct
+	float heading = follow_me_heading/180*M_PI;
 	// Then rotate frame
 	transformation = rotate_frame(&transformation, -heading);
 	// Bound transformation values
@@ -381,7 +381,11 @@ struct FloatVect3 compute_state(void){
 void follow_me_soar_here(void){
 	// This condition is required because sometimes the ground_utm variable has not been updated yet in case the GROUND_GPS messages was not received yet
 	if ((ground_utm.east != 0) && (ground_utm.north != 0)){
+		// Obtain the current position to calculate waypoint positions
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+
+		// Set the follow_me_heading to the current heading of the UAV
+		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
 
 		// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
 		if (ground_set){
@@ -399,6 +403,8 @@ void follow_me_soar_here(void){
 		follow_me_distance = state_in_boat_frame.y;
 		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = state_in_boat_frame.x;
+
+
 	}
 }
 
@@ -554,7 +560,6 @@ void follow_me_compute_wp(void){
 	lla.alt = ((float)(ground_lla.alt))/1000.;
 	follow_me_altitude = lla.alt + follow_me_height;
 
-	printf("Follow me height is given by %d in compute wp\n", follow_me_height);
 	// Convert LLA to UTM in oder to set watpoint in UTM system
 	// ground_utm.zone = nav_utm_zone0;
 	utm_of_lla_f(&ground_utm, &lla);
@@ -615,8 +620,8 @@ void compute_follow_distances(void){
 	counter_gps++;
 	// Go to STDBY in case the GPS has lost
 	if (counter_gps > gps_lost_count){
-		GotoBlock(5);
-		printf("Moving to stdby block because gps lost\n");
+		// GotoBlock(5);
+		printf("Removed moving to stdby block because gps lost\n");
 	}
 
 	// Compute errors towards waypoint
@@ -634,8 +639,6 @@ void compute_follow_distances(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
-
-
 	compute_follow_distances();
 
     // Loop through controllers
