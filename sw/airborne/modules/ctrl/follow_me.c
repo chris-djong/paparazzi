@@ -56,7 +56,7 @@ int8_t hand_rl_idx = 0; // the index value that needs to be modified
 // Waypoint parameters
 int16_t follow_me_distance = 20; // distance from which the follow me points are created
 // Follow me distance +30 because we want to fly just in front of the UAV. In case we fly closer by we follow flower like patterns
-int16_t follow_me_distance_2 = 20 + 30; // unsigned integer because the uav should always fly with the same heading as the boat -- this is where the uav will fly to
+int16_t follow_me_distance_2 = 20 + 30; //  this is where the uav will fly to
 int16_t stdby_distance = 110; // based on stbdy radius (80) + 30
 int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
@@ -68,14 +68,14 @@ int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-// float roll_enable = 1; // when this x distance is exceeded the roll PID is enabled
-// float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
-// float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-// float roll_diff_pgain = 0.006;
-// float roll_diff_igain = 0.0;
-// float roll_diff_dgain = 0.0;
-// float roll_diff_sum_err = 0.0;
-// uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+float roll_enable = 5; // when this x distance is exceeded the roll PID is enabled
+float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
+float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_diff_pgain = 0.006;
+float roll_diff_igain = 0.0;
+float roll_diff_dgain = 0.0;
+float roll_diff_sum_err = 0.0;
+uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Throttle PID
 float airspeed_sum_err = 0.0;
@@ -104,7 +104,7 @@ struct UtmCoor_f ground_utm_new;
 
 // Counter for the case gps is lost
 int counter_gps = 0;
-int gps_lost_count = 25;
+int gps_lost_count = 100;
 
 // Old location for D gains
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
@@ -404,6 +404,8 @@ void follow_me_soar_here(void){
 		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = state_in_boat_frame.x;
 
+		printf("Soaring here..\nFollow_me_distance: %d\nLateral_offset: %d\nAirspeed_setpoint: %f\nFollow_me_heading: %f\n\n", follow_me_distance, lateral_offset, v_ctl_auto_airspeed_setpoint, follow_me_heading);
+
 
 	}
 }
@@ -426,14 +428,15 @@ void follow_me_startup(void){
 	if (!rl_started){
     }
 #endif
-	// follow_me_soar_here();
     follow_me_call();
 
-    // if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
-    // 	follow_me_roll = 0;
-    //  } else {
-    // 	follow_me_roll = 0;
-    // }
+    if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
+    	follow_me_roll = 1;
+    	printf("Follow me roll set enabled\n");
+    } else {
+    	printf("Follow me roll set disabled\n");
+     	follow_me_roll = 0;
+    }
 }
 
 // Sets the heading based on the average over several GPS positions
@@ -484,7 +487,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	follow_me_set_heading();
 }
 
-/*
+
 // Roll angle controller
 void follow_me_roll_pid(void);
 void follow_me_roll_pid(void){
@@ -493,7 +496,7 @@ void follow_me_roll_pid(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
-		follow_me_roll = 0;
+		follow_me_roll = 1;
 	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
 		follow_me_roll = 0;
 	}
@@ -501,6 +504,7 @@ void follow_me_roll_pid(void){
 	if (fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)){
 		follow_me_roll = 0;
 	}
+
 	roll_diff_sum_err += dist_wp_follow.x;
 	BoundAbs(roll_diff_sum_err, 20);
 
@@ -513,7 +517,7 @@ void follow_me_roll_pid(void){
 		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
 	}
 }
-*/
+
 
 // Throttle controller
 void follow_me_throttle_pid(void);
@@ -618,7 +622,7 @@ void compute_follow_distances(void);
 void compute_follow_distances(void){
 	// Increase the gps counter to verify whether gps has been lost
 	counter_gps++;
-	// Go to STDBY in case the GPS has lost
+	// Go to STDBY in case the ground GPS has been lost
 	if (counter_gps > gps_lost_count){
 		// GotoBlock(5);
 		printf("Removed moving to stdby block because gps lost\n");
@@ -630,6 +634,7 @@ void compute_follow_distances(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
 	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
+	printf("Follow me distances are given by (%f %f %f)\n", dist_wp_follow.x, dist_wp_follow.y, dist_wp_follow.z);
 	// Loop through controller
 	// In case we have reached follow 2, simply increase the distance towards it so that it is never reached
 	if (dist_wp_follow2.y <  10){
@@ -642,7 +647,7 @@ int follow_me_call(void){
 	compute_follow_distances();
 
     // Loop through controllers
-	// follow_me_roll_pid();
+	follow_me_roll_pid();
 	follow_me_throttle_pid();
 
 	// Move to the correct location
@@ -660,7 +665,7 @@ int follow_me_call(void){
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
-	// follow_me_roll = 0;
-	// h_ctl_roll_setpoint_follow_me = 0;
+	follow_me_roll = 0;
+	h_ctl_roll_setpoint_follow_me = 0;
 }
 

@@ -49,6 +49,12 @@ extern float airspeed_pgain;
 extern float airspeed_dgain;
 extern uint8_t average_speed_size;
 
+extern float roll_enable; // when this x distance is exceeded the roll PID is enabled
+extern float roll_disable; // when the x distance is lower the roll PID is disabled again
+extern float roll_diff_limit; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+extern float roll_diff_pgain;
+extern float roll_diff_igain;
+extern float roll_diff_dgain;
 
 /************************************************
   Variables used by internal file logger
@@ -61,6 +67,8 @@ extern struct FloatVect3 dist_wp_follow2;
 extern struct FloatVect3 wp_follow_enu;
 extern int fix_mode;
 extern struct UtmCoor_f ground_utm;
+extern uint8_t follow_me_roll; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+
 
 
 

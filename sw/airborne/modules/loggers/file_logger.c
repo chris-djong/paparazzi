@@ -155,7 +155,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll\n"
 #endif
     );
   }
@@ -211,52 +211,53 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f\n",
-          counter, // int
-          imu.gyro_unscaled.p, // int
-          imu.gyro_unscaled.q, // int
-          imu.gyro_unscaled.r, // int
-          imu.accel_unscaled.x, // int
-          imu.accel_unscaled.y, // int
-          imu.accel_unscaled.z, // int
-          imu.mag_unscaled.x, // int
-          imu.mag_unscaled.y, // int
-          imu.mag_unscaled.z, // int
-		  imu.gyro_unscaled.p, // int
-		  imu.gyro.q, // int
-		  imu.gyro.r, // int
-		  imu.accel.x, // int
-		  imu.accel.y, // int
-		  imu.accel.z, // int
-		  imu.mag.x, // int
-		  imu.mag.y, // int
-	      imu.mag.z, // int
-		  h_ctl_aileron_setpoint, // int
-		  h_ctl_elevator_setpoint, // int
-		  ground_utm.east, // float
-		  ground_utm.north, // float
-		  ground_utm.alt, // float
-		  dist_wp_follow.x, // float
-		  dist_wp_follow.y, // float
-		  dist_wp_follow.z, // float
-		  pos_Utm->east, // float
-		  pos_Utm->north, // float
-		  pos_Utm->alt, // float
-		  wind->x, // float
-		  wind->y, // float
-		  wind->z, // float
-		  airspeed, //float
-		  aoa, //float
-		  sideslip, // float
-          gps.fix, // float GPS state aircraft
-		  v_ctl_auto_airspeed_setpoint, // float
-		  autopilot.mode, //int
-		  follow_me_height, // float
-		  follow_me_altitude, // float
-		  follow_me_heading, // float
-		  dist_wp_follow2.x, // float
-		  dist_wp_follow2.y, // float
-		  dist_wp_follow2.z // float
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d\n",
+          counter, // int 1
+          imu.gyro_unscaled.p, // int 2
+          imu.gyro_unscaled.q, // int 3
+          imu.gyro_unscaled.r, // int 4
+          imu.accel_unscaled.x, // int 5
+          imu.accel_unscaled.y, // int 6
+          imu.accel_unscaled.z, // int 7
+          imu.mag_unscaled.x, // int 8
+          imu.mag_unscaled.y, // int 9
+          imu.mag_unscaled.z, // int 10
+		  imu.gyro_unscaled.p, // int 11
+		  imu.gyro.q, // int 12
+		  imu.gyro.r, // int 13
+		  imu.accel.x, // int 14
+		  imu.accel.y, // int 15
+		  imu.accel.z, // int 16
+		  imu.mag.x, // int 17
+		  imu.mag.y, // int 18
+	      imu.mag.z, // int 19
+		  h_ctl_aileron_setpoint, // int 20
+		  h_ctl_elevator_setpoint, // int 21
+		  ground_utm.east, // float 22
+		  ground_utm.north, // float 23
+		  ground_utm.alt, // float 24
+		  dist_wp_follow.x, // float 25
+		  dist_wp_follow.y, // float 26
+		  dist_wp_follow.z, // float 27
+		  pos_Utm->east, // float 28
+		  pos_Utm->north, // float 29
+		  pos_Utm->alt, // float 30
+		  wind->x, // float 31
+		  wind->y, // float 32
+		  wind->z, // float 33
+		  airspeed, //float 34
+		  aoa, //float 35
+		  sideslip, // float 36
+          gps.fix, // int GPS state aircraft 37
+		  v_ctl_auto_airspeed_setpoint, // float 38
+		  autopilot.mode, //int 39
+		  follow_me_height, // int 40
+		  follow_me_altitude, // float 41
+		  follow_me_heading, // float 42
+		  dist_wp_follow2.x, // float 43
+		  dist_wp_follow2.y, // float 44
+		  dist_wp_follow2.z, // float 45
+		  follow_me_roll // int 46
          );
 #endif
   counter++;

@@ -52,7 +52,7 @@ bool h_ctl_auto1_rate;
 
 /* inner roll loop parameters */
 float  h_ctl_roll_setpoint;
-// float h_ctl_roll_setpoint_follow_me;
+float h_ctl_roll_setpoint_follow_me;
 float  h_ctl_roll_pgain;
 pprz_t h_ctl_aileron_setpoint;
 float  h_ctl_roll_slew;
@@ -289,7 +289,6 @@ void h_ctl_course_loop(void)
   float cmd = -h_ctl_course_pgain * speed_depend_nav * (err + d_err * h_ctl_course_dgain);
 
 
-
 #if defined(AGR_CLIMB) && !USE_AIRSPEED
   /** limit navigation during extreme altitude changes */
   if (AGR_BLEND_START > AGR_BLEND_END && AGR_BLEND_END > 0) { /* prevent divide by zero, reversed or negative values */
@@ -321,9 +320,9 @@ void h_ctl_course_loop(void)
   h_ctl_roll_setpoint = roll_setpoint;
 #endif
   // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
-//  if (follow_me_roll){
-//	  h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
-//  }
+ if (follow_me_roll){
+   h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+ }
 
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }
