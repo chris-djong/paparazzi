@@ -211,7 +211,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -250,7 +250,9 @@ void file_logger_periodic(void)
 		  sideslip, // float
           gps.fix, // float GPS state aircraft
 		  v_ctl_auto_airspeed_setpoint, // float
-		  autopilot.mode //int
+		  autopilot.mode, //int
+		  follow_me_height, // float
+		  follow_me_altitude // float
          );
 #endif
   counter++;
