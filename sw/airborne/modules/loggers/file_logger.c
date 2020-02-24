@@ -155,7 +155,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode\n"
+      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z\n"
 #endif
     );
   }
@@ -211,7 +211,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f\n",
           counter, // int
           imu.gyro_unscaled.p, // int
           imu.gyro_unscaled.q, // int
@@ -252,7 +252,11 @@ void file_logger_periodic(void)
 		  v_ctl_auto_airspeed_setpoint, // float
 		  autopilot.mode, //int
 		  follow_me_height, // float
-		  follow_me_altitude // float
+		  follow_me_altitude, // float
+		  follow_me_heading, // float
+		  dist_wp_follow2.x, // float
+		  dist_wp_follow2.y, // float
+		  dist_wp_follow2.z // float
          );
 #endif
   counter++;
