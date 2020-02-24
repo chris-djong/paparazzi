@@ -18,15 +18,15 @@
         <dl_setting var="follow_me_height" min="-200" max="200" step="1" shortname="Height"/>
         <dl_setting var="follow_me_region" min="10" max="1000" step="1" shortname="Fly Region"/>
         <dl_setting var="lateral_offset" min="-128" max="127" step="1" shortname="Lateral offset"/>
-        <!-- <dl_setting var="roll_enable" min="0" max="255" step="0.5" shortname="Roll enable"/>
-        <dl_setting var="roll_disable" min="0" max="255" step="0.5" shortname="Roll disable"/> -->
+        <dl_setting var="roll_enable" min="0" max="255" step="0.5" shortname="Roll enable"/>
+        <dl_setting var="roll_disable" min="0" max="255" step="0.5" shortname="Roll disable"/> 
         <dl_setting var="average_speed_size" min="1" max="100" step="1" shortname="Average speed length"/> 
         <dl_setting var="airspeed_pgain" min="-10" max="10" step="0.01" shortname="Speed pgain"/>
         <dl_setting var="airspeed_igain" min="-10" max="10" step="0.001" shortname="Speed igain"/>
         <dl_setting var="airspeed_dgain" min="-10" max="10" step="0.001" shortname="Speed dgain"/>
-        <!-- <dl_setting var="roll_diff_pgain" min="0" max="0.012" step="0.0001" shortname="Roll pgain"/>
-        <dl_setting var="roll_diff_igain" min="0" max="0.001" step="0.0001" shortname="Roll igain"/>
-        <dl_setting var="roll_diff_dgain" min="0" max="0.22" step="0.01" shortname="Roll dgain"/> -->
+        <dl_setting var="roll_diff_pgain" min="-0.012" max="0.012" step="0.0001" shortname="Roll pgain"/>
+        <dl_setting var="roll_diff_igain" min="-0.001" max="0.001" step="0.0001" shortname="Roll igain"/>
+        <dl_setting var="roll_diff_dgain" min="-0.22" max="0.22" step="0.01" shortname="Roll dgain"/> 
       </dl_settings>
     </dl_settings>
   </settings>
