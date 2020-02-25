@@ -68,10 +68,10 @@ int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-float roll_enable = 5; // when this x distance is exceeded the roll PID is enabled
+float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float roll_diff_pgain = 0.006;
+float roll_diff_pgain = 0.002;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.0;
 float roll_diff_sum_err = 0.0;
@@ -404,9 +404,6 @@ void follow_me_soar_here(void){
 		follow_me_distance_2 = follow_me_distance + 30;
 		lateral_offset = state_in_boat_frame.x;
 
-		printf("Soaring here..\nFollow_me_distance: %d\nLateral_offset: %d\nAirspeed_setpoint: %f\nFollow_me_heading: %f\n\n", follow_me_distance, lateral_offset, v_ctl_auto_airspeed_setpoint, follow_me_heading);
-
-
 	}
 }
 
@@ -432,9 +429,7 @@ void follow_me_startup(void){
 
     if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
     	follow_me_roll = 1;
-    	printf("Follow me roll set enabled\n");
     } else {
-    	printf("Follow me roll set disabled\n");
      	follow_me_roll = 0;
     }
 }
@@ -495,11 +490,17 @@ void follow_me_roll_pid(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
+	if (fabs(dist_wp_follow.x) > roll_enable){
 		follow_me_roll = 1;
-	} else if ((fabs(dist_wp_follow.x) <= roll_disable && dist_wp_follow_old.x > roll_disable)) {
+	} else if (fabs(dist_wp_follow.x) < roll_disable){
 		follow_me_roll = 0;
 	}
+	// if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
+	// 	follow_me_roll = 1;
+	// } else if ((fabs(dist_wp_follow.x) <= roll_disable && fabs(dist_wp_follow_old.x) > roll_disable)) {
+	// 	follow_me_roll = 0;
+	// }
+
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
 	if (fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)){
 		follow_me_roll = 0;
@@ -509,6 +510,7 @@ void follow_me_roll_pid(void){
 	BoundAbs(roll_diff_sum_err, 20);
 
 	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+
 	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
@@ -634,7 +636,6 @@ void compute_follow_distances(void){
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
 	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
-	printf("Follow me distances are given by (%f %f %f)\n", dist_wp_follow.x, dist_wp_follow.y, dist_wp_follow.z);
 	// Loop through controller
 	// In case we have reached follow 2, simply increase the distance towards it so that it is never reached
 	if (dist_wp_follow2.y <  10){
