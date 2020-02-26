@@ -110,6 +110,7 @@ extern int follow_me_call(void);
 extern void compute_follow_distances(void);
 
 extern void follow_me_throttle_pid(void);
+extern void follow_me_roll_pid(void);
 
 // Used by telemetry for reception of ground gps
 //extern void follow_me_set_wp(void);

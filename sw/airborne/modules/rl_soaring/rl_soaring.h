@@ -35,6 +35,7 @@ extern int rl_soaring_call(void);
 extern void rl_soaring_stop(void);
 extern int rl_started;
 extern float rl_exploration_rate;
+extern uint8_t average_distance_size;
 
 
 extern void rl_soaring_update_measurements(void);

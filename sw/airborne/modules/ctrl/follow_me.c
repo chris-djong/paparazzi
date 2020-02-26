@@ -68,10 +68,10 @@ int32_t x_follow2;
 int32_t y_follow2;
 
 // Roll PID
-float roll_enable = 2; // when this x distance is exceeded the roll PID is enabled
+float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
 float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float roll_diff_pgain = 0.002;
+float roll_diff_pgain = 0.0015;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.0;
 float roll_diff_sum_err = 0.0;
@@ -103,8 +103,12 @@ struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
 // Counter for the case gps is lost
-int counter_gps = 0;
-int gps_lost_count = 100;
+uint8_t counter_gps = 0;
+uint8_t gps_lost_count = 100;
+
+// Counter for the calculation of the old dist_wp_follow
+uint8_t counter_old_distance = 0;
+uint8_t old_distance_count = 20;
 
 // Old location for D gains
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
@@ -202,37 +206,7 @@ float AverageHeading(float diffx, float diffy)
   Average Distance calculator  // used by RL module
 *********************************/
 
-#ifdef RL_SOARING_H
-#define MAX_DISTANCE_SIZE 30
-float average_distance[MAX_DISTANCE_SIZE]={0};
-int8_t front_distance=-1,rear_distance=-1, count_distance=0;
-float AverageDistance(int8_t);
-//function definition
-float AverageDistance(int8_t item)
-{
-	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
-	// Count = int8_t
-	if (count_distance<MAX_DISTANCE_SIZE){
-		count_distance += 1;
-	}
-    static float Sum=0;
-    if(front_distance ==(rear_distance+1)%MAX_DISTANCE_SIZE)
-    {
-        if(front_distance==rear_distance)
-            front_distance=rear_distance=-1;
-        else
-            front_distance = (front_distance+1)%MAX_DISTANCE_SIZE;
-        Sum=Sum-average_distance[front_distance];
-    }
-    if(front_distance==-1)
-        front_distance=rear_distance=0;
-    else
-        rear_distance=(rear_distance+1)%MAX_DISTANCE_SIZE;
-    average_distance[rear_distance]=item;
-    Sum=Sum+average_distance[rear_distance];
-    return ((float)Sum/fmin(MAX_DISTANCE_SIZE, count_distance));
-}
-#endif
+
 
 /***********************************************************************************************************************
   Frame translation functions
@@ -322,20 +296,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
   Reinforcement Learning functions
 ***********************************************************************************************************************/
 
-#ifdef RL_SOARING_H
-// Function to check whether we can hand control over to reinforcement learning again
-int8_t check_handover_rl(void);
-int8_t check_handover_rl(void){
-	for (int i=0; i<HAND_RL_SIZE; i++){
-		// In case we have only one incorrect value return false
-		if (hand_rl[i] == 0){
-			return 0;
-		}
-	}
-	// In case we loop through the whole array return true
-	return 1;
-}
-#endif
+
 
 /***********************************************************************************************************************
   Follow me functions
@@ -518,6 +479,8 @@ void follow_me_roll_pid(void){
 	else if (h_ctl_roll_setpoint_follow_me < -roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
 	}
+
+	printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_diff_pgain, dist_wp_follow.x, roll_diff_pgain*dist_wp_follow.x, roll_diff_igain, roll_diff_sum_err, roll_diff_igain*roll_diff_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_diff_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain);
 }
 
 
@@ -596,20 +559,6 @@ void follow_me_compute_wp(void){
 	nav_move_waypoint(WP_FR_BL,  ground_utm.east - follow_me_region,  ground_utm.north - follow_me_region, follow_me_altitude + 20);
 	nav_move_waypoint(WP_FR_BR,  ground_utm.east + follow_me_region,  ground_utm.north - follow_me_region, follow_me_altitude + 20);
 
-#ifdef RL_SOARING_H
-	if (rl_started){
-		average_follow_me_distance = AverageDistance(dist_wp_follow.y);
-		if ((average_follow_me_distance < hand_rl_threshold) && (average_follow_me_distance > -hand_rl_threshold) && rl_started){
-			hand_rl[hand_rl_idx] = 1;
-		} else {
-			hand_rl[hand_rl_idx] = 0;
-		}
-		hand_rl_idx++;
-		if (hand_rl_idx>HAND_RL_SIZE-1){
-			hand_rl_idx = 0;
-		}
-	}
-#endif
 	return;
 }
 
@@ -630,9 +579,14 @@ void compute_follow_distances(void){
 		printf("Removed moving to stdby block because gps lost\n");
 	}
 
+	counter_old_distance++;
 	// Compute errors towards waypoint
 	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
-	dist_wp_follow_old = dist_wp_follow;
+	if (counter_old_distance == old_distance_count){
+	    dist_wp_follow_old = dist_wp_follow;
+	    counter_old_distance = 0;
+	}
+
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
 	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
 
@@ -653,12 +607,6 @@ int follow_me_call(void){
 
 	// Move to the correct location
 	follow_me_go();
-
-#ifdef RL_SOARING_H
-	if (check_handover_rl()){
-		GotoBlock(7);
-	}
-#endif
 
 	return 1;
 }
