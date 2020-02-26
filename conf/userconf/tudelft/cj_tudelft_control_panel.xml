@@ -117,8 +117,7 @@
         <arg flag="-u" constant="0.1"/>
         <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed_sp:1"/>
         <arg flag="-c" constant="*:telemetry:AIRSPEED:airspeed:1"/>
-        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/> 
-        
+        <arg flag="-c" constant="*:telemetry:FOLLOW_ME:Distance_WP_y:1"/>       
       </program>
     </session>
     

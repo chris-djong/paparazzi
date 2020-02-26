@@ -8,6 +8,7 @@
     <dl_settings>
       <dl_settings name="ReinLearn">
         <dl_setting var="rl_exploration_rate" min="0" max="1" step="0.1" shortname="Exploration Rate" unit="m"/>
+        <dl_setting var="average_distance_size" min="0" max="100" step="1" shortname="Average Dist Size"/>
       </dl_settings>
     </dl_settings>
   </settings>

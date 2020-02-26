@@ -81,7 +81,7 @@ static int32_t episode_time_rl = 0;
 static int32_t max_episode_time = 120000; // in seconds
 
 // RL variables
-float desired_accuracy = 10; // accuracy at which the discretised states are created
+float desired_accuracy = 3; // accuracy at which the discretised states are created
 
 
 // Need to have struct for array because otherwise we have 2 possibilities for state 6 for example, 2x3 and 3x2
@@ -95,7 +95,7 @@ float desired_accuracy = 10; // accuracy at which the discretised states are cre
 #define action_size_height 3
 
 
-float state_accuracy = 50; // accuracy at which states are seperated between each other
+float state_accuracy = 10; // accuracy at which states are seperated between each other
 
 // Create variables for reference of flying window
 float lateral_offset_reference;
@@ -135,13 +135,25 @@ static void send_rl_variables(struct transport_tx *trans, struct link_device *de
 void update_policy(void);
 void update_q_value(struct Int8Vect3, struct Int8Vect3, float, struct Int8Vect3, struct Int8Vect3);
 
+uint8_t average_distance_size = 15;
+struct FloatVect3 average_distance;
+struct FloatVect3 AverageDistance(struct FloatVect3);
+// Calculates the average distance based on the previous average distance
+// It should be noted that this function is incorrect in case we have not enough measurements (at least average_distance_size measurements are required)
+// Used for the calculation on when an epiosde is terminated
+struct FloatVect3 AverageDistance(struct FloatVect3 distance){
+	struct FloatVect3 average;
+	average.x = (average_distance.x * (average_distance_size-1) + distance.x) / (average_distance_size);
+	average.y = (average_distance.y * (average_distance_size-1) + distance.y) / (average_distance_size);
+	average.z = (average_distance.z * (average_distance_size-1) + distance.z) / (average_distance_size);
+    return average;
+}
 
 struct Int8Vect3 state_to_idx(void);
 struct Int8Vect3 state_to_idx(){
 	// Obtain current offsets
     struct FloatVect3 current_attitude = compute_state();
 
-    printf("Current state has been computed as (%f, %f %f)\n", current_attitude.x, current_attitude.y, current_attitude.z);
     int8_t lateral_state = round((current_attitude.x - lateral_offset_reference)/state_accuracy);
     int8_t forward_state = round((current_attitude.y - follow_me_distance_reference)/state_accuracy);
     int8_t height_state = round((current_attitude.z - follow_me_height_reference)/state_accuracy);
@@ -150,9 +162,6 @@ struct Int8Vect3 state_to_idx(){
     	rl_episode_out_of_window = 0;
     	// printf("Out of window because %d > %d || %d > %d\n", abs(ceil(lateral_state)), state_size_lateral/2, abs(ceil(height_state)), state_size_height/2);
     }
-
-    printf("The reference window is centered at %f %f %f\n", lateral_offset_reference, follow_me_distance_reference, follow_me_height_reference);
-    printf("Based on this the following indices have been obtained (%d %d %d)\n", lateral_state, forward_state, height_state);
 
     struct Int8Vect3 idx;
     idx.x = lateral_state;
@@ -163,12 +172,10 @@ struct Int8Vect3 state_to_idx(){
 
 struct FloatVect3 idx_to_state(struct Int8Vect3);
 struct FloatVect3 idx_to_state(struct Int8Vect3 idx){
-	printf("Performing idx_to_state calculation for idx (%d %d %d)\n", idx.x, idx.y, idx.z);
     struct FloatVect3 actual_state;
     actual_state.x = lateral_offset_reference + idx.x*state_accuracy;
     actual_state.y = follow_me_distance_reference + idx.y*state_accuracy;
     actual_state.z = follow_me_height_reference + idx.z*state_accuracy;
-    printf("Based on this the state is given by (%f %f %f)\n\n", actual_state.x, actual_state.y, actual_state.z);
     return actual_state;
 }
 
@@ -287,9 +294,6 @@ void rl_soaring_start(void){
 		start_time_milliseconds = currentTime.tv_usec;
 		rl_started = true;
 	}
-	else{
-		printf("Rl soaring_start has not been executed. Start already..\n");
-	}
 }
 
 
@@ -310,48 +314,37 @@ void rl_soaring_start_episode(){
     episode_start_time_seconds = currentTime.tv_sec;
 
     state1 = current_state;
-    printf("State 1 has been set to %d %d %d\n", state1.x, state1.y, state1.z);
 }
 
 
 // Not used at all for now ///////
 void rl_soaring_end_episode(void){
 	if (rl_episode_target_reached){
-		printf("Ended because target has been reached\n");
 		rl_episode_target_reached = false;
 	}
 	if (rl_episode_beyond_wp){
-		printf("Ended because beyond wp\n");
 	    rl_episode_beyond_wp = false;
 	}
 	if (rl_episode_boatcrash){
-		printf("Ended because boatcrash\n");
         rl_episode_boatcrash = false;
 	}
 	if (rl_episode_timeout){
-		printf("Ended because of timeout\n");
 	    rl_episode_timeout = false;
 	}
 	if (rl_episode_out_of_window){
-		printf("Ended because out of window\n");
 		rl_episode_out_of_window = false;
 	}
 
 	// Calculate end state of an episode and obtain the new desired action
 	state2 = current_state;
-	printf("State 2 has been set to (%d %d %d)\n", state2.x, state2.y, state2.z);
 	action2 = rl_soaring_get_action(state2);
-	printf("Action 2 set to %d %d %d\n", action2.x, action2.y, action2.z);
 
 	// Calculate reward based on beginning and end state and update the policies accordingly
 	reward = calc_reward();
 	update_q_value(state1, state2, reward, action1, action2);
 	update_policy();
 	action1 = action2;
-	printf("Action 1 set to %d %d %d\n", action1.x, action1.y, action1.z);
 	rl_soaring_perform_action(action1);
-
-	printf("Episode %d ended. Total flying time: %d.\n", episode, episode_time_rl);
 	rl_episode_started = false;
 
 
@@ -385,10 +378,10 @@ void rl_soaring_update_measurements(void){
 
 void rl_navigation(void);
 void rl_navigation(void){
-	compute_follow_distances();
 
     // Loop through controllers
 	follow_me_throttle_pid();
+	follow_me_roll_pid();
 
 	// Standart navigational loop
 	NavGotoWaypoint(WP__FOLLOW2);
@@ -458,6 +451,8 @@ int rl_soaring_call(void) {
 	}
 
     gettimeofday(&nowcallTime, NULL);
+	compute_follow_distances();
+
 
 	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
 	// Update measurements
@@ -466,12 +461,12 @@ int rl_soaring_call(void) {
 
 
 	// If we have reached our target the episode ends
-	// if ((current_state.x == desired_state.x) && (current_state.y == desired_state.y) && (current_state.z == desired_state.z)){
-	if ((fabs(dist_wp_follow.x) < 4) && (fabs(dist_wp_follow.y) < 4)){
+	average_distance = AverageDistance(dist_wp_follow);
+	if ((fabs(average_distance.x) < desired_accuracy) && (fabs(average_distance.y) < desired_accuracy)){
 	    rl_episode_target_reached = 1;
-	    printf("Target has been reached and dist.wp_follow is given by: (%f %f %f)\n", dist_wp_follow.x, dist_wp_follow.y, dist_wp_follow.z);
-	} else {
-		printf("Target has not been reached because dist.wp_follow is given by: (%f %f %f)\n", dist_wp_follow.x, dist_wp_follow.y, dist_wp_follow.z);
+	    average_distance.x = 10;
+	    average_distance.y = 10;
+	    average_distance.z = 10;
 	}
 
 	// Check whether the episode has ended
@@ -483,7 +478,6 @@ int rl_soaring_call(void) {
 	// Check whether we are in an episode already
 	if (!rl_episode_started){
 	   // If the episode has not been then start a new episode
-	   printf("\n\n\nStarting a new episode.. \n");
 	   rl_soaring_start_episode();
 	}
 
@@ -501,9 +495,7 @@ struct Int8Vect3 rl_soaring_get_action(struct Int8Vect3 actual_state){
         action.x = rand() % action_size_lateral - (action_size_lateral-1)/2;
         action.y = rand() % action_size_longitudinal - (action_size_longitudinal-1)/2;
         action.z = rand() % action_size_height - (action_size_height-1)/2;
-        printf("Obtaining random action (%d %d %d)\n", action.x, action.y, action.z);
     } else{
-    	printf("Obtaining predefined action (%d %d %d)\n", action.x, action.y, action.z);
         action = current_policy[actual_state.x][actual_state.z];
     }
     return action;
@@ -515,9 +507,8 @@ void rl_soaring_perform_action(struct Int8Vect3 action){
 	struct FloatVect3 carr = idx_to_state(action);
 	desired_state = action;
 	lateral_offset = carr.x;
-    // follow_me_distance = carrc.y;
-    follow_me_height = carr.z;
-    printf("Follow me height has been set to %d\n", follow_me_height);
+    // follow_me_distance = carr.y;
+    // follow_me_height = carr.z;
 }
 
 
