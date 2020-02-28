@@ -182,46 +182,49 @@ struct FloatVect3 idx_to_state(struct Int8Vect3 idx){
 
 // Function that loads an existing Q file in order to obtain the Q values for each corresponding action
 static void rl_load_Q_file(void){
-	// FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "r");
-	// if (f == NULL){
-	    for (int i=0; i<state_size_lateral; i++){
-		    for (int j=0; j<state_size_height; j++){
-			    for (int k=0; k<action_size_lateral; k++){
-				    for (int l=0; l<action_size_height; l++){
-				    	Q[i][j][k][l] = 0;
-				    }
-			    }
-		    }
-	    }
-	    return;
-	/* }
-
-	char line[1024]; // assumption that we have a maximum of 1024 characters per line which should be sufficient
+	// Open the File
+	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "r");
+	// Create a char for each line
+	char line[1024]; // Assumption that we have a maximum of 1024 character in each line
+	// Store the first line of of f in the line char
 	if (fgets(line, 1024, f) == NULL){
 		printf("Error obtaining first line in load Qfile\n"); // remove first line which is only header
 	}
+	// Create a token to store each cell and split the line into the different tokens
 	char *token;
+	// In case a line is given as an argument it just takes the first index.
+	// In order to obtain the subsequent delimiters instead of line a NULL pointer is used
 	token = strtok(line, ",");
-	episode = atoll(token);
-	for (int i=0; i<STATE_SIZE_1; i++){
-		// Obtain the first line which is under format State1.1 Q1.1.1, Q1.1.2, Q 1.1.3, Q 1.1.4, Q1.1.15, Q 1.2.1
-	    if (fgets(line, 1024, f) == NULL){
-	    	printf("Error obtaining line in load Qfile\n");
-	    }
-	    token = strtok(line, ",");  // This takes the first cell of the current line which is simply the state
-	    int j = 0;
-	    int k = 0;
-	    while (j<STATE_SIZE_2){
-	        token = strtok(NULL, ",");  // this gives the next cell
-	        Q[i][j][k] = atof(token);
-	        k++;
-	        if (k==ACTION_SIZE_1){
-	        	k=0;
-	        	j++;
-	        }
-	    }
-	} */
+	token = strtok(NULL, ","); // Obtain seconds cell of first line where amount of episodes trained is stored
+	// A to long integer. Converts a string to an integer
+	episode = atol(token);
+	if (fgets(line, 1024, f) == NULL){
+		printf("Error obtaining second line\n"); // Obtain line with header State.x, State.z, Action.x, Action.z, Qvalue
+	}
 
+	// Now we can loop through the subsequent lines
+	while (fgets(line, 1024, f) != NULL){
+		// Obtain the states
+		token = strtok(line, ",");
+		uint8_t state_x = atol(token);
+		// token = strtok(NULL, ",");
+		// uint8_t state_y = atol(token);
+		token = strtok(NULL, ",");
+		uint8_t state_z = atol(token);
+
+		// Obtain the actions
+		token = strtok(NULL, ",");
+		uint8_t action_x = atol(token);
+		// token = strtok(NULL, ",");
+		// uint8_t action_y = atol(token);
+		token = strtok(NULL, ",");
+		uint8_t action_z = atol(token);
+
+		// Store the Q value
+		token = strtok(NULL, ",");
+		float Q_value = atof(token);
+		Q[state_x][state_z][action_x][action_z] = Q_value;
+	}
 }
 
 static void rl_write_Q_file(void){

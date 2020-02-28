@@ -592,6 +592,7 @@ void compute_follow_distances(void){
 
 	// Loop through controller
 	// In case we have reached follow 2, simply increase the distance towards it so that it is never reached
+	// This condition will increase the distance towards the carrot until we leave the flying zone
 	if (dist_wp_follow2.y <  10){
 		follow_me_distance_2 += 20;
 	}
