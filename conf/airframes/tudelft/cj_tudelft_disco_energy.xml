@@ -175,8 +175,8 @@
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
   
-    <!-- Calibration for PH-4HH performed on 29 of November 2019 -->
-    <!-- for Disco PH-4HM labelled Chris -->
+    <!-- Calibration for PH-4HM performed on 29 of November 2019 -->
+    <!-- for Disco PH-4HM labelled Chris 
     
     <define name="ACCEL_X_NEUTRAL" value="-241"/>
     <define name="ACCEL_Y_NEUTRAL" value="-8"/>
@@ -193,6 +193,23 @@
     <define name="MAG_Z_SENS" value="7.41620875250963" integer="16"/>
 
     <!-- End of 29 0f November 2019 calibration -->
+    
+    <!-- Calibration for PH-4HM performed on 4 of March 2020  -->
+    <define name="ACCEL_X_NEUTRAL" value="-231"/>
+	<define name="ACCEL_Y_NEUTRAL" value="-10"/>
+	<define name="ACCEL_Z_NEUTRAL" value="-342"/>
+	<define name="ACCEL_X_SENS" value="2.45031495759" integer="16"/>
+	<define name="ACCEL_Y_SENS" value="2.45103820007" integer="16"/>
+	<define name="ACCEL_Z_SENS" value="2.41138551295" integer="16"/>
+	
+	<define name="MAG_X_NEUTRAL" value="-243"/>
+	<define name="MAG_Y_NEUTRAL" value="28"/>
+	<define name="MAG_Z_NEUTRAL" value="-1046"/>
+	<define name="MAG_X_SENS" value="7.04637461909" integer="16"/>
+	<define name="MAG_Y_SENS" value="7.00901838773" integer="16"/>
+	<define name="MAG_Z_SENS" value="7.40188574312" integer="16"/>
+  
+    <!-- End of 4 of March 2020 calibration -->
 
     <define name="BODY_TO_IMU_PHI" value="0"/>
     <define name="BODY_TO_IMU_THETA" value="0.02"/>
