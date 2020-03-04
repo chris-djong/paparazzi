@@ -8,6 +8,7 @@
   <firmware name="fixedwing">  
    <!-- Define default radius for oval eight and stdby -->
    <module name="follow_me"/> 
+   <module name="rl_soaring"/>
     
    
     <!-- ************************************************
@@ -305,7 +306,7 @@
     <!-- Energy Control Algorithm -->
     <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
     
-    <define name="ALTITUDE_PGAIN" value="0.15"/>
+    <define name="ALTITUDE_PGAIN" value="0.07"/>
     <define name="AIRSPEED_PGAIN" value="0.19"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.5"/>
@@ -339,7 +340,7 @@
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
   <!--  These gains were taken from erik for energy? -->
   
-     <define name="COURSE_PGAIN" value="1.25"/><!-- TODO: Tune values -->
+     <define name="COURSE_PGAIN" value="0.5"/><!-- TODO: Tune values -->
      <define name="COURSE_DGAIN" value="0.2"/><!-- TODO: Tune values -->
      <define name="COURSE_TAU" value="0.5"/><!-- TODO: Tune values -->
      <!--

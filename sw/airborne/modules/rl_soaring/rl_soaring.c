@@ -32,6 +32,7 @@
 #include "std.h"
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 // Include telemetry headers
 #include "subsystems/datalink/telemetry.h"
@@ -81,7 +82,7 @@ static int32_t episode_time_rl = 0;
 static int32_t max_episode_time = 120000; // in seconds
 
 // RL variables
-float desired_accuracy = 3; // accuracy at which the discretised states are created
+float desired_accuracy = 3; // the uav has reached its state in case all direction are lower than the desired accuracy
 
 
 // Need to have struct for array because otherwise we have 2 possibilities for state 6 for example, 2x3 and 3x2
@@ -89,13 +90,13 @@ float desired_accuracy = 3; // accuracy at which the discretised states are crea
 // EVEN VALUES HAVE NOT BEEN TESTED!!
 #define state_size_lateral 3
 #define state_size_longitudinal 1
-#define state_size_height 3
-#define action_size_lateral 3  // hardcoded as well, as it is the same
+#define state_size_height 1
+#define action_size_lateral 3   // hardcoded as well, as it is the same
 #define action_size_longitudinal 1
-#define action_size_height 3
+#define action_size_height 1
 
 
-float state_accuracy = 10; // accuracy at which states are seperated between each other
+uint8_t state_accuracy = 7; // accuracy at which states are seperated between each other
 
 // Create variables for reference of flying window
 float lateral_offset_reference;
@@ -103,11 +104,11 @@ float follow_me_distance_reference;
 float follow_me_height_reference;
 
 
-static float Q[state_size_lateral][state_size_height][action_size_lateral][action_size_height];
+static float Q[state_size_lateral][state_size_longitudinal][state_size_height][action_size_lateral][action_size_longitudinal][action_size_height];
 
 // Gives action to be performed based on current state
 // Inputs are the current state and output the desired state
-static struct Int8Vect3 current_policy[state_size_lateral][state_size_height] = {};
+static struct Int8Vect3 current_policy[state_size_longitudinal][state_size_lateral][state_size_height] = {};
 
 static struct Int8Vect3 state1;
 static struct Int8Vect3 state2;
@@ -123,6 +124,8 @@ static uint8_t rl_episode_out_of_window;
 static uint8_t rl_episode_beyond_wp;
 static uint8_t rl_episode_target_reached;
 static uint8_t rl_episode_started;
+static float rl_episode_integrated_reward;
+static uint32_t rl_episode_amount_iterations;
 int rl_started = false;
 
 // static void rl_soaring_send_message_down(char *_request, char *_parameters);
@@ -160,7 +163,6 @@ struct Int8Vect3 state_to_idx(){
 
     if ((abs(ceil(lateral_state)) > state_size_lateral/2.) || (abs(ceil(height_state)) > state_size_height/2) ){
     	rl_episode_out_of_window = 0;
-    	// printf("Out of window because %d > %d || %d > %d\n", abs(ceil(lateral_state)), state_size_lateral/2, abs(ceil(height_state)), state_size_height/2);
     }
 
     struct Int8Vect3 idx;
@@ -180,10 +182,36 @@ struct FloatVect3 idx_to_state(struct Int8Vect3 idx){
 }
 
 
+static void rl_write_Q_file(void);
+
 // Function that loads an existing Q file in order to obtain the Q values for each corresponding action
 static void rl_load_Q_file(void){
 	// Open the File
-	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "r");
+	char filename[150];
+	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+
+	if (access(filename, F_OK) == -1){
+		printf("File does not exist. Creating new file.\n");
+		/* Uncomment this text in the desired Q table does not exist yet */
+		for (int i=0; i<state_size_lateral; i++){
+			for (int j=0; j<state_size_longitudinal; j++){
+				for (int k=0; k<state_size_height; k++){
+					for (int l=0; l<action_size_lateral; l++){
+						for (int m=0; m<action_size_longitudinal; m++){
+							for (int n=0; n<action_size_height; n++){
+								Q[i][j][k][l][m][n] = 0;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		rl_write_Q_file();
+	}
+
+	FILE *f = fopen(filename, "r");
+
 	// Create a char for each line
 	char line[1024]; // Assumption that we have a maximum of 1024 character in each line
 	// Store the first line of of f in the line char
@@ -207,28 +235,32 @@ static void rl_load_Q_file(void){
 		// Obtain the states
 		token = strtok(line, ",");
 		uint8_t state_x = atol(token);
-		// token = strtok(NULL, ",");
-		// uint8_t state_y = atol(token);
+		token = strtok(NULL, ",");
+		uint8_t state_y = atol(token);
 		token = strtok(NULL, ",");
 		uint8_t state_z = atol(token);
 
 		// Obtain the actions
 		token = strtok(NULL, ",");
 		uint8_t action_x = atol(token);
-		// token = strtok(NULL, ",");
-		// uint8_t action_y = atol(token);
+		token = strtok(NULL, ",");
+		uint8_t action_y = atol(token);
 		token = strtok(NULL, ",");
 		uint8_t action_z = atol(token);
 
 		// Store the Q value
 		token = strtok(NULL, ",");
 		float Q_value = atof(token);
-		Q[state_x][state_z][action_x][action_z] = Q_value;
+		Q[state_x][state_y][state_z][action_x][action_y][action_z] = Q_value;
 	}
+
 }
 
 static void rl_write_Q_file(void){
-	FILE *f = fopen("/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q.csv", "w");
+	char filename[150];
+	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+
+	FILE *f = fopen(filename, "w");
 	if (f == NULL){
 	    printf("Error opening Q table file for writing!\n");
 	    return;
@@ -236,12 +268,16 @@ static void rl_write_Q_file(void){
 
 	// First print the header consisting of only the possible states2
 	fprintf(f, "Episodes trained, %d\n", episode);
-	fprintf(f, "State.x, State.z, Action.x, Action.y, Qvalue\n");
+	fprintf(f, "State.x, State.y, State.z, Action.x, Action.y, Action.z, Qvalue\n");
 	for (int i=0; i<state_size_lateral; i++){
-		for (int j=0; j<state_size_height; j++){
-			for (int k=0; k<action_size_lateral; k++){
-				for (int l=0; l<action_size_height; l++){
-					fprintf(f, "%d,%d,%d,%d,%f\n", i, j, k, l, Q[i][j][k][l]);
+		for (int j=0; j<state_size_longitudinal; j++){
+		    for (int k=0; k<state_size_height; k++){
+			    for (int l=0; l<action_size_lateral; l++){
+				    for (int m=0; m<action_size_longitudinal; m++){
+				        for (int n=0; n<action_size_height; n++){
+					        fprintf(f, "%d,%d,%d,%d,%d,%d,%f\n", i, j, k, l, m, n, Q[i][j][k][l][m][n]);\
+				        }
+				    }
 				}
 			}
 		}
@@ -255,8 +291,8 @@ static void rl_write_Q_file(void){
 // sends all the messages through the pprzlink which are update in rl_soaring_update_measurements
 static void send_rl_variables(struct transport_tx *trans, struct link_device *dev){
      // When prompted, return all the telemetry variables
-	uint timestamp = 0;
-	uint episodes = 0;
+	int32_t timestamp = 0;
+	int32_t episodes = 0;
 	float old_distance = 0;
 	float current_distance = 0;
 	float foo = 0;
@@ -270,7 +306,6 @@ void rl_soaring_init(void) {
 	// Create a random seed based on current time
 	gettimeofday(&currentTime, NULL);
 	srand(currentTime.tv_sec);
-
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RL_SOARING, send_rl_variables);
 }
 
@@ -320,7 +355,7 @@ void rl_soaring_start_episode(){
 }
 
 
-// Not used at all for now ///////
+// Not used at all for now
 void rl_soaring_end_episode(void){
 	if (rl_episode_target_reached){
 		rl_episode_target_reached = false;
@@ -344,10 +379,12 @@ void rl_soaring_end_episode(void){
 
 	// Calculate reward based on beginning and end state and update the policies accordingly
 	reward = calc_reward();
+	printf("Calculating reward %f\n\n", reward);
 	update_q_value(state1, state2, reward, action1, action2);
 	update_policy();
 	action1 = action2;
 	rl_soaring_perform_action(action1);
+	printf("Performing action (%d %d %d)\n", action1.x, action1.y, action1.z);
 	rl_episode_started = false;
 
 
@@ -372,6 +409,8 @@ void rl_soaring_update_measurements(void){
 
     // In order to calculate state first calculate location of current waypoints
     follow_me_compute_wp();
+
+
 
     // Convert these states to an idx
     current_state = state_to_idx();
@@ -404,42 +443,64 @@ int rl_episode_stop_condition(void){
 }
 
 float calc_reward(void){
-	return 0;
+    float rew = rl_episode_integrated_reward/rl_episode_amount_iterations;
+    printf("Calculating reward. Integrated reward given by %f and amount of iterations by %d\n", rl_episode_integrated_reward, rl_episode_amount_iterations);
+    rl_episode_integrated_reward = 0;
+    rl_episode_amount_iterations = 0;
+	return rew;
 }
 
 void update_q_value(struct Int8Vect3 s1, struct Int8Vect3 s2, float r, struct Int8Vect3 a1, struct Int8Vect3 a2){
-	float predicted_q_value = Q[s1.x][s1.z][a1.x][a1.z];
-    float target = r + rl_gamma * Q[s2.x][s2.z][a2.x][a2.z];
-    Q[s1.x][s1.z][a1.x][a1.z] = Q[s1.x][s1.z][a1.x][a1.z] + rl_alpha * (target - predicted_q_value);
+	float predicted_q_value = Q[s1.x][s1.y][s1.z][a1.x][a1.y][a1.z];
+    float target = r + rl_gamma * Q[s2.x][s2.y][s2.z][a2.x][a2.y][a2.z];
+    Q[s1.x][s1.y][s1.z][a1.x][a1.y][a1.z] = Q[s1.x][s1.y][s1.z][a1.x][a1.y][a1.z] + rl_alpha * (target - predicted_q_value);
 }
 
 
 void update_policy(void){
 	for (int i=0; i<state_size_lateral; i++){ // moves through the lateral state
-	    for (int j=0; j<state_size_height; j++){ // moves through the height state
-	    	// Now we need to find the maximum Q value of all the actions
-	    	int max_index_lateral = 0;
-	    	int max_index_height = 0;
-	    	int maximum = 0;
-	    	for (int k=0; k<action_size_lateral; k++){
-	    		for (int l=0; l<action_size_height; l++){
-					if (Q[i][j][k][l] > maximum){
-						maximum = Q[i][j][k][l];
-						max_index_lateral = k;
-						max_index_height = l;
+		for (int j=0; j<state_size_longitudinal; j++){
+			for (int k=0; k<state_size_height; k++){ // moves through the height state
+				// Now we need to find the maximum Q value of all the actions
+				int max_index_lateral = 0;
+				int max_index_longitudinal = 0;
+				int max_index_height = 0;
+				int maximum = 0;
+				for (int l=0; l<action_size_lateral; l++){
+					for (int m=0; m<action_size_longitudinal; m++){
+						for (int n=0; n<action_size_height; n++){
+							if (Q[i][j][k][l][m][n] > maximum){
+								maximum = Q[i][j][k][l][m][n];
+								max_index_lateral = l;
+								max_index_longitudinal = m;
+								max_index_height = n;
+							}
+						}
 					}
-	    		}
-	    	}
-	    	// Update the current policy accordingly
-	    	struct Int8Vect3 desired_action;
-	    	desired_action.x = max_index_lateral;
-	    	desired_action.y = 0; // not used
-	    	desired_action.z = max_index_height;
-	        current_policy[i][j] = desired_action;
+				}
+				// Update the current policy accordingly
+				struct Int8Vect3 desired_action;
+				desired_action.x = max_index_lateral;
+				desired_action.y = max_index_longitudinal;
+				desired_action.z = max_index_height;
+				current_policy[i][j][k] = desired_action;
+			}
 	    }
 	}
 }
 
+
+void rl_soaring_integrate_reward(void);
+void rl_soaring_integrate_reward(void){
+	// uint16_t current_throttle = 100 * autopilot.throttle / MAX_PPRZ;
+	float speed = stateGetHorizontalSpeedNorm_f();
+	float current_kinetic = 0.5*speed*speed;
+	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
+	float current_potential = 9.81*pos_Utm->alt;
+	rl_episode_amount_iterations++;
+	rl_episode_integrated_reward += current_kinetic + current_potential;
+	printf("Integrating reward, kinetic energy %f and potential %f\n", current_kinetic, current_potential);
+}
 
 /*
  * Function periodic, the heartbeat of the module
@@ -460,6 +521,9 @@ int rl_soaring_call(void) {
 	// The start of this module is called constantly by the fact that the intiialisation of the module created the periodique call
 	// Update measurements
 	rl_soaring_update_measurements();
+
+	// Calculates current energy consumption
+	rl_soaring_integrate_reward();
 
 
 
@@ -499,7 +563,7 @@ struct Int8Vect3 rl_soaring_get_action(struct Int8Vect3 actual_state){
         action.y = rand() % action_size_longitudinal - (action_size_longitudinal-1)/2;
         action.z = rand() % action_size_height - (action_size_height-1)/2;
     } else{
-        action = current_policy[actual_state.x][actual_state.z];
+        action = current_policy[actual_state.x][actual_state.y][actual_state.z];
     }
     return action;
 }
@@ -510,8 +574,8 @@ void rl_soaring_perform_action(struct Int8Vect3 action){
 	struct FloatVect3 carr = idx_to_state(action);
 	desired_state = action;
 	lateral_offset = carr.x;
-    // follow_me_distance = carr.y;
-    // follow_me_height = carr.z;
+    follow_me_distance = carr.y;
+    follow_me_height = carr.z;
 }
 
 
