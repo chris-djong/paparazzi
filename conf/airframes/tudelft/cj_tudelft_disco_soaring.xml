@@ -116,16 +116,18 @@
                SERVO DEFINITIONS
     ************************************************  -->
   <servos>
+    <!--  Trim can be added here by changing the neutral value -->
+    <!--  Absolute travel limits can also be changed with the min/max values -->
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1380" max="1000"/> <!-- min is downward deflection-->
-    <servo name="AILEVON_LEFT" no="1" min="1000" neutral="1480" max="1900"/>  <!-- max is upward deflection-->
+    <servo name="AILEVON_RIGHT" no="6" min="1880" neutral="1380" max="880"/> <!-- min is downward deflection-->
+    <servo name="AILEVON_LEFT" no="1" min="980" neutral="1480" max="1980"/>  <!-- max is upward deflection-->
   </servos>
 
   <!-- ************************************************
                SERVO COMMANDS
     ************************************************  -->
   <commands>
-    <!-- These are the failsafe attitude commands that the aircraft will keep in case GPS is lost for example -->
+    <!-- These are the failsafe attitude commands that the aircraft will keep in case no controller is active -->
     <axis name="THROTTLE" failsafe_value="0"/>  
     <axis name="ROLL" failsafe_value="0"/>
     <axis name="PITCH" failsafe_value="0"/>
@@ -304,7 +306,7 @@
     <!-- Energy Control Algorithm -->
     <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
     <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
-    <define name="ALTITUDE_PGAIN" value="0.15"/>
+    <define name="ALTITUDE_PGAIN" value="0.07"/>
     <define name="AIRSPEED_PGAIN" value="0.19"/>
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.5"/>
@@ -333,15 +335,15 @@
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
   <!--  These gains were taken from erik for energy? -->
   
-     <define name="COURSE_PGAIN" value="1.25"/><!-- TODO: Tune values -->
+     <define name="COURSE_PGAIN" value="0.7"/><!-- TODO: Tune values -->
      <define name="COURSE_DGAIN" value="0.2"/><!-- TODO: Tune values -->
      <define name="COURSE_TAU" value="0.5"/><!-- TODO: Tune values -->
 
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.98"/>
 
     <define name="ROLL_MAX_SETPOINT" value="75" unit="deg"/>
-    <define name="PITCH_MAX_SETPOINT" value="60" unit="deg"/>
-    <define name="PITCH_MIN_SETPOINT" value="-60" unit="deg"/>
+    <define name="PITCH_MAX_SETPOINT" value="40" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-40" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="12372"/>
     <define name="PITCH_DGAIN" value="0"/>

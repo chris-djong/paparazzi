@@ -302,7 +302,9 @@ void v_ctl_altitude_loop(void)
 
   // Altitude Controller
   v_ctl_altitude_error = v_ctl_altitude_setpoint - stateGetPositionUtm_f()->alt;
-  float sp = v_ctl_altitude_pgain * v_ctl_altitude_error + v_ctl_altitude_pre_climb ;
+  // printf("The altitude error is given by %f\n", v_ctl_altitude_error);
+  float sp = v_ctl_altitude_pgain * v_ctl_altitude_error + v_ctl_altitude_pre_climb;
+  // printf("This gives a setpoint of %f\n", sp);
 
   // Vertical Speed Limiter
   BoundAbs(sp, v_ctl_max_climb);
@@ -311,6 +313,7 @@ void v_ctl_altitude_loop(void)
   float incr = sp - v_ctl_climb_setpoint;
   BoundAbs(incr, 2 * dt_navigation);
   v_ctl_climb_setpoint += incr;
+  // printf("And the climb setpoint is then set to %f\n", v_ctl_climb_setpoint);
 }
 
 
@@ -431,6 +434,7 @@ void v_ctl_climb_loop(void)
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
+
   Bound(v_ctl_pitch_setpoint, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT)
 
   ac_char_update(controlled_throttle, v_ctl_pitch_of_vz, v_ctl_climb_setpoint, v_ctl_desired_acceleration);

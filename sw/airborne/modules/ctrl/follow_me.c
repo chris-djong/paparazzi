@@ -70,8 +70,8 @@ int32_t y_follow2;
 // Roll PID
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
-float roll_diff_limit = 0.6; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float roll_diff_pgain = 0.0015;
+float roll_diff_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_diff_pgain = 0.015;
 float roll_diff_igain = 0.0;
 float roll_diff_dgain = 0.0;
 float roll_diff_sum_err = 0.0;
@@ -305,7 +305,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 
 // Compute both lateral offset and follow_me_distance
 // Also used by RL algorithm
-struct FloatVect3 compute_state(void);
+// struct FloatVect3 compute_state(void);
 struct FloatVect3 compute_state(void){
 	// Obtain current position in order to calculate state as function of boat difference
 	struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
@@ -329,9 +329,6 @@ struct FloatVect3 compute_state(void){
 	float heading = follow_me_heading/180*M_PI;
 	// Then rotate frame
 	transformation = rotate_frame(&transformation, -heading);
-	// Bound transformation values
-	BoundAbs(transformation.x, 32766); // 16 bit signed integer
-	BoundAbs(transformation.y, 32766); // 16 bit signed integer
 
 	return transformation;
 }
@@ -413,7 +410,7 @@ void follow_me_set_heading(void){
     }
 }
 
-void follow_me_compute_wp(void);
+// void follow_me_compute_wp(void);
 // Function that is executed each time the GROUND_GPS message is received
 void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
@@ -445,7 +442,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 
 
 // Roll angle controller
-void follow_me_roll_pid(void);
+// void follow_me_roll_pid(void);
 void follow_me_roll_pid(void){
 	// Roll rate controller
 	// We either have the normal course mode or the nav follow mode.
@@ -470,8 +467,15 @@ void follow_me_roll_pid(void){
 	roll_diff_sum_err += dist_wp_follow.x;
 	BoundAbs(roll_diff_sum_err, 20);
 
-	h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+	// h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
 
+	// Second fabs in order to keep the negative number for the square
+	if (dist_wp_follow.x > 0){
+	    h_ctl_roll_setpoint_follow_me = roll_diff_pgain*log(dist_wp_follow.x - roll_disable);
+	}
+	else {
+	    h_ctl_roll_setpoint_follow_me = -roll_diff_pgain*log(-(dist_wp_follow.x + roll_disable));
+	}
 	// Bound roll diff by limits
 	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
 		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
@@ -480,12 +484,12 @@ void follow_me_roll_pid(void){
 		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
 	}
 
-	printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_diff_pgain, dist_wp_follow.x, roll_diff_pgain*dist_wp_follow.x, roll_diff_igain, roll_diff_sum_err, roll_diff_igain*roll_diff_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_diff_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain);
+	// printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_diff_pgain, dist_wp_follow.x, roll_diff_pgain*dist_wp_follow.x, roll_diff_igain, roll_diff_sum_err, roll_diff_igain*roll_diff_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_diff_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain);
 }
 
 
 // Throttle controller
-void follow_me_throttle_pid(void);
+// void follow_me_throttle_pid(void);
 void follow_me_throttle_pid(void){
 	// Airspeed controller
 	airspeed_sum_err += dist_wp_follow.y;
@@ -500,8 +504,8 @@ void follow_me_throttle_pid(void){
 		v_ctl_auto_airspeed_setpoint = 0;
 	}
 
-	if (v_ctl_auto_airspeed_setpoint > 18){
-		v_ctl_auto_airspeed_setpoint = 18;
+	if (v_ctl_auto_airspeed_setpoint > 19){
+		v_ctl_auto_airspeed_setpoint = 19;
 	}
 
 }
@@ -569,7 +573,7 @@ void follow_me_go(void){
     NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
 
-void compute_follow_distances(void);
+// void compute_follow_distances(void);
 void compute_follow_distances(void){
 	// Increase the gps counter to verify whether gps has been lost
 	counter_gps++;
