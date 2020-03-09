@@ -504,8 +504,8 @@ void follow_me_throttle_pid(void){
 		v_ctl_auto_airspeed_setpoint = 0;
 	}
 
-	if (v_ctl_auto_airspeed_setpoint > 19){
-		v_ctl_auto_airspeed_setpoint = 19;
+	if (v_ctl_auto_airspeed_setpoint > 21){
+		v_ctl_auto_airspeed_setpoint = 21;
 	}
 
 }
@@ -591,8 +591,8 @@ void compute_follow_distances(void){
 	    counter_old_distance = 0;
 	}
 
-	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_height);
-	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_height);
+	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_altitude);
+	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_altitude);
 
 	// Loop through controller
 	// In case we have reached follow 2, simply increase the distance towards it so that it is never reached
