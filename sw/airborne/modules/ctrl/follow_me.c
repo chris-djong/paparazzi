@@ -146,16 +146,11 @@ float AverageAirspeed(float speed){
 #define MAX_HEADING_SIZE 5
 float all_diff_x[MAX_HEADING_SIZE]={0};
 float all_diff_y[MAX_HEADING_SIZE]={0};
-int8_t front_heading=-1,rear_heading=-1, count_heading=0;
+int8_t front_heading=-1,rear_heading=-1;
 float AverageHeading(float, float);
 //function definition
 float AverageHeading(float diffx, float diffy)
 {
-	// This condition is required because otherwise the counter will reach 127 and continue counting from 0 again
-	// Count = int8_t
-	if (count_heading<MAX_HEADING_SIZE){
-		count_heading += 1;
-	}
     float Sum_x = 0;
     float Sum_y = 0;
 
@@ -181,7 +176,7 @@ float AverageHeading(float diffx, float diffy)
     }
 
     // Check for condition in which we are not moving
-    // In case we are not moving return the heading that is not present
+    // In case we are not moving return the heading initial heading
     if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
     	return follow_me_heading;
     } else {
