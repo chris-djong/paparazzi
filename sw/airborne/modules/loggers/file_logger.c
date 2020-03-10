@@ -36,6 +36,8 @@
 #include "modules/ctrl/follow_me.h"
 #include "subsystems/gps.h"
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
+#include "inter_mcu.h"
+
 
 #include "subsystems/imu.h"
 #ifdef COMMAND_THRUST
@@ -155,7 +157,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,aoa,sideslip,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me\n"
+      "counter,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw\n"
 #endif
     );
   }
@@ -186,8 +188,11 @@ void file_logger_periodic(void)
   struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
   struct FloatVect3 *wind = stateGetWindspeed_f();
   float airspeed = stateGetAirspeed_f();
-  float aoa =  stateGetAngleOfAttack_f();
-  float sideslip = stateGetSideslip_f();
+  struct FloatEulers *attitude  = stateGetNedToBodyEulers_f();
+  int16_t radio_yaw = imcu_get_radio(RADIO_YAW);                          \
+  int16_t radio_pitch = imcu_get_radio(RADIO_PITCH);                      \
+  int16_t radio_roll =  imcu_get_radio(RADIO_ROLL);
+
 
 #ifdef COMMAND_THRUST //For example rotorcraft
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
@@ -211,18 +216,8 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d\n",
           counter, // int 1
-          imu.gyro_unscaled.p, // int 2
-          imu.gyro_unscaled.q, // int 3
-          imu.gyro_unscaled.r, // int 4
-          imu.accel_unscaled.x, // int 5
-          imu.accel_unscaled.y, // int 6
-          imu.accel_unscaled.z, // int 7
-          imu.mag_unscaled.x, // int 8
-          imu.mag_unscaled.y, // int 9
-          imu.mag_unscaled.z, // int 10
-		  imu.gyro_unscaled.p, // int 11
 		  imu.gyro.q, // int 12
 		  imu.gyro.r, // int 13
 		  imu.accel.x, // int 14
@@ -246,8 +241,6 @@ void file_logger_periodic(void)
 		  wind->y, // float 32
 		  wind->z, // float 33
 		  airspeed, //float 34
-		  aoa, //float 35
-		  sideslip, // float 36
           gps.fix, // int GPS state aircraft 37
 		  v_ctl_auto_airspeed_setpoint, // float 38
 		  autopilot.mode, //int 39
@@ -258,7 +251,13 @@ void file_logger_periodic(void)
 		  dist_wp_follow2.y, // float 44
 		  dist_wp_follow2.z, // float 45
 		  follow_me_roll, // int 46
-		  h_ctl_roll_setpoint_follow_me // float 47
+		  h_ctl_roll_setpoint_follow_me, // float 47
+		  attitude->phi, // float
+		  attitude->psi, // float
+		  attitude->theta, // float
+		  radio_pitch, // int16
+		  radio_roll, // int16
+		  radio_yaw // int16
          );
 #endif
   counter++;
