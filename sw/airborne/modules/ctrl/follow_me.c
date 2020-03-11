@@ -403,7 +403,7 @@ void follow_me_set_heading(void){
 		float diff_y = ground_utm_new.north - ground_utm_old.north;
 		float diff_x = ground_utm_new.east - ground_utm_old.east;
 
-		// First check conditions in which we divide by 0
+		// Obtain average heading over this new distance
 		// Note atan2 gives results between -180 and 180
 		follow_me_heading = AverageHeading(diff_x, diff_y);
 		ground_utm_old = ground_utm_new;
