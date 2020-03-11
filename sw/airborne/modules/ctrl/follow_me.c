@@ -41,14 +41,6 @@
 #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
 
-#ifdef RL_SOARING_H
-#include "modules/rl_soaring/rl_soaring.h"
-#define HAND_RL_SIZE 20 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
-int8_t hand_rl[HAND_RL_SIZE] = {0};
-float hand_rl_threshold = 1;
-int8_t hand_rl_idx = 0; // the index value that needs to be modified
-#endif
-
 /*********************************
   Parameters for follow_me module
 *********************************/
@@ -145,7 +137,7 @@ float AverageAirspeed(float speed){
 // Calculate the average gps heading in order to predict where the boat is going
 // This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
 // The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
-#define MAX_HEADING_SIZE 5
+#define MAX_HEADING_SIZE 15
 float all_diff_x[MAX_HEADING_SIZE]={0};
 float all_diff_y[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1;
