@@ -106,6 +106,8 @@ struct UtmCoor_f ground_utm_new;
 uint8_t counter_gps = 0;
 uint8_t gps_lost_count = 100;
 
+uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
+
 // Counter for the calculation of the old dist_wp_follow
 uint8_t counter_old_distance = 0;
 uint8_t old_distance_count = 20;
@@ -176,10 +178,12 @@ float AverageHeading(float diffx, float diffy)
     }
 
     // Check for condition in which we are not moving
-    // In case we are not moving return the heading initial heading
+    // In case we are not moving keep the current heading
     if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
+    	stationary_ground = 1;
     	return follow_me_heading;
     } else {
+    	stationary_ground = 0;
 		float heading = 0.0;
 		// First check cases which divide by 0
 		if (Sum_y == 0.0){
@@ -338,7 +342,9 @@ void follow_me_soar_here(void){
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
 		// Set the follow_me_heading to the current heading of the UAV
-		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
+		if (stationary_ground){
+		    follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
+		}
 
 		// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
 		if (ground_set){
