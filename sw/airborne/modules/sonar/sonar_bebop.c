@@ -236,7 +236,9 @@ void *sonar_bebop_read(void *data __attribute__((unused)))
       // Send Telemetry report
       DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_bebop.meas, &sonar_bebop.distance);
       #endif
+    #ifndef SITL
     }
+    #endif
     usleep(10000); //100Hz  FIXME: use SYS_TIME_FREQUENCY and divisor
   }
   return NULL;
