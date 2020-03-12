@@ -93,6 +93,7 @@ uint8_t heading_calc_counter = 5; // in case we have received heading_calc_count
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
 
+// Assumed no stationary gruond so that heading is not updated (this is a safety measure)
 uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
 
 // Counter for the calculation of the old dist_wp_follow
@@ -159,7 +160,7 @@ float AverageHeading(float diffx, float diffy)
 
     // Check for condition in which we are not moving
     // In case we are not moving keep the current heading
-    if ((fabs(Sum_x) < 2) && (fabs(Sum_y) < 2)){
+    if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
     	stationary_ground = 1;
     	return follow_me_heading;
     } else {
