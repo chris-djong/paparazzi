@@ -98,6 +98,8 @@ float desired_accuracy = 3; // the uav has reached its state in case all directi
 
 uint8_t state_accuracy = 7; // accuracy at which states are seperated between each other
 
+uint8_t simulating_counter = 0;
+
 // Create variables for reference of flying window
 float lateral_offset_reference;
 float follow_me_distance_reference;
@@ -188,8 +190,8 @@ static void rl_write_Q_file(void);
 static void rl_load_Q_file(void){
 	// Open the File
 	char filename[150];
-	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
-
+	// sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+    sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
 	if (access(filename, F_OK) == -1){
 		printf("File does not exist. Creating new file.\n");
 		/* Uncomment this text in the desired Q table does not exist yet */
@@ -258,7 +260,8 @@ static void rl_load_Q_file(void){
 
 static void rl_write_Q_file(void){
 	char filename[150];
-	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+	// sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+    sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
 
 	FILE *f = fopen(filename, "w");
 	if (f == NULL){
@@ -529,11 +532,14 @@ int rl_soaring_call(void) {
 
 	// If we have reached our target the episode ends
 	average_distance = AverageDistance(dist_wp_follow);
-	if ((fabs(average_distance.x) < desired_accuracy) && (fabs(average_distance.y) < desired_accuracy)){
+	simulating_counter++;
+	// if ((fabs(average_distance.x) < desired_accuracy) && (fabs(average_distance.y) < desired_accuracy)){
+	if (simulating_counter == 50){
 	    rl_episode_target_reached = 1;
 	    average_distance.x = 10;
 	    average_distance.y = 10;
 	    average_distance.z = 10;
+	    simulating_counter = 0;
 	}
 
 	// Check whether the episode has ended
