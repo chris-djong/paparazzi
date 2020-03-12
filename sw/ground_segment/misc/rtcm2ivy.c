@@ -405,7 +405,7 @@ int main(int argc, char **argv)
   printf_debug("Adding IO watch...\n");
   GIOChannel *sk = g_io_channel_unix_new(serial_port->fd);
   // g_io_add_watch(sk, G_IO_IN, parse_device_data, NULL);
-  g_timeout_add(0.25, parse_device_data, NULL);
+  g_timeout_add(0.01, parse_device_data, NULL);
 
 
   // Run the main loop
