@@ -49,6 +49,13 @@
 #include "subsystems/datalink/downlink.h"
 #endif
 
+/** Minimum speed in m/s for heading update via GPS.
+ * Don't update heading from GPS course if GPS ground speed is below is this threshold
+ */
+#ifndef AHRS_HEADING_UPDATE_GPS_MIN_SPEED
+#define AHRS_HEADING_UPDATE_GPS_MIN_SPEED 5.0
+#endif
+
 struct AhrsFloatDCM ahrs_dcm;
 
 // Axis definition: X axis pointing forward, Y axis pointing to the right and Z axis pointing down.
@@ -175,7 +182,7 @@ void ahrs_dcm_update_gps(struct GpsState *gps_s)
     ahrs_dcm.gps_age = 0;
     ahrs_dcm.gps_speed = gps_s->speed_3d / 100.;
 
-    if (gps_s->gspeed >= 500) { //got a 3d fix and ground speed is more than 5.0 m/s //FIXME: Should be settable
+    if (gps_s->gspeed >= AHRS_HEADING_UPDATE_GPS_MIN_SPEED*100) { //got a 3d fix and ground speed is more than 5.0 m/s
       ahrs_dcm.gps_course = ((float)gps_s->course) / 1.e7;
       ahrs_dcm.gps_course_valid = true;
     } else {
