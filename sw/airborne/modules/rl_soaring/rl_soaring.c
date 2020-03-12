@@ -255,7 +255,8 @@ static void rl_load_Q_file(void){
 		float Q_value = atof(token);
 		Q[state_x][state_y][state_z][action_x][action_y][action_z] = Q_value;
 	}
-
+	// Close the file
+	fclose(f);
 }
 
 static void rl_write_Q_file(void){
