@@ -77,7 +77,6 @@ float airspeed_pgain = 0.4;
 float airspeed_igain = 0.00;
 float airspeed_dgain = 0.00;
 
-
 /*********************************
   Variables for follow_me module
 *********************************/
@@ -89,14 +88,10 @@ struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
 int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 
 // Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
-int counter_heading = 0; // counter which counts heading function executions
-int heading_calc_counter = 10; // in case counter reaches heading_calc_counter the heading is calculated
+uint8_t counter_heading = 0; // counter which counts heading function executions
+uint8_t heading_calc_counter = 5; // in case we have received heading_calc_counter GROUND_GPS messages the heading is calculated
 struct UtmCoor_f ground_utm_old;
 struct UtmCoor_f ground_utm_new;
-
-// Counter for the case gps is lost
-uint8_t counter_gps = 0;
-uint8_t gps_lost_count = 100;
 
 uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
 
@@ -137,10 +132,11 @@ float AverageAirspeed(float speed){
 // Calculate the average gps heading in order to predict where the boat is going
 // This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
 // The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
-#define MAX_HEADING_SIZE 15
+#define MAX_HEADING_SIZE 10
 float all_diff_x[MAX_HEADING_SIZE]={0};
 float all_diff_y[MAX_HEADING_SIZE]={0};
-int8_t front_heading=-1,rear_heading=-1;
+// Parameter which keeps track of the value that needs to be replaced
+uint8_t current_heading_value = 0;
 float AverageHeading(float, float);
 //function definition
 float AverageHeading(float diffx, float diffy)
@@ -148,21 +144,13 @@ float AverageHeading(float diffx, float diffy)
     float Sum_x = 0;
     float Sum_y = 0;
 
-    if(front_heading ==(rear_heading+1)%MAX_HEADING_SIZE)
-    {
-        if(front_heading==rear_heading)
-            front_heading=rear_heading=-1;
-        else
-            front_heading = (front_heading+1)%MAX_HEADING_SIZE;
+    all_diff_x[current_heading_value] = diffx;
+    all_diff_y[current_heading_value] = diffy;
+
+    current_heading_value++;
+    if (current_heading_value == MAX_HEADING_SIZE){
+    	current_heading_value = 0;
     }
-    if(front_heading==-1)
-        front_heading=rear_heading=0;
-    else
-        rear_heading=(rear_heading+1)%MAX_HEADING_SIZE;
-
-    all_diff_x[rear_heading] = diffx;
-    all_diff_y[rear_heading] = diffy;
-
 
     for (int i=0; i<MAX_HEADING_SIZE; i++){
     	Sum_x = Sum_x + all_diff_x[i];
@@ -171,7 +159,7 @@ float AverageHeading(float diffx, float diffy)
 
     // Check for condition in which we are not moving
     // In case we are not moving keep the current heading
-    if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
+    if ((fabs(Sum_x) < 2) && (fabs(Sum_y) < 2)){
     	stationary_ground = 1;
     	return follow_me_heading;
     } else {
@@ -190,13 +178,6 @@ float AverageHeading(float diffx, float diffy)
 		return heading;
     }
 }
-
-
-
-/*********************************
-  Average Distance calculator  // used by RL module
-*********************************/
-
 
 
 /***********************************************************************************************************************
@@ -392,8 +373,15 @@ void follow_me_set_heading(void){
     counter_heading++;
     if (counter_heading == heading_calc_counter){
     	counter_heading = 0;
-		float diff_y = ground_utm_new.north - ground_utm_old.north;
-		float diff_x = ground_utm_new.east - ground_utm_old.east;
+    	float diff_y;
+    	float diff_x;
+    	if (ground_utm_old.north != 0 && ground_utm_old.east != 0){
+            diff_y = ground_utm_new.north - ground_utm_old.north;
+			diff_x = ground_utm_new.east - ground_utm_old.east;
+    	} else {
+    		diff_x = 0;
+    		diff_y = 0;
+    	}
 
 		// Obtain average heading over this new distance
 		// Note atan2 gives results between -180 and 180
@@ -425,8 +413,6 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	if (ground_timestamp > old_ground_timestamp){
 		follow_me_compute_wp();
 		ground_set = true;
-		counter_gps = 0;
-
 	}
 
 	// Set heading here so that it can be calculated already during stdby or Manual execution
@@ -568,14 +554,6 @@ void follow_me_go(void){
 
 // void compute_follow_distances(void);
 void compute_follow_distances(void){
-	// Increase the gps counter to verify whether gps has been lost
-	counter_gps++;
-	// Go to STDBY in case the ground GPS has been lost
-	if (counter_gps > gps_lost_count){
-		// GotoBlock(5);
-		printf("Removed moving to stdby block because gps lost\n");
-	}
-
 	counter_old_distance++;
 	// Compute errors towards waypoint
 	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
