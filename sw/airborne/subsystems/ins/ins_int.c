@@ -395,6 +395,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((un
 #if USE_GPS
 void ins_int_update_gps(struct GpsState *gps_s)
 {
+  printf("We are using ins_int_update_gps. INS_USE_GPS_ALT can be added to the airframe\n\n");
   if (gps_s->fix < GPS_FIX_3D) {
     return;
   }

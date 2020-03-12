@@ -54,7 +54,6 @@
       
       <!-- Periodic frequency of default modules -->
       <configure name="PERIODIC_FREQUENCY" value="512"/>
-      
     </target>
     
     <!-- ************************************************
