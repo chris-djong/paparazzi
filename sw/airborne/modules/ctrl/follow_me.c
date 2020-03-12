@@ -41,14 +41,6 @@
 #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
 
-#ifdef RL_SOARING_H
-#include "modules/rl_soaring/rl_soaring.h"
-#define HAND_RL_SIZE 20 // the amount of average_follow_me_distance that need to be below the threshold in order to hand control over to RL
-int8_t hand_rl[HAND_RL_SIZE] = {0};
-float hand_rl_threshold = 1;
-int8_t hand_rl_idx = 0; // the index value that needs to be modified
-#endif
-
 /*********************************
   Parameters for follow_me module
 *********************************/
@@ -106,6 +98,8 @@ struct UtmCoor_f ground_utm_new;
 uint8_t counter_gps = 0;
 uint8_t gps_lost_count = 100;
 
+uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
+
 // Counter for the calculation of the old dist_wp_follow
 uint8_t counter_old_distance = 0;
 uint8_t old_distance_count = 20;
@@ -143,7 +137,7 @@ float AverageAirspeed(float speed){
 // Calculate the average gps heading in order to predict where the boat is going
 // This has to be done by summing up the difference in x and difference in y in order to obtain a vector addition
 // The use of vectors makes it possible to also calculate the average over for example 359, 0 and 1 degree
-#define MAX_HEADING_SIZE 5
+#define MAX_HEADING_SIZE 15
 float all_diff_x[MAX_HEADING_SIZE]={0};
 float all_diff_y[MAX_HEADING_SIZE]={0};
 int8_t front_heading=-1,rear_heading=-1;
@@ -176,10 +170,12 @@ float AverageHeading(float diffx, float diffy)
     }
 
     // Check for condition in which we are not moving
-    // In case we are not moving return the heading initial heading
+    // In case we are not moving keep the current heading
     if ((fabs(Sum_x) < 4) && (fabs(Sum_y) < 4)){
+    	stationary_ground = 1;
     	return follow_me_heading;
     } else {
+    	stationary_ground = 0;
 		float heading = 0.0;
 		// First check cases which divide by 0
 		if (Sum_y == 0.0){
@@ -338,7 +334,9 @@ void follow_me_soar_here(void){
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
 		// Set the follow_me_heading to the current heading of the UAV
-		follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
+		if (stationary_ground){
+		    follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
+		}
 
 		// In case we have a ground reference set the follow me height, otherwise the follow_me_altitude
 		if (ground_set){
@@ -397,7 +395,7 @@ void follow_me_set_heading(void){
 		float diff_y = ground_utm_new.north - ground_utm_old.north;
 		float diff_x = ground_utm_new.east - ground_utm_old.east;
 
-		// First check conditions in which we divide by 0
+		// Obtain average heading over this new distance
 		// Note atan2 gives results between -180 and 180
 		follow_me_heading = AverageHeading(diff_x, diff_y);
 		ground_utm_old = ground_utm_new;

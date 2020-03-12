@@ -9,7 +9,6 @@
    <!-- Define default radius for oval eight and stdby -->
    <module name="follow_me"/> 
    <module name="rl_soaring"/>
-    
    
     <!-- ************************************************
                AUTOPILOT TARGET 
@@ -70,12 +69,11 @@
     
     <module name="air_data"/>
     
+    <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
+    
     <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
     <configure name="USE_MAGNETOMETER" value="FALSE"/> <!-- Make sure is callibrated if set to TRUE -->
-    
-    <!-- Energy -->
-    <define name="COMMAND_PITCH_TRIM" value="0"/>
     
     <!-- Periodic frequency of default modules -->
     <configure name="PERIODIC_FREQUENCY" value="120"/>
@@ -86,7 +84,7 @@
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
         <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/>
         <configure name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-        <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0" unit="m/s"/>
+        <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="2.0" unit="m/s"/>
         
         <!-- <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> --> <!-- Use Mag to also update roll and pitch / not recommended -->
         <!-- <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>-->
