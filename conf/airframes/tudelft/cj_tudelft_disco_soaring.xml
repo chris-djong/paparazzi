@@ -118,8 +118,8 @@
     <!--  Trim can be added here by changing the neutral value -->
     <!--  Absolute travel limits can also be changed with the min/max values -->
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1880" neutral="1380" max="880"/> <!-- min is downward deflection-->
-    <servo name="AILEVON_LEFT" no="1" min="980" neutral="1480" max="1980"/>  <!-- max is upward deflection-->
+    <servo name="AILEVON_RIGHT" no="6" min="1880" neutral="1550" max="880"/> <!-- min is downward deflection-->
+    <servo name="AILEVON_LEFT" no="1" min="980" neutral="1400" max="1980"/>  <!-- max is upward deflection-->
   </servos>
 
   <!-- ************************************************
@@ -173,34 +173,16 @@
                IMU DEFINITIONS
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
-  
-    <!-- Calibration for PH-4HM performed on 29 of November 2019 -->
-    <!-- for Disco PH-4HM labelled Chris 
     
-    <define name="ACCEL_X_NEUTRAL" value="-241"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-8"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-403"/>
-    <define name="ACCEL_X_SENS" value="2.449574992839191" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.4506198003165993" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.4050357128352857" integer="16"/>
+    <!-- Calibration for PH-4HM performed on 4 of March 2020  -->                                          
+    <!-- for Disco PH-4HM labelled Chris -->                                            
+    <define name="ACCEL_X_NEUTRAL" value="-163"/>                                             
+    <define name="ACCEL_Y_NEUTRAL" value="-19"/>                                               
+    <define name="ACCEL_Z_NEUTRAL" value="-265"/>                                                    
+    <define name="ACCEL_X_SENS" value="2.43793703158" integer="16"/>                                       
+    <define name="ACCEL_Y_SENS" value="2.43200803061" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.41071847251" integer="16"/>
 
-    <define name="MAG_X_NEUTRAL" value="-175"/>
-    <define name="MAG_Y_NEUTRAL" value="-76"/>
-    <define name="MAG_Z_NEUTRAL" value="-869"/>
-    <define name="MAG_X_SENS" value="6.999010552417837" integer="16"/>
-    <define name="MAG_Y_SENS" value="6.941504898357588" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.41620875250963" integer="16"/>
-
-    <!-- End of 29 0f November 2019 calibration -->
-    
-    <!-- Calibration for PH-4HM performed on 4 of March 2020  -->
-    <!-- for Disco PH-4HM labelled Chris -->
-    <define name="ACCEL_X_NEUTRAL" value="-231"/>
-	<define name="ACCEL_Y_NEUTRAL" value="-10"/>
-	<define name="ACCEL_Z_NEUTRAL" value="-342"/>
-	<define name="ACCEL_X_SENS" value="2.45031495759" integer="16"/>
-	<define name="ACCEL_Y_SENS" value="2.45103820007" integer="16"/>
-	<define name="ACCEL_Z_SENS" value="2.41138551295" integer="16"/>
 	
 	<define name="MAG_X_NEUTRAL" value="-243"/>
 	<define name="MAG_Y_NEUTRAL" value="28"/>
