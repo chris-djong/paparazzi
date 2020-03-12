@@ -39,8 +39,21 @@
           <configure name="MODEM_BAUD" value="B57600"/>
       </module> -->
             
-      <!-- Option 1 EKF2  NOT WORKING YET -->
+      <!-- Option 1 EKF2 -->
       <module name="ins" type="alt_float"/> 
+      
+      <define name="DISCO_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_1000"/>
+      <define name="DISCO_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/><!-- Set to 8G maybe possible -->
+      <define name="DISCO_LOWPASS_FILTER" value="MPU60X0_DLPF_256HZ"/>
+      <define name="DISCO_SMPLRT_DIV" value="3"/><!-- Do not change randomly ;) -->
+      
+      <configure name="NAVIGATION_FREQUENCY" value="16"/> <!--  unit="Hz" -->
+      <configure name="CONTROL_FREQUENCY" value="120"/> <!--  unit="Hz" -->
+      <configure name="TELEMETRY_FREQUENCY" value="60"/> <!--  unit="Hz" -->
+      <configure name="MODULES_FREQUENCY" value="512"/> <!--  unit="Hz" -->
+      
+      <!-- Periodic frequency of default modules -->
+      <configure name="PERIODIC_FREQUENCY" value="512"/>
       
     </target>
     
@@ -73,25 +86,17 @@
     
     <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!-- Make sure is callibrated if set to TRUE -->
-    
-    <!-- Periodic frequency of default modules -->
-    <configure name="PERIODIC_FREQUENCY" value="120"/>
-        
+    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!-- Make sure is callibrated if set to TRUE -->    
     <!--  Vehicle -->
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm">
+        <!-- Use Magnetometer for heading -->
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
         <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/>
+        
+        <!-- Enable GPS Heading  -->
         <configure name="AHRS_USE_GPS_HEADING" value="TRUE"/>
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="2.0" unit="m/s"/>
-        
-        <!-- <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> --> <!-- Use Mag to also update roll and pitch / not recommended -->
-        <!-- <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>-->
-        <!-- <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="2.0" unit="m/s"/>-->
-        <!-- <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="20"/>--> <!-- Default 30. Reduce accelerometer cut off frequency when the vehicle is accelerating. Set to 0 in order to remove all vibrations -->
-        <!-- <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/>--> <!--ABI sender id of IMU to use-->
-        <!-- <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID" /> --> <!--for when using the mag_calib_ukf-->
     </module>
     <module name="actuators" type="disco"/>
     
@@ -222,6 +227,11 @@
                 DEFINITIONS
     ************************************************  -->
   <section name="INS" prefix="INS_">
+    <!-- Location of INS with respect to airframe -->
+    <define name="BODY_TO_GPS_X" value="0.11" unit="m"/>
+    <define name="BODY_TO_GPS_Y" value="0.0" unit="m"/>
+    <define name="BODY_TO_GPS_Z" value="0.03" unit="m"/>
+    
     <define name="ROLL_NEUTRAL_DEFAULT" value="0" unit="deg"/>
     <define name="PITCH_NEUTRAL_DEFAULT" value="0" unit="deg"/>
   </section>
@@ -234,6 +244,16 @@
     <define name="LOW_BAT_LEVEL" value="10" unit="V"/> <!-- Used to display battery warning in GCS -->
     <define name="CATASTROPHIC_BAT_LEVEL" value="9.3" unit="V"/>  <!-- Warning: Kill mode is engaged in case this battery level is reached -->
     <define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>
+  </section>
+  
+  <!-- ************************************************
+               SONAR DEFINITIONS
+    ************************************************  -->
+  <section name="SONAR" prefix="SONAR_">
+    <define name="SCALE" value="0.016775" integer="16"/>
+    <define name="OFFSET" value="0.03" unit="m"/> <!-- Landing gear height to tarmac, well ~0 m with this flyingwing -->
+    <define name="MAX_RANGE" value="9.0" unit="m"/>
+    <define name="MIN_RANGE" value="0.18" unit="m"/>
   </section>
 
   <!-- ************************************************
@@ -323,6 +343,7 @@
     
     <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.12"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.004"/> 
+    
   </section>
 
   <!-- ************************************************
