@@ -208,7 +208,6 @@ static void rl_load_Q_file(void){
 				}
 			}
 		}
-
 		rl_write_Q_file();
 	}
 
@@ -383,12 +382,10 @@ void rl_soaring_end_episode(void){
 
 	// Calculate reward based on beginning and end state and update the policies accordingly
 	reward = calc_reward();
-	printf("Calculating reward %f\n\n", reward);
 	update_q_value(state1, state2, reward, action1, action2);
 	update_policy();
 	action1 = action2;
 	rl_soaring_perform_action(action1);
-	printf("Performing action (%d %d %d)\n", action1.x, action1.y, action1.z);
 	rl_episode_started = false;
 
 
@@ -448,7 +445,6 @@ int rl_episode_stop_condition(void){
 
 float calc_reward(void){
     float rew = rl_episode_integrated_reward/rl_episode_amount_iterations;
-    printf("Calculating reward. Integrated reward given by %f and amount of iterations by %d\n", rl_episode_integrated_reward, rl_episode_amount_iterations);
     rl_episode_integrated_reward = 0;
     rl_episode_amount_iterations = 0;
 	return rew;
@@ -503,7 +499,6 @@ void rl_soaring_integrate_reward(void){
 	float current_potential = 9.81*pos_Utm->alt;
 	rl_episode_amount_iterations++;
 	rl_episode_integrated_reward += current_kinetic + current_potential;
-	printf("Integrating reward, kinetic energy %f and potential %f\n", current_kinetic, current_potential);
 }
 
 /*

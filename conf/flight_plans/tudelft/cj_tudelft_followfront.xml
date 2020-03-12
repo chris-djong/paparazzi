@@ -41,7 +41,7 @@
 
   <exceptions>
       <exception cond="datalink_time > 60" deroute="Standby"/> 
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> <!-- exception removed from here because it standby error at startup-->  
+      <!--  <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> <!-- exception removed from here because it standby error at startup-->  
   </exceptions>
 
   <!-- *********** Initial setup *********** -->
@@ -109,7 +109,7 @@
     </block>
     
     <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
+      <!--exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/-->
       <call_once fun="rl_soaring_start()"/>
       <call fun="rl_soaring_call()"/>
     </block> 
