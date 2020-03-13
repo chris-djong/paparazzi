@@ -72,8 +72,6 @@
     <!-- ************************************************
                ALL TARGETS
     ************************************************  -->
-    <!-- Personal modules -->
-    <!-- <module name="rl_soaring"/> -->
         
     <!-- Airspeed definitions  -->
     <define name="USE_AIRSPEED" value="1"/>

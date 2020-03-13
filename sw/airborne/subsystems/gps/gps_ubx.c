@@ -122,7 +122,6 @@ void gps_ubx_event(void)
 
 void gps_ubx_read_message(void)
 {
-
   if (gps_ubx.msg_class == UBX_NAV_ID) {
     if (gps_ubx.msg_id == UBX_NAV_SOL_ID) {
       /* get hardware clock ticks */
@@ -139,13 +138,17 @@ void gps_ubx_read_message(void)
       gps_ubx.state.ecef_pos.z = UBX_NAV_SOL_ECEF_Z(gps_ubx.msg_buf);
       SetBit(gps_ubx.state.valid_fields, GPS_VALID_POS_ECEF_BIT);
       gps_ubx.state.pacc       = UBX_NAV_SOL_Pacc(gps_ubx.msg_buf);
+      printf("Nav sol message has been found, pacc given by %f\n", gps_ubx.state.pacc);
       gps_ubx.state.ecef_vel.x = UBX_NAV_SOL_ECEFVX(gps_ubx.msg_buf);
       gps_ubx.state.ecef_vel.y = UBX_NAV_SOL_ECEFVY(gps_ubx.msg_buf);
       gps_ubx.state.ecef_vel.z = UBX_NAV_SOL_ECEFVZ(gps_ubx.msg_buf);
       SetBit(gps_ubx.state.valid_fields, GPS_VALID_VEL_ECEF_BIT);
       gps_ubx.state.sacc       = UBX_NAV_SOL_Sacc(gps_ubx.msg_buf);
+      printf("Nav sol message has been found, sacc given by %f\n", gps_ubx.state.sacc);
       gps_ubx.state.pdop       = UBX_NAV_SOL_PDOP(gps_ubx.msg_buf);
+      printf("Nav sol message has been found, pdop given by %f\n", gps_ubx.state.pdop);
       gps_ubx.state.num_sv     = UBX_NAV_SOL_numSV(gps_ubx.msg_buf);
+      printf("Nav sol message has been found, num_sv given by %f\n", gps_ubx.state.num_sv);
 #ifdef GPS_LED
       if (gps_ubx.state.fix == GPS_FIX_3D) {
         LED_ON(GPS_LED);
