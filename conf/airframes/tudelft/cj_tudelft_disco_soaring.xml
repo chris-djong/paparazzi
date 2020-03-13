@@ -206,15 +206,15 @@
     ************************************************  -->
     
   <section name="AHRS" prefix="AHRS_">
-    <!-- Values for Valkenburg Zuid Holland NL 
+    <!-- Values for Valkenburg Zuid Holland NL --> 
     <define name="H_X" value="0.387264"/>
     <define name="H_Y" value=" 0.0099463"/>
-    <define name="H_Z" value="0.921915"/> -->
+    <define name="H_Z" value="0.921915"/> 
     
-    <!-- Values for Den Helder NL -->
+    <!-- Values for Den Helder NL 
     <define name="H_X" value="0.377011"/>
     <define name="H_Y" value="0.0102128"/>
-    <define name="H_Z" value="0.926152"/> 
+    <define name="H_Z" value="0.926152"/> -->
     
     <!-- Values for Mondorf-les-Bains LUX 
     <define name="H_X" value="0.420013"/>

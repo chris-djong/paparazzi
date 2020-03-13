@@ -206,7 +206,6 @@ static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
     }
     else{
 		if (gps_waiting(gpsdata, 500)) {
-			printf("waiting\n");
 			if (gps_read (gpsdata) == -1) {
 				perror("gps read error");
 			} else {
