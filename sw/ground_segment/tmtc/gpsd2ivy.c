@@ -80,7 +80,7 @@ char* wp;
 // Parameters for simulation
 float sim_lon = 3.495218;
 float sim_lat = 51.495227;
-float sim_lat_speed =  90*1e-7;
+float sim_lat_speed =  0;// 90*1e-7;
 float sim_lon_speed =  90*1e-7;
 float sim_course = 0;
 float sim_speed = 0;
