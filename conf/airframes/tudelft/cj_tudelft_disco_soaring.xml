@@ -334,8 +334,8 @@
 
     <define name="ENERGY_TOT_PGAIN" value="0.0"/>
     <define name="ENERGY_TOT_IGAIN" value="0.0"/>
-    <define name="ENERGY_DIFF_PGAIN" value="0.0"/>
-    <define name="ENERGY_DIFF_IGAIN" value="0.0"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.07"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
     <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.39" unit="%/(m/s)"/>
     
