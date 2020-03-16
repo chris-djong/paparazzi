@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "firmwares/fixedwing/autopilot_firmware.h"
+#include "autopilot.h"
 #include <unistd.h>
 #include "std.h"
 #include "modules/ctrl/follow_me.h"

@@ -540,7 +540,7 @@ static void compute_ahrs_representations(void)
   ahrs_dcm.ltp_to_imu_euler.phi = atan2(DCM_Matrix[2][1], DCM_Matrix[2][2]);
   ahrs_dcm.ltp_to_imu_euler.theta = -asin(DCM_Matrix[2][0]);
   ahrs_dcm.ltp_to_imu_euler.psi = atan2(DCM_Matrix[1][0], DCM_Matrix[0][0]);  // This value is between -M_PI and M_PI
-  // Add heading bound here
+  // Add heading bound here for backwards flight
   ahrs_dcm.ltp_to_imu_euler.psi += M_PI; // Rotating the angle 180deg to fit for PPRZ
 #endif
 }
