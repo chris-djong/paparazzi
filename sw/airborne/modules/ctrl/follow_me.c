@@ -62,6 +62,7 @@ int32_t y_follow2;
 // Roll PID
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
+uint8_t roll_button_disable = 1;  // In order to disable roll controler using buttons
 float roll_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_pgain = 0.015;
 float roll_igain = 0.0;
@@ -184,7 +185,7 @@ float AverageHeading(float diffx, float diffy)
 				heading = -90.0;
 			}
 		} else {
-			heading = atan2(Sum_x, Sum_y)*180.0/M_PI;
+			heading = atan2(Sum_x, Sum_y)*180.0/M_PI;  // returns value between -180 and 180 (at least no other values have been found yet)
 		}
 		return heading;
     }
@@ -364,16 +365,14 @@ void follow_me_init(void){
 
 // Called each time the follow me block is started
 void follow_me_startup(void){
-#ifdef RL_SOARING_H
-	if (!rl_started){
-    }
-#endif
     follow_me_call();
 
-    if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
-    	follow_me_roll = 1;
-    } else {
-     	follow_me_roll = 0;
+    if (!roll_button_disable){
+		if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
+			follow_me_roll = 1;
+		} else {
+			follow_me_roll = 0;
+		}
     }
 }
 
@@ -431,6 +430,17 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 }
 
 
+// Function to enable roll controller using buttons
+void follow_me_enable_roll(void){
+	roll_button_disable = 0;
+}
+
+// Function to disable roll controller using button
+void follow_me_disable_roll(void){
+	roll_button_disable = 1;
+	follow_me_roll = 0;
+}
+
 // Roll angle controller
 // void follow_me_roll_pid(void);
 void follow_me_roll_pid(void){
@@ -438,10 +448,12 @@ void follow_me_roll_pid(void){
 	// We either have the normal course mode or the nav follow mode.
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
-	if (fabs(dist_wp_follow.x) > roll_enable){
-		follow_me_roll = 1;
-	} else if (fabs(dist_wp_follow.x) < roll_disable){
-		follow_me_roll = 0;
+	if (!roll_button_disable){
+		if (fabs(dist_wp_follow.x) > roll_enable){
+			follow_me_roll = 1;
+		} else if (fabs(dist_wp_follow.x) < roll_disable){
+			follow_me_roll = 0;
+		}
 	}
 	// if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 	// 	follow_me_roll = 1;
@@ -450,7 +462,7 @@ void follow_me_roll_pid(void){
 	// }
 
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
-	if (fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)){
+	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)) || fabs(dist_wp_follow.x > 5*roll_enable)){
 		follow_me_roll = 0;
 	}
 
@@ -603,5 +615,6 @@ void follow_me_stop(void){
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
+	roll_button_disable = 1;
 }
 
