@@ -62,7 +62,7 @@ int32_t y_follow2;
 // Roll PID
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
-float roll_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_pgain = 0.015;
 float roll_igain = 0.0;
 float roll_dgain = 0.0;
