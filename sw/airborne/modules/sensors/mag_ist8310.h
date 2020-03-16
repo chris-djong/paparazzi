@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Hector Garcia de Marina
+ * Copyright (C) 2019 Freek van Tienen <freek.v.tienen@gmail.com>
  *
  * This file is part of paparazzi.
  *
@@ -16,20 +16,24 @@
  * You should have received a copy of the GNU General Public License
  * along with paparazzi; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
- *
  */
 
-/** \file fc_rotor.h
+/**
+ * @file modules/sensors/mag_ist8310.h
  *
- *  Formation control algorithm for rotorcrafts
+ * Module wrapper for Isentek IST8310 magnetometers.
  */
 
-#include <std.h>
+#ifndef MAG_IST8310_H
+#define MAG_IST8310_H
 
-#ifndef FC_ROTOR_H
-#define FC_ROTOR_H
+#include "peripherals/ist8310.h"
 
-extern void fc_rotor_init(void);
-extern void fc_read_msg(uint8_t *buf);
+extern struct IST8310 mag_ist8310;
 
-#endif // FC_ROTOR_H
+extern void mag_ist8310_module_init(void);
+extern void mag_ist8310_module_periodic(void);
+extern void mag_ist8310_module_event(void);
+extern void mag_ist8310_report(void);
+
+#endif // MAG_IST8310_H
