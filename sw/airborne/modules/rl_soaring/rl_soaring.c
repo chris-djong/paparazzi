@@ -87,7 +87,7 @@ float desired_accuracy = 3; // the uav has reached its state in case all directi
 
 // Need to have struct for array because otherwise we have 2 possibilities for state 6 for example, 2x3 and 3x2
 // NOTE: USE ODD VALUE SO THAT WINDOW CAN BE CENTERED AROUND 0.
-// EVEN VALUES HAVE NOT BEEN TESTED!!
+// NOT WORKING ON EVEN VALUES --> TODO: CREATE ASSERTION
 #define state_size_lateral 3
 #define state_size_longitudinal 1
 #define state_size_height 1
@@ -411,12 +411,9 @@ void rl_soaring_update_measurements(void){
     // In order to calculate state first calculate location of current waypoints
     follow_me_compute_wp();
 
-
-
     // Convert these states to an idx
     current_state = state_to_idx();
 }
-
 
 
 void rl_navigation(void);
@@ -430,7 +427,6 @@ void rl_navigation(void){
 	NavGotoWaypoint(WP__FOLLOW2);
     NavVerticalAltitudeMode(follow_me_altitude, 0.);
 }
-
 
 int rl_episode_stop_condition(void);
 int rl_episode_stop_condition(void){
@@ -480,9 +476,9 @@ void update_policy(void){
 				}
 				// Update the current policy accordingly
 				struct Int8Vect3 desired_action;
-				desired_action.x = max_index_lateral;
-				desired_action.y = max_index_longitudinal;
-				desired_action.z = max_index_height;
+				desired_action.x = max_index_lateral - (action_size_lateral - 1)/2; // max_index is between 0 and state_size_lateral*2, we want however also negative distances
+				desired_action.y = max_index_longitudinal - (action_size_longitudinal - 1)/2;
+				desired_action.z = max_index_height - (action_size_height - 1)/2;
 				current_policy[i][j][k] = desired_action;
 			}
 	    }
