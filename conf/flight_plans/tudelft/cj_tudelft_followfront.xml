@@ -47,22 +47,26 @@
   <!-- *********** Initial setup *********** -->
   
   <!-- Kill throttle until we have a GPS fix -->
-  <blocks>
+  <blocks> 
+    <!-- Block 1 -->
     <block name="Wait GPS">
       <set value="1" var="autopilot.kill_throttle"/>
       <while cond="!GpsFixValid()"/>
     </block>
+    <!-- Block 2 -->
     <!--  Set the reference values as soon as a GPS fix is obtained -->
     <block name="Geo init">    
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
+    <!-- Block 3 -->
     <!--  Don`t continue procedure until RC Link has been established at least once -->
     <block name="Waiting for RC Transmitter">
       <attitude roll="0" throttle="0" vmode="throttle"/> <!-- To disable wriggly Actuators in Auto2, and throttle to 0 just in case -->
       <while cond="RCLost()"/> <!-- To make sure we do not hop to AUTO2 and motor could starts running, at least switch on then maybe off if you want to -->
     </block>
+    <!-- Block 4 -->
     <!-- Hold throttle kill until Takeoff block is called -->
     <block name="Holding point">
       <set value="1" var="autopilot.kill_throttle"/>
@@ -72,47 +76,68 @@
   <!-- *********** Takeoff *********** -->
     
     <!-- Takeoff in direction of CLIMB waypoint until we have a height of 25 meters -->
+    <!-- Block 5 -->
     <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
       <exception cond="GetPosAlt() > GetAltRef()+5" deroute="Standby"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
       <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="15"/>
     </block>
+    <!-- Block 6 -->
     <!--  After the height of 25 m is obtained we deroute to the standby waypoint for 1 minute-->
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="tuning">
       <call_once fun="follow_me_stop()"/>
       <!-- <call_once fun="rl_soaring_stop()"/> -->
       <circle radius="nav_radius" wp="STDBY" />
     </block>
-    
+    <!-- Block 7 -->
     <block name="Figure 8 (1-2)" strip_button="Figure 8 (1-2)" strip_icon="eight.png" group="tuning">
       <eight center="1" radius="nav_radius" turn_around="2"/>
     </block>
-    
+    <!-- Block 8 -->
     <block name="Oval (1-2)" strip_button="Oval (1-2)" strip_icon="oval.png" group="tuning">
       <oval p1="1" p2="2" radius="nav_radius"/>
     </block>
     
   <!-- *********** Flight *********** -->
-
+    <!-- Block 9 -->
     <!-- Set follow_me distance and lateral offset to current position -->
-    <block name="soar_here" strip_button="Soar here" group="flight">
+    <block name="soar_here" strip_button="Soar here" group="followme">
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="follow_me_soar_here()"/>
     </block>
 
     <!--  Follow me module  -->
-    <block name="follow_me" strip_button="Follow me" group="flight">
+    <!-- Block 10 -->
+    <block name="follow_me" strip_button="Follow me" group="followme">
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
     </block>
     
-    <block name="reinforce_learning" strip_button="Reinforcement Learning" group="flight">
+    <!--  Enable roll pid module  -->
+    <!-- Block 11 -->
+    <block name="follow_me_roll_enable" strip_button="Enable Roll" group="followme">
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
+      <call_once fun="follow_me_enable_roll()"/>
+      <deroute block="follow_me"/>   
+    </block>
+    
+    <!--  Disable roll pid module  -->
+    <!-- Block 12 -->
+    <block name="follow_me_roll_disable" strip_button="Disable Roll" group="followme">
+      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
+      <call_once fun="follow_me_disable_roll()"/>
+      <deroute block="follow_me"/>   
+    </block>
+    
+    <!-- Block 13 -->    
+    <block name="reinforce_learning" strip_button="Reinforcement Learning" group="rlsoaring">
       <!--exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/-->
       <call_once fun="rl_soaring_start()"/>
       <call fun="rl_soaring_call()"/>
     </block> 
+    
  
     
   <!-- *********** Land *********** -->
