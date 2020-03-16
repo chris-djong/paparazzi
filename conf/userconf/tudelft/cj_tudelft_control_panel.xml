@@ -74,6 +74,7 @@
         <arg flag="--norc"/>
       </program>
       <program name="GCS">
+        <arg flag="-center_ac"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
       <program name="Server">
@@ -129,6 +130,7 @@
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>
+        <arg flag="-center_ac"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
      <!-- <program name="Real-time Plotter">
@@ -172,6 +174,7 @@
       </program>
       <program name="Server"/>
       <program name="GCS">
+        <arg flag="-center_ac"/>
         <arg flag="-speech"/>
         <arg flag="-layout" constant="cj_tudelft_gcs_layout.xml"/>
       </program>
