@@ -176,12 +176,13 @@
     
     <!-- Calibration for PH-4HM performed on 4 of March 2020  -->                                          
     <!-- for Disco PH-4HM labelled Chris -->                                            
-    <define name="ACCEL_X_NEUTRAL" value="-163"/>                                             
-    <define name="ACCEL_Y_NEUTRAL" value="-19"/>                                               
-    <define name="ACCEL_Z_NEUTRAL" value="-265"/>                                                    
-    <define name="ACCEL_X_SENS" value="2.43793703158" integer="16"/>                                       
-    <define name="ACCEL_Y_SENS" value="2.43200803061" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.41071847251" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="-81"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-7"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-146"/>
+    <define name="ACCEL_X_SENS" value="4.86975916963" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.86060526443" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.8158037729" integer="16"/>
+    
 
 	
 	<define name="MAG_X_NEUTRAL" value="-243"/>
