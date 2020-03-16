@@ -190,8 +190,8 @@ static void rl_write_Q_file(void);
 static void rl_load_Q_file(void){
 	// Open the File
 	char filename[150];
-	// sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
-    sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+    // sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
 	if (access(filename, F_OK) == -1){
 		printf("File does not exist. Creating new file.\n");
 		/* Uncomment this text in the desired Q table does not exist yet */
@@ -260,8 +260,8 @@ static void rl_load_Q_file(void){
 
 static void rl_write_Q_file(void){
 	char filename[150];
-	// sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
-    sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+	sprintf(filename, "/home/chris/paparazzi/sw/airborne/modules/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
+    // sprintf(filename, "/data/ftp/internal_000/rl_soaring/rl_Q_%d_%d_%d_%d_%d_%d_%d.csv", state_size_lateral, state_size_longitudinal, state_size_height, action_size_lateral, action_size_longitudinal, action_size_height, state_accuracy);
 
 	FILE *f = fopen(filename, "w");
 	if (f == NULL){
