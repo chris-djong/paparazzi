@@ -24,9 +24,9 @@
         <dl_setting var="airspeed_pgain" min="-10" max="10" step="0.01" shortname="Speed pgain"/>
         <dl_setting var="airspeed_igain" min="-10" max="10" step="0.001" shortname="Speed igain"/>
         <dl_setting var="airspeed_dgain" min="-10" max="10" step="0.001" shortname="Speed dgain"/>
-        <dl_setting var="roll_diff_pgain" min="-0.02" max="0.02" step="0.00001" shortname="Roll pgain"/>
-        <dl_setting var="roll_diff_igain" min="-0.02" max="0.02" step="0.0001" shortname="Roll igain"/>
-        <dl_setting var="roll_diff_dgain" min="-0.02" max="0.02" step="0.0001" shortname="Roll dgain"/> 
+        <dl_setting var="roll_pgain" min="-0.02" max="0.02" step="0.00001" shortname="Roll pgain"/>
+        <dl_setting var="roll_igain" min="-0.02" max="0.02" step="0.0001" shortname="Roll igain"/>
+        <dl_setting var="roll_dgain" min="-0.02" max="0.02" step="0.0001" shortname="Roll dgain"/> 
       </dl_settings>
     </dl_settings>
   </settings>

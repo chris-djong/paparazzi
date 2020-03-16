@@ -62,12 +62,22 @@ int32_t y_follow2;
 // Roll PID
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
-float roll_diff_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float roll_diff_pgain = 0.015;
-float roll_diff_igain = 0.0;
-float roll_diff_dgain = 0.0;
-float roll_diff_sum_err = 0.0;
+float roll_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_pgain = 0.015;
+float roll_igain = 0.0;
+float roll_dgain = 0.0;
+float roll_sum_err = 0.0;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+
+// Pitch PID
+float pitch_enable = 3; // when this x distance is exceeded the roll PID is enabled
+float pitch_disable = 1; // when the x distance is lower the roll PID is disabled again
+float pitch_diff_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float pitch_diff_pgain = 0.015;
+float pitch_diff_igain = 0.0;
+float pitch_diff_dgain = 0.0;
+float pitch_diff_sum_err = 0.0;
+uint8_t follow_me_pitch = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Throttle PID
 float airspeed_sum_err = 0.0;
@@ -444,27 +454,27 @@ void follow_me_roll_pid(void){
 		follow_me_roll = 0;
 	}
 
-	roll_diff_sum_err += dist_wp_follow.x;
-	BoundAbs(roll_diff_sum_err, 20);
+	roll_sum_err += dist_wp_follow.x;
+	BoundAbs(roll_sum_err, 20);
 
-	// h_ctl_roll_setpoint_follow_me = +roll_diff_pgain*dist_wp_follow.x + roll_diff_igain*roll_diff_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain;
+	// h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
 
 	// Second fabs in order to keep the negative number for the square
 	if (dist_wp_follow.x > 0){
-	    h_ctl_roll_setpoint_follow_me = roll_diff_pgain*log(dist_wp_follow.x - roll_disable);
+	    h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
 	}
 	else {
-	    h_ctl_roll_setpoint_follow_me = -roll_diff_pgain*log(-(dist_wp_follow.x + roll_disable));
+	    h_ctl_roll_setpoint_follow_me = -roll_pgain*log(-(dist_wp_follow.x + roll_disable));
 	}
 	// Bound roll diff by limits
-	if (h_ctl_roll_setpoint_follow_me > roll_diff_limit){
-		h_ctl_roll_setpoint_follow_me = roll_diff_limit;
+	if (h_ctl_roll_setpoint_follow_me > roll_limit){
+		h_ctl_roll_setpoint_follow_me = roll_limit;
 	}
-	else if (h_ctl_roll_setpoint_follow_me < -roll_diff_limit){
-		h_ctl_roll_setpoint_follow_me = -roll_diff_limit;
+	else if (h_ctl_roll_setpoint_follow_me < -roll_limit){
+		h_ctl_roll_setpoint_follow_me = -roll_limit;
 	}
 
-	// printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_diff_pgain, dist_wp_follow.x, roll_diff_pgain*dist_wp_follow.x, roll_diff_igain, roll_diff_sum_err, roll_diff_igain*roll_diff_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_diff_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_diff_dgain);
+	// printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_pgain, dist_wp_follow.x, roll_pgain*dist_wp_follow.x, roll_igain, roll_sum_err, roll_igain*roll_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain);
 }
 
 
