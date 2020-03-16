@@ -29,6 +29,8 @@
 
 #include "follow_me.h"
 #include "state.h"
+#include "autopilot.h"
+
 
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
@@ -54,10 +56,12 @@ int16_t follow_me_height = 30; // desired height above ground station
 float follow_me_altitude;
 uint16_t follow_me_region = 200;
 float follow_me_heading = 0;
+uint8_t follow_me_mode = 0;
 int32_t x_follow;
 int32_t y_follow;
 int32_t x_follow2;
 int32_t y_follow2;
+uint8_t follow_me_autopilot_mode = 0;
 
 // Roll PID
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
@@ -407,6 +411,12 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
 		return;
 
+	// Automaitcally move waypoint in case AUTO2 is engaged
+	if ((autopilot.mode == 2) && (follow_me_autopilot_mode != 2)){
+		follow_me_soar_here();
+	}
+	follow_me_autopilot_mode =  autopilot.mode;
+
 	// Save the received values
 	ground_lla.lat = DL_GROUND_GPS_lat(buf);
 	ground_lla.lon = DL_GROUND_GPS_lon(buf);
@@ -598,6 +608,7 @@ void compute_follow_distances(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
+	printf("Follow me call executed\n");
 	compute_follow_distances();
 
     // Loop through controllers
@@ -612,6 +623,7 @@ int follow_me_call(void){
 
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
+	printf("Follow me stop executed\n");
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
