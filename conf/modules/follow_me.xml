@@ -11,6 +11,7 @@
   <settings>
     <dl_settings>
       <dl_settings name="FollowMe">
+        <dl_setting var="follow_me_use_magnetometer" min="0" max="1" step="1" shortname="Use Magneto"/>
         <dl_setting var="follow_me_distance" min="-255" max="255" step="1" shortname="Follow distance" unit="m"/>
         <dl_setting var="follow_me_distance_2" min="-255" max="255" step="1" shortname="Follow 2 distance" unit="m"/>
         <dl_setting var="stdby_distance" min="-255" max="255" step="1" shortname="Stdby distance" unit="m"/>

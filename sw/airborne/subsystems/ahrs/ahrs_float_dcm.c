@@ -33,6 +33,7 @@
 
 #include "subsystems/ahrs/ahrs_float_dcm_algebra.h"
 #include "math/pprz_algebra_float.h"
+#include "modules/ctrl/follow_me.h"
 
 #if USE_GPS
 #include "subsystems/gps.h"
@@ -184,8 +185,6 @@ void ahrs_dcm_update_gps(struct GpsState *gps_s)
   static float last_gps_speed_3d = 0;
 
 #if USE_GPS
-	printf("We are update gps\n");
-
   if (gps_s->fix >= GPS_FIX_3D) {
     ahrs_dcm.gps_age = 0;
     ahrs_dcm.gps_speed = gps_s->speed_3d / 100.;
@@ -237,56 +236,58 @@ void ahrs_dcm_update_accel(struct FloatVect3 *accel)
 void ahrs_dcm_update_mag(struct FloatVect3 *mag)
 {
 #if USE_MAGNETOMETER
-MESSAGE("MAGNETOMETER FEEDBACK NOT TESTED YET")
-printf("We are updating the magnetometr\n");
-  float cos_roll;
-  float sin_roll;
-  float cos_pitch;
-  float sin_pitch;
+if (follow_me_use_magnetometer){
 
-  cos_roll = cosf(ahrs_dcm.ltp_to_imu_euler.phi);
-  sin_roll = sinf(ahrs_dcm.ltp_to_imu_euler.phi);
-  cos_pitch = cosf(ahrs_dcm.ltp_to_imu_euler.theta);
-  sin_pitch = sinf(ahrs_dcm.ltp_to_imu_euler.theta);
+	MESSAGE("MAGNETOMETER FEEDBACK NOT TESTED YET")
+	printf("We are updating the magnetometr\n");
+	  float cos_roll;
+	  float sin_roll;
+	  float cos_pitch;
+	  float sin_pitch;
+
+	  cos_roll = cosf(ahrs_dcm.ltp_to_imu_euler.phi);
+	  sin_roll = sinf(ahrs_dcm.ltp_to_imu_euler.phi);
+	  cos_pitch = cosf(ahrs_dcm.ltp_to_imu_euler.theta);
+	  sin_pitch = sinf(ahrs_dcm.ltp_to_imu_euler.theta);
 
 
-  // Pitch&Roll Compensation:
-  MAG_Heading_X = mag->x * cos_pitch + mag->y * sin_roll * sin_pitch + mag->z * cos_roll * sin_pitch;
-  MAG_Heading_Y = mag->y * cos_roll - mag->z * sin_roll;
+	  // Pitch&Roll Compensation:
+	  MAG_Heading_X = mag->x * cos_pitch + mag->y * sin_roll * sin_pitch + mag->z * cos_roll * sin_pitch;
+	  MAG_Heading_Y = mag->y * cos_roll - mag->z * sin_roll;
 
-  /*
-   *
-    // Magnetic Heading
-    Heading = atan2(-Head_Y,Head_X);
+	  /*
+	   *
+		// Magnetic Heading
+		Heading = atan2(-Head_Y,Head_X);
 
-    // Declination correction (if supplied)
-    if( declination != 0.0 )
-    {
-        Heading = Heading + declination;
-        if (Heading > M_PI)    // Angle normalization (-180 deg, 180 deg)
-            Heading -= (2.0 * M_PI);
-        else if (Heading < -M_PI)
-            Heading += (2.0 * M_PI);
-    }
+		// Declination correction (if supplied)
+		if( declination != 0.0 )
+		{
+			Heading = Heading + declination;
+			if (Heading > M_PI)    // Angle normalization (-180 deg, 180 deg)
+				Heading -= (2.0 * M_PI);
+			else if (Heading < -M_PI)
+				Heading += (2.0 * M_PI);
+		}
 
-    // Optimization for external DCM use. Calculate normalized components
-    Heading_X = cos(Heading);
-    Heading_Y = sin(Heading);
-  */
+		// Optimization for external DCM use. Calculate normalized components
+		Heading_X = cos(Heading);
+		Heading_Y = sin(Heading);
+	  */
 
 #if FLOAT_DCM_SEND_DEBUG
-  struct FloatVect3 ltp_mag;
+	  struct FloatVect3 ltp_mag;
 
-  ltp_mag.x = MAG_Heading_X;
-  ltp_mag.y = MAG_Heading_Y;
+	  ltp_mag.x = MAG_Heading_X;
+	  ltp_mag.y = MAG_Heading_Y;
 
-  // Downlink
-  RunOnceEvery(10, DOWNLINK_SEND_IMU_MAG(DefaultChannel, DefaultDevice, &ltp_mag.x, &ltp_mag.y, &ltp_mag.z));
+	  // Downlink
+	  RunOnceEvery(10, DOWNLINK_SEND_IMU_MAG(DefaultChannel, DefaultDevice, &ltp_mag.x, &ltp_mag.y, &ltp_mag.z));
 #endif
 
   // Magnetic Heading
   // MAG_Heading = atan2(mag->y, -mag->x);
-
+} // follow_me_use_magneto
 #else // !USE_MAGNETOMETER
   // get rid of unused param warning...
   mag = mag;
@@ -434,22 +435,23 @@ void Drift_correction()
   //*****YAW***************
 
 #if USE_MAGNETOMETER
-  printf("drift correction using magnetomer\n");
-  // We make the gyro YAW drift correction based on compass magnetic heading
-//  float mag_heading_x = cos(MAG_Heading);
-//  float mag_heading_y = sin(MAG_Heading);
-  // 2D dot product
-  //Calculating YAW error
-  errorCourse = (DCM_Matrix[0][0] * MAG_Heading_Y) + (DCM_Matrix[1][0] * MAG_Heading_X);
-  //Applys the yaw correction to the XYZ rotation of the aircraft, depeding the position.
-  Vector_Scale(errorYaw, &DCM_Matrix[2][0], errorCourse);
+  if (follow_me_use_magnetometer){  // in order to turn on and off the magnetometer during flight
+	  printf("drift correction using magnetomer\n");
+	  // We make the gyro YAW drift correction based on compass magnetic heading
+	  // float mag_heading_x = cos(MAG_Heading);
+	  // float mag_heading_y = sin(MAG_Heading);
+	  // 2D dot product
+	  //Calculating YAW error
+	  errorCourse = (DCM_Matrix[0][0] * MAG_Heading_Y) + (DCM_Matrix[1][0] * MAG_Heading_X);
+	  //Applys the yaw correction to the XYZ rotation of the aircraft, depeding the position.
+	  Vector_Scale(errorYaw, &DCM_Matrix[2][0], errorCourse);
 
-  Vector_Scale(&Scaled_Omega_P[0], &errorYaw[0], Kp_YAW);
-  Vector_Add(Omega_P, Omega_P, Scaled_Omega_P); //Adding  Proportional.
+	  Vector_Scale(&Scaled_Omega_P[0], &errorYaw[0], Kp_YAW);
+	  Vector_Add(Omega_P, Omega_P, Scaled_Omega_P); //Adding  Proportional.
 
-  Vector_Scale(&Scaled_Omega_I[0], &errorYaw[0], Ki_YAW);
-  Vector_Add(Omega_I, Omega_I, Scaled_Omega_I); //adding integrator to the Omega_I
-
+	  Vector_Scale(&Scaled_Omega_I[0], &errorYaw[0], Ki_YAW);
+	  Vector_Add(Omega_I, Omega_I, Scaled_Omega_I); //adding integrator to the Omega_I
+  }
 #else // Use GPS Ground course to correct yaw gyro drift
   if (ahrs_dcm.gps_course_valid) {
 	  printf("course is valid\n");

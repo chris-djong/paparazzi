@@ -125,6 +125,7 @@ static uint32_t ground_timestamp; // only executed set wp function if we receive
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
+uint8_t follow_me_use_magnetometer = 1;  // Whether we update the AHRS for the magnetometer or not
 
 /*********************************
   Average speed calculator
