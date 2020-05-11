@@ -51,7 +51,7 @@
 #include "subsystems/gps/gps_datalink.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
 #include "modules/ctrl/follow_me.h"
-#include <Ivy/ivy.h>
+// #include <Ivy/ivy.h>
 //#include <Ivy/ivyglibloop.h>
 
 // Include other paparazzi modules

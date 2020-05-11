@@ -40,7 +40,7 @@
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "generated/flight_plan.h" // for waypoint reference pointers
-#include <Ivy/ivy.h> // for go to block
+// #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
 
 /*********************************
@@ -197,6 +197,7 @@ float AverageHeading(float diffx, float diffy)
 }
 
 
+
 /***********************************************************************************************************************
   Frame translation functions
 ***********************************************************************************************************************/
@@ -292,6 +293,7 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 ***********************************************************************************************************************/
 
 
+
 // Compute both lateral offset and follow_me_distance
 // Also used by RL algorithm
 // struct FloatVect3 compute_state(void);
@@ -321,6 +323,64 @@ struct FloatVect3 compute_state(void){
 
 	return transformation;
 }
+
+
+// Wind speed predictor
+struct FloatVect3 compute_wind_field(void);
+struct FloatVect3 compute_wind_field(void){
+    // Initial Parameters for wind field computation
+	float R_ridge = 10.0; // Height of the hill in m
+	float U_inf = 15.0; // Wind velocity at infinity in m/s
+	float a = 10; // Defines loci x-position
+	float x_stag = 14; // m, defines a-axis of standard oval
+	float b = sqrt(x_stag*x_stag - a*a);
+
+	struct FloatVect3 dist_from_boat = compute_state();
+	struct FloatVect3 wind_vector;
+	wind_vector.x = 0;
+
+	// Start of computation
+    float m = M_PI*U_inf/a*(x_stag*x_stag - a*a);
+    wind_vector.y = U_inf + m / (2 * M_PI) * ((dist_from_boat.y + a) / ((dist_from_boat.y+0.001 + a) * (dist_from_boat.y+0.001 + a) + dist_from_boat.z * dist_from_boat.z) - (dist_from_boat.y+0.001 - a) / ((dist_from_boat.y+0.001 - a)*(dist_from_boat.y+0.001 - a) + dist_from_boat.z*dist_from_boat.z));
+    wind_vector.z = -(m * dist_from_boat.z) / (2 * M_PI) * (1 / ((dist_from_boat.y+0.001 + a)*(dist_from_boat.y+0.001 + a) + dist_from_boat.z*dist_from_boat.z) - 1 / ((dist_from_boat.y+0.001 - a)*(dist_from_boat.y+0.001 - a) + dist_from_boat.z*dist_from_boat.z));
+
+	float ellipse_eq = (dist_from_boat.y * dist_from_boat.y) / (x_stag * x_stag) + (dist_from_boat.z * dist_from_boat.z) / (b * b);
+
+	if (ellipse_eq < 1){
+	    wind_vector.x = 0;
+	    wind_vector.y = 0;
+	    wind_vector.z = 0;
+	    return wind_vector;
+	}
+
+    if (dist_from_boat.y < x_stag){
+	    float z_ellipse = -b / x_stag * sqrt(x_stag * x_stag- dist_from_boat.y * dist_from_boat.y);
+
+	    // v_x *= ((z_i - z_ellipse)/-20)**(1/7)
+	    // v_z *= ((z_i - z_ellipse) / -20) ** (1 / 7)
+
+	    float mult_factor = (log(-(dist_from_boat.z - z_ellipse))/0.05)/(log(-(-20 - z_ellipse))/0.05);
+		if (mult_factor){
+            wind_vector.y *= mult_factor;
+	        wind_vector.z *= mult_factor;
+		} else {
+	        if (dist_from_boat.z < 0){
+	            z_ellipse = -0.01;
+	            mult_factor = (log(-(dist_from_boat.z - z_ellipse)) / 0.05) / (log(-(-20 - z_ellipse)) / 0.05);
+	            wind_vector.y *= mult_factor;
+	            wind_vector.z *= mult_factor;
+	        } else {
+	            wind_vector.x = 0;
+	            wind_vector.y = 0;
+	            wind_vector.z = 0;
+	        }
+		}
+    }
+    printf("Distance to boat is given by (%f,%f,%f)\n", dist_from_boat.x, dist_from_boat.y, dist_from_boat.z);
+    printf("Returning wind vector of (%f,%f,%f)\n\n", wind_vector.x, wind_vector.y, wind_vector.z);
+    return wind_vector;
+}
+
 
 
 //void follow_me_soar_here(void);
@@ -609,12 +669,14 @@ void compute_follow_distances(void){
 
 // This is the main function executed by the follow_me_block
 int follow_me_call(void){
-	printf("Follow me call executed\n");
 	compute_follow_distances();
 
     // Loop through controllers
 	follow_me_roll_pid();
 	follow_me_throttle_pid();
+	struct FloatVect3 wind = compute_wind_field();
+	struct FloatVect3* windspeed_f = stateGetWindspeed_f();
+	printf("Current wind is given by: (%f %f %f)\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);
 
 	// Move to the correct location
 	follow_me_go();
@@ -624,7 +686,6 @@ int follow_me_call(void){
 
 // This function should be executed at the start of each other block so that it is executed whenever the flying region is left or a new block is called
 void follow_me_stop(void){
-	printf("Follow me stop executed\n");
 	v_ctl_auto_airspeed_setpoint = V_CTL_AUTO_AIRSPEED_SETPOINT;
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
