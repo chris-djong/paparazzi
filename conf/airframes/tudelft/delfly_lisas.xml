@@ -22,7 +22,7 @@
         <configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/>
             <define name="RADIO_YAW" value="RADIO_ROLL"/>
-          </module>
+      </module>
 
       <configure name="USE_MAGNETOMETER" value="0"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
@@ -77,9 +77,8 @@
   <!-- ACTUATORS & COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
   <servos driver="Pwm">
-    <servo name="MOTOR" no="4" min="1100" neutral="1100" max="1900"/>
-    <servo name="ELEVATOR" no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="RUDDER" no="0" min="1100" neutral="1500" max="1900"/>
+    <servo name="ELEVATOR" no="3" min="1100" neutral="1500" max="1900"/>
+    <servo name="RUDDER" no="4" min="1100" neutral="1500" max="1900"/>
   </servos>
 
   <commands>
