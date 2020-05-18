@@ -143,7 +143,7 @@ void file_logger_start(void)
   while ((file_logger = fopen(filename, "r"))) {
     fclose(file_logger);
 
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), date_time, counter);
+    sprintf(filename, "%s/%s_%05ld.csv", STRINGIFY(FILE_LOGGER_PATH), date_time, counter);
     counter++;
   }
 
@@ -216,7 +216,7 @@ void file_logger_periodic(void)
           quat->qz
          );
 #else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d\n",
           counter, // int 1
 		  imu.gyro.p, // int 2
 		  imu.gyro.q, // int3
