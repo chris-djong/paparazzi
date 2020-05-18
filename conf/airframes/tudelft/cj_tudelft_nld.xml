@@ -113,7 +113,7 @@
     
     <!-- Calibration AHRS automatically in case we have a 3D fix -->
     <module name="geo_mag"/>
-
+    
     
     <!-- CONFIGURATION --------------------------------------->
    
@@ -121,6 +121,11 @@
     <define name="AGR_CLIMB"/> <!-- Airspeed tutorial in paparazzi wants to set this value in case airspeed control is required -->
     <define name="USE_AIRSPEED" value="TRUE"/>
     <define name="STALL_AIRSPEED" value="4"/>
+
+    <!-- ToDo find out what these modules do / assumption that they enable backwards flying -->
+    <define name="STRONG_WIND"/>
+    <define name="WIND_INFO"/>
+    <define name="WIND_INFO_RET"/>
 
     <!-- Use barometer of flight controller -->
     <configure name="USE_BARO_BOARD" value="TRUE"/>
