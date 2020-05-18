@@ -92,7 +92,6 @@ char* port;
 char* ivy_bus;
 char* ac;
 char* wp;
-<<<<<<< HEAD
 
 // Parameters for simulation
 float sim_lon = 3.495218;
@@ -106,14 +105,11 @@ float sim_climb = 0;
 int sim_time = 0;
 
 int change_state_at = 100000000;
-=======
->>>>>>> master
 
 static void update_gps(struct gps_data_t *gpsdata,
                        char *message,
                        size_t len)
 {
-<<<<<<< HEAD
 	if (simulate){
 #undef TIMEOUT_PERIOD
 #define TIMEOUT_PERIOD 100
@@ -148,25 +144,17 @@ static void update_gps(struct gps_data_t *gpsdata,
 	}
 
     static double fix_time = 0;
-=======
     static TIME_T fix_time = TIME_INIT;
->>>>>>> master
     double fix_track = 0;
     double fix_speed = 0;
     double fix_altitude = 0;
     double fix_climb = 0;
     // Only anlyse data if we have a fix and did not transmit this timestep already 
     if ((isnan(gpsdata->fix.latitude) == 0) &&
-<<<<<<< HEAD
        (isnan(gpsdata->fix.longitude) == 0) &&
        (isnan(gpsdata->fix.time) == 0) &&
        (gpsdata->fix.mode >= MODE_2D) &&
        (gpsdata->fix.time != fix_time))
-=======
-        (isnan(gpsdata->fix.longitude) == 0) &&
-        (gpsdata->fix.mode >= MODE_2D) &&
-        !IS_TIME_EQUAL(gpsdata->fix.time, fix_time))
->>>>>>> master
     {
         if (!isnan(gpsdata->fix.track))
             fix_track = gpsdata->fix.track;
@@ -203,8 +191,8 @@ static void update_gps(struct gps_data_t *gpsdata,
                 TIME_IN_SEC(gpsdata->fix.time),
                 0, // itow
                 0.0); // airspeed
- 
-        // Send GROUND_GPS message for data 
+
+        // Send GROUND_GPS message for data
         if(strcmp(ac, "NONE") != 0) {
             IvySendMsg("%s GROUND_GPS %s %d %d %d %d", "0", ac, (int)(gpsdata->fix.latitude * 1e7), (int)(gpsdata->fix.longitude * 1e7), (int)(fix_altitude* 1000), (int)(gpsdata->fix.time));
             if (verbose)
@@ -243,7 +231,6 @@ static void update_gps(struct gps_data_t *gpsdata,
 
 static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
 {
-<<<<<<< HEAD
     if (simulate){
     	update_gps(gpsdata, NULL, 0);
     }
@@ -254,15 +241,7 @@ static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
 			} else {
 				update_gps(gpsdata, NULL, 0);
 			}
-		} 
-=======
-    if (gps_waiting (gpsdata, TIMEOUT_PERIOD)) {
-        if (GPS_READ (gpsdata) == -1) {
-            perror("gps read error");
-        } else {
-            update_gps(gpsdata, NULL, 0);
-        }
->>>>>>> master
+		}
     }
     return TRUE;
 }
