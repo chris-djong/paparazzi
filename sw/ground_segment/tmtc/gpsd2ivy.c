@@ -143,7 +143,6 @@ static void update_gps(struct gps_data_t *gpsdata,
 	    gpsdata->fix.mode = 3;
 	}
 
-    static double fix_time = 0;
     static TIME_T fix_time = TIME_INIT;
     double fix_track = 0;
     double fix_speed = 0;
