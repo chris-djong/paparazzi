@@ -34,10 +34,10 @@
       </module>
 
       
-      <!-- ToDo specify where to log files (even possible on Lisa MXS?) -->
+      <!-- ToDo specify where to log files (even possible on Lisa MXS?) 
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
-      </module>
+      </module> -->
       
     </target>
 
@@ -59,7 +59,7 @@
     <!-- MODULES --------------------------------------->
     <!-- Personal -->
     <module name="follow_me"/> 
-    <module name="rl_soaring"/>
+    <!--  <module name="rl_soaring"/>  -->
 
     <!-- Telemetry -->
     <module name="telemetry" type="transparent">
