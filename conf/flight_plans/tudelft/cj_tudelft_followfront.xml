@@ -132,12 +132,12 @@
     </block>
     
     <!-- Block 13 -->    
-    <block name="reinforce_learning" strip_button="Reinforcement Learning" group="rlsoaring">
-      <!--exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/-->
+    <!-- <block name="reinforce_learning" strip_button="Reinforcement Learning" group="rlsoaring">
+      <!--exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/
       <call_once fun="rl_soaring_start()"/>
       <call fun="rl_soaring_call()"/>
     </block> 
-    
+    -->
  
     
   <!-- *********** Land *********** -->
