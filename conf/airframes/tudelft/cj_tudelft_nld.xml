@@ -37,8 +37,8 @@
       <!-- ToDo specify where to log files (even possible on Lisa MXS?) 
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
-      </module> -->
-      
+      </module> 
+      -->
     </target>
 
     <!-- ************************************************
@@ -49,6 +49,8 @@
       <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       <module name="airspeed" type="adc"/>
+      <define name="AIRSPEED_ADC_SCALE" value="1"/>
+      <define name="AIRSPEED_ADC_BIAS" value="1"/>
       <module name="baro_sim"/>
     </target>
 
@@ -59,7 +61,7 @@
     <!-- MODULES --------------------------------------->
     <!-- Personal -->
     <module name="follow_me"/> 
-    <!--  <module name="rl_soaring"/>  -->
+    <!--  <module name="rl_soaring"/> -->
 
     <!-- Telemetry -->
     <module name="telemetry" type="transparent">
@@ -80,7 +82,7 @@
     <module name="imu" type="lisa_mx_v2.1"/>
 
     <!-- Actuators -->
-    <module name="actuators" type="pwm"/>    
+    <module name="actuators" type="pwm"/>
     
     <!-- Control algorithm -->
     <!-- Note for the Disco we used energy, revert if required -->
@@ -145,7 +147,7 @@
   </firmware>
  
   <!-- Set servos locations -->
-  <servos driver="PWM">
+  <servos driver="Pwm">
     <!-- <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/> -->
     <servo name="AILEVON_RIGHT" no="3" min="1900" neutral="1450" max="1000"/>
     <servo name="AILEVON_LEFT" no="4" min="1000" neutral="1450" max="1900"/>
