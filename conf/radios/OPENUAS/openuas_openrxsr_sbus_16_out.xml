@@ -43,12 +43,12 @@ the order of the functon in the list
  <channel ctl="sw1"               function="AUX1"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw2"               function="AUX2"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw3"               function="AUX3"     min="1100" neutral="1500" max="1900" average="0"/>
- <channel ctl="sw4"               function="AUX4"     min="1100" neutral="1500" max="1900" average="0"/>
+ <!-- <channel ctl="sw4"               function="AUX4"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw5"               function="AUX5"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw6"               function="AUX6"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw7"               function="AUX7"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw8"               function="AUX8"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw9"               function="AUX9"     min="1100" neutral="1500" max="1900" average="0"/>
  <channel ctl="sw10"              function="AUX10"    min="1100" neutral="1500" max="1900" average="0"/>
- <channel ctl="sw11"              function="AUX11"    min="1100" neutral="1500" max="1900" average="0"/>
+ <channel ctl="sw11"              function="AUX11"    min="1100" neutral="1500" max="1900" average="0"/> --> 
 </radio>
