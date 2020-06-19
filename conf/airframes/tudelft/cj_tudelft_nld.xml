@@ -100,6 +100,7 @@
   
     <!-- Enable radio control --> 
     <module name="radio_control" type="ppm">
+      <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
       <configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
     </module>
   
@@ -150,8 +151,8 @@
   <!-- Set servos locations -->
   <servos driver="Pwm">
     <!-- <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/> -->
-    <servo name="AILEVON_RIGHT" no="3" min="1900" neutral="1450" max="1000"/>
-    <servo name="AILEVON_LEFT" no="4" min="1000" neutral="1450" max="1900"/>
+    <servo name="AILEVON_RIGHT" no="2" min="1900" neutral="1450" max="1000"/>
+    <servo name="AILEVON_LEFT" no="3" min="1000" neutral="1450" max="1900"/>
   </servos>
  
   <!-- Set servo commands -->
