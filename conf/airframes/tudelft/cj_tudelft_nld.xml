@@ -127,9 +127,9 @@
     <define name="STALL_AIRSPEED" value="4"/>
 
     <!-- ToDo find out what these modules do / assumption that they enable backwards flying -->
-    <define name="STRONG_WIND"/>
-    <define name="WIND_INFO"/>
-    <define name="WIND_INFO_RET"/>
+    <define name="STRONG_WIND"/>  <!-- Make it possible to not change heading if we fly backwards -->
+    <define name="WIND_INFO"/>  <!-- To calculate Wind if we fly in circles -->
+    <define name="WIND_INFO_RET"/>  <!-- Return this wind info to the ground station -->
 
     <!-- Use barometer of flight controller -->
     <configure name="USE_BARO_BOARD" value="TRUE"/>

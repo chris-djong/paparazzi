@@ -174,16 +174,15 @@
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
     
-    <!-- Calibration for PH-4HM performed on 4 of March 2020  -->                                          
+    <!-- Calibration for PH-4HM performed on 22 of June 2020  -->                                          
     <!-- for Disco PH-4HM labelled Chris -->                                            
-    <define name="ACCEL_X_NEUTRAL" value="-81"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-7"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-146"/>
-    <define name="ACCEL_X_SENS" value="4.86975916963" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.86060526443" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.8158037729" integer="16"/>
-    
-
+    <define name="ACCEL_X_NEUTRAL" value="-77"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-10"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-98"/>
+    <define name="ACCEL_X_SENS" value="4.878191439730589" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.865442056866066" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.827849982429958" integer="16"/>
+    <!-- end 22 June -->
 	
 	<define name="MAG_X_NEUTRAL" value="-243"/>
 	<define name="MAG_Y_NEUTRAL" value="28"/>
