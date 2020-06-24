@@ -63,7 +63,6 @@ extern float roll_dgain;
 
 extern uint8_t stationary_ground;
 extern float ground_speed;
-extern float actual_enu_speed;
 extern struct FloatVect3 dist_wp_follow;
 extern struct FloatVect3 dist_wp_follow2;
 extern struct FloatVect3 wp_follow_enu;
