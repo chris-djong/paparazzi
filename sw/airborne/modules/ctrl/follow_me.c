@@ -48,99 +48,80 @@
 *********************************/
 
 // Waypoint parameters
-int16_t follow_me_distance = 20; // distance from which the follow me points are created
+int16_t follow_me_distance = 20; // the desired distance that we want to soar in front of
 // Follow me distance +30 because we want to fly just in front of the UAV. In case we fly closer by we follow flower like patterns
-int16_t follow_me_distance_2 = 20 + 30; //  this is where the uav will fly to
+int16_t follow_me_distance_2 = 20 + 30; //  this is where the uav will fly to using its navigational loop
+int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 int16_t stdby_distance = 110; // based on stbdy radius (80) + 30
 int16_t follow_me_height = 30; // desired height above ground station
-float follow_me_altitude;
-uint16_t follow_me_region = 200;
-float follow_me_heading = 0;
-uint8_t follow_me_mode = 0;
+float follow_me_altitude;  // desired altitude in case the ground statin can not be reached for example
+uint16_t follow_me_region = 200;  // rectangular size of the follow me region. in case we leave this region we go to stbdy
+float follow_me_heading = 0;  // the heading that the boat is driving too / used to create the waypoints or calculate the position with respect to the boat
 int32_t x_follow;
 int32_t y_follow;
 int32_t x_follow2;
 int32_t y_follow2;
-uint8_t follow_me_autopilot_mode = 0;
+uint8_t follow_me_autopilot_mode = 0;  // this boolean is used in order to detect AUTO1 AUTO2 changes. A change in auto2 can result for example in a follow_me_soar_here execution
 
-// Roll PID
+// Roll loop
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
 uint8_t roll_button_disable = 1;  // In order to disable roll controler using buttons
 float roll_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 float roll_pgain = 0.015;
-float roll_igain = 0.0;
-float roll_dgain = 0.0;
-float roll_sum_err = 0.0;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
-// Pitch PID
+// Pitch loop
 float pitch_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float pitch_disable = 1; // when the x distance is lower the roll PID is disabled again
-float pitch_diff_limit = 1.3; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
-float pitch_diff_pgain = 0.015;
-float pitch_diff_igain = 0.0;
-float pitch_diff_dgain = 0.0;
-float pitch_diff_sum_err = 0.0;
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+uint8_t pitch_button_disable = 1;
 
-// Throttle PID
+// Throttle loop
 float airspeed_sum_err = 0.0;
-
 // Should be defined positive
 float airspeed_pgain = 0.4;
 float airspeed_igain = 0.00;
 float airspeed_dgain = 0.00;
 
-/*********************************
-  Variables for follow_me module
-*********************************/
-
-float average_follow_me_distance;
-float actual_enu_speed;
+// Keep track of current position with respect of waypoint
 struct FloatVect3 dist_wp_follow; // distance to follow me wp
 struct FloatVect3 dist_wp_follow2; // distance to follow 2 waypoint
-int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
-
-// Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
-uint8_t counter_heading = 0; // counter which counts heading function executions
-uint8_t heading_calc_counter = 5; // in case we have received heading_calc_counter GROUND_GPS messages the heading is calculated
-struct UtmCoor_f ground_utm_old;
-struct UtmCoor_f ground_utm_new;
-
-// Assumed no stationary gruond so that heading is not updated (this is a safety measure)
-uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
-
 // Counter for the calculation of the old dist_wp_follow
 uint8_t counter_old_distance = 0;
 uint8_t old_distance_count = 20;
-
-// Old location for D gains
 struct FloatVect3 dist_wp_follow_old; // old distance to follow me wp
 
+// Ground UTM variables used in order to calculate heading (they are only updated once heading calc counter is reached)
+uint8_t counter_heading = 0; // counter which counts heading function executions and thus the amount of GROUND_GPS messages received
+uint8_t heading_calc_counter = 5; // in case we have received heading_calc_counter GROUND_GPS messages the heading is calculated
+struct UtmCoor_f ground_utm_old;  // old ground station location
+struct UtmCoor_f ground_utm_new;  // new ground station location
+
+// Assumed no stationary gruond so that heading is not updated (this is a safety measure)
+// the stationary ground detection helps in detecting as well whether we are flying using a gps reference or not. If the gruond is stationary then we need to use the heading of the UAV as follow_me_heading
+uint8_t stationary_ground = 0; // boolean to keep track on whether ground station is moving or not / used in order to find out whether to update the heading or not at initiation
+
 // Variables initialised in functions themselves
-static bool ground_set; // boolean to decide whether GPS message was received
+static bool ground_set; // boolean to decide whether GPS message was received or not / in case this boolean is false then we upadte the altitude directly and not the height (as we dont have a relative position for the height)
 static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS message
-static uint32_t ground_timestamp; // only executed set wp function if we received a newer timestamp
+static uint32_t ground_timestamp; // only execut set wp function if we received a newer timestamp
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
-uint8_t follow_me_use_magnetometer = 1;  // Whether we update the AHRS for the magnetometer or not
+uint8_t follow_me_use_magnetometer = 1;  // Whether we update the AHRS for the magnetometer or not / find out where to update this value in actual autopilot
 
 /*********************************
   Average speed calculator
 *********************************/
 
-
-uint8_t average_speed_size = 10;
+uint8_t average_speed_size = 10;  // the amount of datapoints we would like to calculate our average from
 float AverageAirspeed(float);
 // Calculates the average speed based on the previous average speed
 // It should be noted that this function is incorrect in case we have not enough measurements (at least average_speed_size measurements are required)
 float AverageAirspeed(float speed){
     return (v_ctl_auto_airspeed_setpoint * (average_speed_size-1) + speed) / (average_speed_size);
 }
-
-
 
 /*********************************
   Average heading calculator
@@ -497,6 +478,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	}
 
 	// Set heading here so that it can be calculated already during stdby or Manual execution
+    // Verify whether this can move to the ground_timestamp if condition above
 	follow_me_set_heading();
 }
 
@@ -512,11 +494,39 @@ void follow_me_disable_roll(void){
 	follow_me_roll = 0;
 }
 
+// Function to enable pitch controller using buttons
+void follow_me_enable_pitch(void){
+	pitch_button_disable = 0;
+}
+
+// Function to disable pitch controller using button
+void follow_me_disable_pitch(void){
+	pitch_button_disable = 1;
+	follow_me_pitch = 0;
+}
+
+// Pitch angle controller
+// void follow_me_pitch_loop(void);
+// NOTE: The pitch has been completely disabled until roll and airspeed loop have been tested
+void follow_me_pitch_loop(void){
+	// Pitch rate controller
+	// If we have the pitch loop disabled via the button set the pitch to 0
+	if (!pitch_button_disable){
+		if (fabs(dist_wp_follow.y) > pitch_enable){
+			follow_me_pitch = 1;
+		} else if (fabs(dist_wp_follow.y) < pitch_disable){
+			follow_me_pitch = 0;
+		}
+	} else {
+		follow_me_pitch = 0;
+	}
+}
+
 // Roll angle controller
-// void follow_me_roll_pid(void);
-void follow_me_roll_pid(void){
+// void follow_me_roll_loop(void);
+void follow_me_roll_loop(void){
 	// Roll rate controller
-	// We either have the normal course mode or the nav follow mode.
+	// If we have the roll loop disabled via the button set the roll to 0
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (!roll_button_disable){
@@ -525,7 +535,10 @@ void follow_me_roll_pid(void){
 		} else if (fabs(dist_wp_follow.x) < roll_disable){
 			follow_me_roll = 0;
 		}
+	} else {
+		follow_me_roll = 0;
 	}
+
 	// if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
 	// 	follow_me_roll = 1;
 	// } else if ((fabs(dist_wp_follow.x) <= roll_disable && fabs(dist_wp_follow_old.x) > roll_disable)) {
@@ -537,12 +550,12 @@ void follow_me_roll_pid(void){
 		follow_me_roll = 0;
 	}
 
-	roll_sum_err += dist_wp_follow.x;
-	BoundAbs(roll_sum_err, 20);
-
+	// roll_sum_err += dist_wp_follow.x;
+	// BoundAbs(roll_sum_err, 20);
 	// h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
 
-	// Second fabs in order to keep the negative number for the square
+	// The -roll disable is used in order to excert a slightly inverted roll command once we reach the target
+	// The stops the UAV at the exact right point
 	if (dist_wp_follow.x > 0){
 	    h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
 	}
@@ -556,14 +569,12 @@ void follow_me_roll_pid(void){
 	else if (h_ctl_roll_setpoint_follow_me < -roll_limit){
 		h_ctl_roll_setpoint_follow_me = -roll_limit;
 	}
-
-	// printf("Roll setpoint follow me is given by %f based on\n P term: %f*%f=%f\n I term: %f*%f=%f\n D term: %f*%f=%f\n\n", h_ctl_roll_setpoint_follow_me, roll_pgain, dist_wp_follow.x, roll_pgain*dist_wp_follow.x, roll_igain, roll_sum_err, roll_igain*roll_sum_err, (dist_wp_follow.x - dist_wp_follow_old.x), roll_dgain, (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain);
 }
 
 
 // Throttle controller
-// void follow_me_throttle_pid(void);
-void follow_me_throttle_pid(void){
+// void follow_me_throttle_loop(void);
+void follow_me_throttle_loop(void){
 	// Airspeed controller
 	airspeed_sum_err += dist_wp_follow.y;
 	BoundAbs(airspeed_sum_err, 20);
@@ -651,11 +662,15 @@ void compute_follow_distances(void){
 	counter_old_distance++;
 	// Compute errors towards waypoint
 	// Calculate distance in main function as follow_me_compute_wp is not executed if GROUND_GPS message is not received
+	// We only update the old counter distance after x iterations
+	// Currently (23 opf June 2020) the dist_wp_follow_old is only used for the airspeed d gain
 	if (counter_old_distance == old_distance_count){
 	    dist_wp_follow_old = dist_wp_follow;
 	    counter_old_distance = 0;
 	}
 
+	// The distances toward each waypoint are computed
+	// Dist wp follow 2 is currently (23 of June) only used in order to increase the waypoint distance in case we come to close to the wp
 	dist_wp_follow = compute_dist_to_utm(x_follow, y_follow, follow_me_altitude);
 	dist_wp_follow2 = compute_dist_to_utm(x_follow2, y_follow2, follow_me_altitude);
 
@@ -672,8 +687,9 @@ int follow_me_call(void){
 	compute_follow_distances();
 
     // Loop through controllers
-	follow_me_roll_pid();
-	follow_me_throttle_pid();
+	follow_me_pitch_loop();
+	follow_me_roll_loop();
+	follow_me_throttle_loop();
 	struct FloatVect3 wind = compute_wind_field();
 	struct FloatVect3* windspeed_f = stateGetWindspeed_f();
 	printf("Current wind is given by: (%f %f %f)\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);

@@ -118,7 +118,7 @@
     <!--  Enable roll pid module  -->
     <!-- Block 11 -->
     <block name="follow_me_roll_enable" strip_button="Enable Roll" group="followme">
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
+      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
       <call_once fun="follow_me_enable_roll()"/>
       <deroute block="follow_me"/>   
     </block>
@@ -126,7 +126,7 @@
     <!--  Disable roll pid module  -->
     <!-- Block 12 -->
     <block name="follow_me_roll_disable" strip_button="Disable Roll" group="followme">
-      <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
+      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
       <call_once fun="follow_me_disable_roll()"/>
       <deroute block="follow_me"/>   
     </block>
