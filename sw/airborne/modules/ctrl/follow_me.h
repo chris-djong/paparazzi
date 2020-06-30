@@ -54,8 +54,13 @@ extern float roll_enable; // when this x distance is exceeded the roll PID is en
 extern float roll_disable; // when the x distance is lower the roll PID is disabled again
 extern float roll_limit; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 extern float roll_pgain;
-extern float roll_igain;
-extern float roll_dgain;
+
+float pitch_enable; // when this y distance is exceeded the pitch PID is enabled
+float pitch_disable; // when the y distance is lower the pitch PID is disabled again
+float pitch_pgain;
+float pitch_dgain;
+float pitch_igain;
+float pitch_limit;
 
 /************************************************
   Variables used by internal file logger
@@ -68,22 +73,6 @@ extern struct FloatVect3 dist_wp_follow2;
 extern struct FloatVect3 wp_follow_enu;
 extern struct UtmCoor_f ground_utm;
 extern uint8_t follow_me_roll; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
-
-
-
-
-
-/************************************************
-  Variables used by RL_MODULE
-*************************************************/
-
-//extern struct FloatVect3 dist_wp_follow_old;
-//extern struct FloatVect3 wp_follow_utm;
-
-
-//extern float dist_wp_follow_y_min;
-//extern float dist_wp_follow_y_max;
-// For settings
 
 
 
@@ -112,8 +101,9 @@ extern void compute_follow_distances(void);
 extern void follow_me_disable_roll(void);
 extern void follow_me_enable_roll(void);
 
-extern void follow_me_throttle_pid(void);
-extern void follow_me_roll_pid(void);
+extern void follow_me_throttle_loop(void);
+extern void follow_me_roll_loop(void);
+extern void follow_me_pitch_loop(void);
 
 // Used by telemetry for reception of ground gps
 //extern void follow_me_set_wp(void);

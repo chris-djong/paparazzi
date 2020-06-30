@@ -82,7 +82,6 @@ float h_ctl_course_pre_bank_correction;
 float h_ctl_course_pgain;
 float h_ctl_course_dgain;
 float h_ctl_roll_max_setpoint;
-float h_ctl_roll_setpoint_follow_me;
 /* roll and pitch disabling */
 bool h_ctl_disabled;
 
@@ -154,6 +153,9 @@ PRINT_CONFIG_VAR(H_CTL_REF_MAX_Q_DOT)
 
 /* inner roll loop parameters */
 float h_ctl_roll_setpoint;
+#ifdef FOLLOW_ME_H
+float h_ctl_roll_setpoint_follow_me;
+#endif
 float h_ctl_roll_attitude_gain;
 float h_ctl_roll_rate_gain;
 float h_ctl_roll_igain;
@@ -387,10 +389,12 @@ void h_ctl_course_loop(void)
   h_ctl_roll_setpoint = h_ctl_course_pre_bank_correction * h_ctl_course_pre_bank
                         + h_ctl_course_pgain * speed_depend_nav * err
                         + h_ctl_course_dgain * d_err;
+#ifdef FOLLOW_ME_H
   // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
   if (follow_me_roll){
     h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
   }
+#endif
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }
 

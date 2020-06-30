@@ -319,10 +319,10 @@ void h_ctl_course_loop(void)
 #else
   h_ctl_roll_setpoint = roll_setpoint;
 #endif
-  // Overwrite roll command in case FOLLOW_ME_MODE_is enabled
- // if (follow_me_roll){
- //   h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
- // }
+  // Overwrite roll command in case follow_me_roll is enabled
+  if (follow_me_roll){
+    h_ctl_roll_setpoint = h_ctl_roll_setpoint_follow_me;
+  }
 
   BoundAbs(h_ctl_roll_setpoint, h_ctl_roll_max_setpoint);
 }

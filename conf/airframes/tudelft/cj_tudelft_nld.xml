@@ -86,8 +86,7 @@
     <module name="actuators" type="pwm"/>
 
     <!-- Control algorithm -->
-    <!-- Note for the Disco we used energy, revert if required -->
-    <module name="control" type="energyadaptive"/>
+    <module name="control" type="energy"/>
 
     <!-- Enable system monitor for CPU load -->
     <module name="sys_mon"/>
