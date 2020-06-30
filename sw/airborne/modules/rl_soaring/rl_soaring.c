@@ -420,8 +420,9 @@ void rl_navigation(void);
 void rl_navigation(void){
 
     // Loop through controllers
-	follow_me_throttle_pid();
-	follow_me_roll_pid();
+	follow_me_pitch_loop();
+	follow_me_roll_loop();
+	follow_me_throttle_loop();
 
 	// Standart navigational loop
 	NavGotoWaypoint(WP__FOLLOW2);

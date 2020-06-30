@@ -38,7 +38,8 @@
 #include "subsystems/navigation/common_nav.h"
 #include "generated/modules.h"
 #include "firmwares/fixedwing/nav.h"
-#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
+#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"  // for h_ctl_roll_setpoint_follow_me
+#include "firmwares/fixedwing/guidance/guidance_v.h"  // for v_ctl_pitch_setpoint_follow_me
 #include "generated/flight_plan.h" // for waypoint reference pointers
 // #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
@@ -67,15 +68,20 @@ uint8_t follow_me_autopilot_mode = 0;  // this boolean is used in order to detec
 float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
 float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
 uint8_t roll_button_disable = 1;  // In order to disable roll controler using buttons
-float roll_limit = 0.2; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float roll_limit = 0.2; // maximum and minimum allowable roll angle
 float roll_pgain = 0.015;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Pitch loop
-float pitch_enable = 3; // when this x distance is exceeded the roll PID is enabled
-float pitch_disable = 1; // when the x distance is lower the roll PID is disabled again
-uint8_t follow_me_pitch = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+float pitch_enable = 3; // when this y distance is exceeded the pitch PID is enabled
+float pitch_disable = 1; // when the y distance is lower the pitch PID is disabled again
+uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 uint8_t pitch_button_disable = 1;
+float pitch_pgain = 0.015;
+float pitch_dgain = 0;
+float pitch_igain = 0;
+float pitch_sum_err = 0;
+float pitch_limit = 0.2; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 
 // Throttle loop
 float airspeed_sum_err = 0.0;
@@ -264,16 +270,8 @@ struct FloatVect3 ENU_to_UTM(struct FloatVect3 *point){
 
 
 /***********************************************************************************************************************
-  Reinforcement Learning functions
-***********************************************************************************************************************/
-
-
-
-/***********************************************************************************************************************
   Follow me functions
 ***********************************************************************************************************************/
-
-
 
 // Compute both lateral offset and follow_me_distance
 // Also used by RL algorithm
@@ -508,6 +506,7 @@ void follow_me_disable_pitch(void){
 // Pitch angle controller
 // void follow_me_pitch_loop(void);
 // NOTE: The pitch has been completely disabled until roll and airspeed loop have been tested
+void follow_me_pitch_loop(void);
 void follow_me_pitch_loop(void){
 	// Pitch rate controller
 	// If we have the pitch loop disabled via the button set the pitch to 0
@@ -520,10 +519,29 @@ void follow_me_pitch_loop(void){
 	} else {
 		follow_me_pitch = 0;
 	}
+
+	// This condition is required in case the relative wind is slower than the stall speed of the UAV
+	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)) || fabs(dist_wp_follow.x > 5*roll_enable)){
+		follow_me_roll = 0;
+	}
+
+	pitch_sum_err += dist_wp_follow.y;
+	BoundAbs(pitch_sum_err, 20);
+
+	v_ctl_pitch_setpoint_follow_me = +pitch_pgain*dist_wp_follow.y + pitch_igain*pitch_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*pitch_dgain;
+
+	// Bound pitch by limits
+	if (v_ctl_pitch_setpoint_follow_me > pitch_limit){
+		v_ctl_pitch_setpoint_follow_me = pitch_limit;
+	}
+	else if (v_ctl_pitch_setpoint_follow_me < -pitch_limit){
+		v_ctl_pitch_setpoint_follow_me = -pitch_limit;
+	}
 }
 
 // Roll angle controller
 // void follow_me_roll_loop(void);
+void follow_me_roll_loop(void);
 void follow_me_roll_loop(void){
 	// Roll rate controller
 	// If we have the roll loop disabled via the button set the roll to 0

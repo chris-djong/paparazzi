@@ -66,6 +66,7 @@ extern float v_ctl_auto_throttle_cruise_throttle;
 extern pprz_t v_ctl_throttle_setpoint;
 extern pprz_t v_ctl_throttle_slewed;
 extern float v_ctl_pitch_setpoint;
+float v_ctl_pitch_setpoint_follow_me;
 
 extern void v_ctl_init(void);
 extern void v_ctl_altitude_loop(void);
