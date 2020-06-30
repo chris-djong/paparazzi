@@ -441,7 +441,6 @@ void follow_me_set_heading(void){
 		// Note atan2 gives results between -180 and 180
 		follow_me_heading = AverageHeading(diff_x, diff_y);
 		ground_utm_old = ground_utm_new;
-
     }
 }
 
@@ -529,6 +528,7 @@ void follow_me_pitch_loop(void){
 	BoundAbs(pitch_sum_err, 20);
 
 	v_ctl_pitch_setpoint_follow_me = +pitch_pgain*dist_wp_follow.y + pitch_igain*pitch_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*pitch_dgain;
+    v_ctl_pitch_setpoint_follow_me = 0.785398163;
 
 	// Bound pitch by limits
 	if (v_ctl_pitch_setpoint_follow_me > pitch_limit){
