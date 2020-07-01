@@ -76,11 +76,11 @@ float roll_pgain = 0.015;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Pitch loop
-float pitch_enable = 3; // when this y distance is exceeded the pitch PID is enabled
-float pitch_disable = 1; // when the y distance is lower the pitch PID is disabled again
+float pitch_enable = 1; // when this y distance is exceeded the pitch PID is enabled
+float pitch_disable = 0; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 uint8_t pitch_button_disable = 1;  // in order to disable pitch controller using button
-float pitch_pgain = 0.015;
+float pitch_pgain = -0.03;
 float pitch_dgain = 0;
 float pitch_igain = 0;
 float pitch_sum_err = 0;

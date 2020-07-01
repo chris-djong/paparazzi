@@ -436,7 +436,7 @@ void v_ctl_climb_loop(void)
 
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
   if (follow_me_pitch){
-	  v_ctl_pitch_setpoint = v_ctl_pitch_setpoint_follow_me;
+	  v_ctl_pitch_setpoint += v_ctl_pitch_setpoint_follow_me;
   }
   Bound(v_ctl_pitch_setpoint, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT)
 
