@@ -73,7 +73,7 @@ extern struct FloatVect3 dist_wp_follow2;
 extern struct FloatVect3 wp_follow_enu;
 extern struct UtmCoor_f ground_utm;
 extern uint8_t follow_me_roll; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
-
+extern uint8_t follow_me_pitch;
 
 
 /************************************************
@@ -100,6 +100,8 @@ extern void compute_follow_distances(void);
 
 extern void follow_me_disable_roll(void);
 extern void follow_me_enable_roll(void);
+extern void follow_me_disable_pitch(void);
+extern void follow_me_enable_pitch(void);
 
 extern void follow_me_throttle_loop(void);
 extern void follow_me_roll_loop(void);

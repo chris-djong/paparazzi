@@ -29,6 +29,8 @@
 #define FW_V_CTL_ENERGY_H
 
 #include "firmwares/fixedwing/guidance/guidance_common.h"
+#include "modules/ctrl/follow_me.h"
+
 
 //To be unified with control NEW, these can be used in a unified flightplan
 //but ETECS has no use of it ofcourse, speed mode always V_CTL_SPEED_AIRSPEED

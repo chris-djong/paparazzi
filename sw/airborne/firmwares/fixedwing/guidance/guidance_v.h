@@ -54,7 +54,6 @@ extern float v_ctl_auto_throttle_pitch_of_vz_dgain;
 
 /* cruise pitch trim */
 extern float v_ctl_pitch_trim;
-extern float v_ctl_pitch_setpoint_follow_me;
 
 /* agressive tuning */
 #ifdef TUNE_AGRESSIVE_CLIMB

@@ -89,7 +89,6 @@ float v_ctl_auto_pitch_sum_err;
 pprz_t v_ctl_throttle_setpoint;
 pprz_t v_ctl_throttle_slewed;
 float v_ctl_pitch_setpoint;
-float v_ctl_pitch_setpoint_follow_me;
 #ifndef V_CTL_PITCH_TRIM
 #define V_CTL_PITCH_TRIM 0.
 #endif
@@ -517,9 +516,6 @@ inline static void v_ctl_climb_auto_throttle_loop(void)
   Bound(controlled_throttle, 0, v_ctl_auto_throttle_max_cruise_throttle);
   f_throttle = controlled_throttle;
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + v_ctl_pitch_trim;
-  if (follow_me_pitch){
-	  v_ctl_pitch_setpoint = v_ctl_pitch_setpoint_follow_me;
-  }
   v_ctl_throttle_setpoint = TRIM_UPPRZ(f_throttle * MAX_PPRZ);
 
   Bound(v_ctl_pitch_setpoint, V_CTL_AUTO_PITCH_MIN_PITCH, V_CTL_AUTO_PITCH_MAX_PITCH);

@@ -131,6 +131,7 @@ float v_ctl_auto_groundspeed_sum_err;
 pprz_t v_ctl_throttle_setpoint;
 pprz_t v_ctl_throttle_slewed;
 float v_ctl_pitch_setpoint;
+float v_ctl_pitch_setpoint_follow_me;
 
 uint8_t v_ctl_speed_mode; //To be compatible with universal flightplan, not used for etecs
 
@@ -434,7 +435,9 @@ void v_ctl_climb_loop(void)
   if (autopilot_throttle_killed()) { v_ctl_pitch_of_vz = v_ctl_pitch_of_vz - 1 / V_CTL_GLIDE_RATIO; }
 
   v_ctl_pitch_setpoint = v_ctl_pitch_of_vz + nav_pitch;
-
+  if (follow_me_pitch){
+	  v_ctl_pitch_setpoint = v_ctl_pitch_setpoint_follow_me;
+  }
   Bound(v_ctl_pitch_setpoint, H_CTL_PITCH_MIN_SETPOINT, H_CTL_PITCH_MAX_SETPOINT)
 
   ac_char_update(controlled_throttle, v_ctl_pitch_of_vz, v_ctl_climb_setpoint, v_ctl_desired_acceleration);

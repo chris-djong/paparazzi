@@ -48,6 +48,9 @@
   Parameters for follow_me module
 *********************************/
 
+float v_ctl_pitch_setpoint_follow_me;
+
+
 // Waypoint parameters
 int16_t follow_me_distance = 20; // the desired distance that we want to soar in front of
 // Follow me distance +30 because we want to fly just in front of the UAV. In case we fly closer by we follow flower like patterns
@@ -76,12 +79,12 @@ uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_set
 float pitch_enable = 3; // when this y distance is exceeded the pitch PID is enabled
 float pitch_disable = 1; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
-uint8_t pitch_button_disable = 1;
+uint8_t pitch_button_disable = 1;  // in order to disable pitch controller using button
 float pitch_pgain = 0.015;
 float pitch_dgain = 0;
 float pitch_igain = 0;
 float pitch_sum_err = 0;
-float pitch_limit = 0.2; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float pitch_limit = 1.047; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 
 // Throttle loop
 float airspeed_sum_err = 0.0;
@@ -355,8 +358,6 @@ struct FloatVect3 compute_wind_field(void){
 	        }
 		}
     }
-    printf("Distance to boat is given by (%f,%f,%f)\n", dist_from_boat.x, dist_from_boat.y, dist_from_boat.z);
-    printf("Returning wind vector of (%f,%f,%f)\n\n", wind_vector.x, wind_vector.y, wind_vector.z);
     return wind_vector;
 }
 
@@ -398,7 +399,7 @@ void follow_me_soar_here(void){
 
 // Variables that are send through IVY
 static void send_follow_me(struct transport_tx *trans, struct link_device *dev){
-	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_airspeed_setpoint);
+	pprz_msg_send_FOLLOW_ME(trans, dev, AC_ID, &dist_wp_follow.y, &dist_wp_follow.x, &v_ctl_auto_airspeed_setpoint, &follow_me_roll, &follow_me_pitch);
 }
 
 // Called at compiling of module
@@ -528,7 +529,6 @@ void follow_me_pitch_loop(void){
 	BoundAbs(pitch_sum_err, 20);
 
 	v_ctl_pitch_setpoint_follow_me = +pitch_pgain*dist_wp_follow.y + pitch_igain*pitch_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*pitch_dgain;
-    v_ctl_pitch_setpoint_follow_me = 0.785398163;
 
 	// Bound pitch by limits
 	if (v_ctl_pitch_setpoint_follow_me > pitch_limit){
@@ -710,7 +710,6 @@ int follow_me_call(void){
 	follow_me_throttle_loop();
 	struct FloatVect3 wind = compute_wind_field();
 	struct FloatVect3* windspeed_f = stateGetWindspeed_f();
-	printf("Current wind is given by: (%f %f %f)\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);
 
 	// Move to the correct location
 	follow_me_go();

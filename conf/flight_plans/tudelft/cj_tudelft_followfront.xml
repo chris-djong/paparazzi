@@ -102,14 +102,14 @@
   <!-- *********** Flight *********** -->
     <!-- Block 9 -->
     <!-- Set follow_me distance and lateral offset to current position -->
-    <block name="soar_here" strip_button="Soar here" group="followme">
+    <block name="soar_here" strip_button="Soar here" group="followme_main">
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="follow_me_soar_here()"/>
     </block>
 
     <!--  Follow me module  -->
     <!-- Block 10 -->
-    <block name="follow_me" strip_button="Follow me" group="followme">
+    <block name="follow_me" strip_button="Follow me" group="followme_main">
       <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/>
       <call_once fun="follow_me_startup()"/>
       <call fun="follow_me_call()"/>
@@ -128,6 +128,22 @@
     <block name="follow_me_roll_disable" strip_button="Disable Roll" group="followme">
       <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
       <call_once fun="follow_me_disable_roll()"/>
+      <deroute block="follow_me"/>   
+    </block>
+    
+    <!--  Enable pitch pid module  -->
+    <!-- Block 13 -->
+    <block name="follow_me_pitch_enable" strip_button="Enable Pitch" group="followme">
+      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
+      <call_once fun="follow_me_enable_pitch()"/>
+      <deroute block="follow_me"/>   
+    </block>
+    
+    <!--  Enable roll pid module  -->
+    <!-- Block 14 -->
+    <block name="follow_me_pitch_disable" strip_button="Disable Pitch" group="followme">
+      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
+      <call_once fun="follow_me_disable_pitch()"/>
       <deroute block="follow_me"/>   
     </block>
     

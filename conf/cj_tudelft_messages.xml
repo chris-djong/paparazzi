@@ -634,6 +634,8 @@
       <field name="Distance_WP_y" type="float"/>   
       <field name="Distance_WP_x" type="float"/>
       <field name="Airspeed" type="float"/>
+      <field name="Follow_me_roll" type="uint8"/>
+      <field name="Follow_me_pitch" type="uint8"/>
     </message>
 
     <!-- Message for RL soaring module --> 
