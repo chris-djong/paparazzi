@@ -436,7 +436,6 @@ void Drift_correction()
 
 #if USE_MAGNETOMETER
   if (follow_me_use_magnetometer){  // in order to turn on and off the magnetometer during flight
-	  printf("drift correction using magnetomer\n");
 	  // We make the gyro YAW drift correction based on compass magnetic heading
 	  // float mag_heading_x = cos(MAG_Heading);
 	  // float mag_heading_y = sin(MAG_Heading);
