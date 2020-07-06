@@ -39,17 +39,14 @@
 #include "generated/modules.h"
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"  // for h_ctl_roll_setpoint_follow_me
-#include "firmwares/fixedwing/guidance/guidance_v.h"  // for v_ctl_pitch_setpoint_follow_me
 #include "generated/flight_plan.h" // for waypoint reference pointers
 // #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
+#include "firmwares/fixedwing/guidance/energy_ctrl.h"
 
 /*********************************
   Parameters for follow_me module
 *********************************/
-
-float v_ctl_pitch_setpoint_follow_me;
-
 
 // Waypoint parameters
 int16_t follow_me_distance = 20; // the desired distance that we want to soar in front of
@@ -85,6 +82,7 @@ float pitch_dgain = 0;
 float pitch_igain = 0;
 float pitch_sum_err = 0;
 float pitch_limit = 1.047; // maximum and minimum allowable change in desired_pitch_angle compared to the desired value by the controller -> 0.2 is around 10 degree
+float v_ctl_pitch_setpoint_follow_me = 0;
 
 // Throttle loop
 float airspeed_sum_err = 0.0;
@@ -306,7 +304,7 @@ struct FloatVect3 compute_state(void){
 	return transformation;
 }
 
-
+/*
 // Wind speed predictor
 struct FloatVect3 compute_wind_field(void);
 struct FloatVect3 compute_wind_field(void){
@@ -360,7 +358,7 @@ struct FloatVect3 compute_wind_field(void){
     }
     return wind_vector;
 }
-
+*/
 
 
 //void follow_me_soar_here(void);
@@ -506,7 +504,7 @@ void follow_me_disable_pitch(void){
 // Pitch angle controller
 // void follow_me_pitch_loop(void);
 // NOTE: The pitch has been completely disabled until roll and airspeed loop have been tested
-void follow_me_pitch_loop(void);
+//void follow_me_pitch_loop(void);
 void follow_me_pitch_loop(void){
 	// Pitch rate controller
 	// If we have the pitch loop disabled via the button set the pitch to 0
@@ -541,7 +539,7 @@ void follow_me_pitch_loop(void){
 
 // Roll angle controller
 // void follow_me_roll_loop(void);
-void follow_me_roll_loop(void);
+// void follow_me_roll_loop(void);
 void follow_me_roll_loop(void){
 	// Roll rate controller
 	// If we have the roll loop disabled via the button set the roll to 0
@@ -708,8 +706,8 @@ int follow_me_call(void){
 	follow_me_pitch_loop();
 	follow_me_roll_loop();
 	follow_me_throttle_loop();
-	struct FloatVect3 wind = compute_wind_field();
-	struct FloatVect3* windspeed_f = stateGetWindspeed_f();
+	// struct FloatVect3 wind = compute_wind_field();
+	// struct FloatVect3* windspeed_f = stateGetWindspeed_f();
 
 	// Move to the correct location
 	follow_me_go();

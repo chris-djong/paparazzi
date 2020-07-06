@@ -55,12 +55,13 @@ extern float roll_disable; // when the x distance is lower the roll PID is disab
 extern float roll_limit; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 extern float roll_pgain;
 
-float pitch_enable; // when this y distance is exceeded the pitch PID is enabled
-float pitch_disable; // when the y distance is lower the pitch PID is disabled again
-float pitch_pgain;
-float pitch_dgain;
-float pitch_igain;
-float pitch_limit;
+extern float v_ctl_pitch_setpoint_follow_me;
+extern float pitch_enable; // when this y distance is exceeded the pitch PID is enabled
+extern float pitch_disable; // when the y distance is lower the pitch PID is disabled again
+extern float pitch_pgain;
+extern float pitch_dgain;
+extern float pitch_igain;
+extern float pitch_limit;
 
 /************************************************
   Variables used by internal file logger
@@ -111,9 +112,9 @@ extern void follow_me_pitch_loop(void);
 //extern void follow_me_set_wp(void);
 
 // Used by flight plan
-void follow_me_soar_here(void);
+extern void follow_me_soar_here(void);
 
-struct FloatVect3 compute_state(void);
+extern struct FloatVect3 compute_state(void);
 extern void follow_me_compute_wp(void);
 
 
