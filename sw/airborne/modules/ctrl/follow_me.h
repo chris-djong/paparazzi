@@ -48,7 +48,6 @@ extern float airspeed_igain;
 extern float airspeed_pgain;
 extern float airspeed_dgain;
 extern uint8_t average_speed_size;
-extern uint8_t follow_me_use_magnetometer;
 
 extern float roll_enable; // when this x distance is exceeded the roll PID is enabled
 extern float roll_disable; // when the x distance is lower the roll PID is disabled again

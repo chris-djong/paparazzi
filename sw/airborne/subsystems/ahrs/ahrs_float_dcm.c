@@ -236,10 +236,8 @@ void ahrs_dcm_update_accel(struct FloatVect3 *accel)
 void ahrs_dcm_update_mag(struct FloatVect3 *mag)
 {
 #if USE_MAGNETOMETER
-if (follow_me_use_magnetometer){
 
 	MESSAGE("MAGNETOMETER FEEDBACK NOT TESTED YET")
-	printf("We are updating the magnetometr\n");
 	  float cos_roll;
 	  float sin_roll;
 	  float cos_pitch;
@@ -287,7 +285,6 @@ if (follow_me_use_magnetometer){
 
   // Magnetic Heading
   // MAG_Heading = atan2(mag->y, -mag->x);
-} // follow_me_use_magneto
 #else // !USE_MAGNETOMETER
   // get rid of unused param warning...
   mag = mag;
@@ -435,7 +432,6 @@ void Drift_correction()
   //*****YAW***************
 
 #if USE_MAGNETOMETER
-  if (follow_me_use_magnetometer){  // in order to turn on and off the magnetometer during flight
 	  // We make the gyro YAW drift correction based on compass magnetic heading
 	  // float mag_heading_x = cos(MAG_Heading);
 	  // float mag_heading_y = sin(MAG_Heading);
@@ -450,7 +446,6 @@ void Drift_correction()
 
 	  Vector_Scale(&Scaled_Omega_I[0], &errorYaw[0], Ki_YAW);
 	  Vector_Add(Omega_I, Omega_I, Scaled_Omega_I); //adding integrator to the Omega_I
-  }
 #else // Use GPS Ground course to correct yaw gyro drift
   if (ahrs_dcm.gps_course_valid) {
 	  printf("course is valid\n");

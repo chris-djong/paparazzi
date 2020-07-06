@@ -116,8 +116,6 @@ static uint32_t ground_timestamp; // only execut set wp function if we received 
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
 
-uint8_t follow_me_use_magnetometer = 1;  // Whether we update the AHRS for the magnetometer or not / find out where to update this value in actual autopilot
-
 /*********************************
   Average speed calculator
 *********************************/
