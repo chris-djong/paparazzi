@@ -97,7 +97,6 @@ float imu_health = 0.;
 
 static inline void set_dcm_matrix_from_rmat(struct FloatRMat *rmat)
 {
-printf("We are using set_dcm_matrix_from_rmat\n");
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       DCM_Matrix[i][j] = RMAT_ELMT(*rmat, j, i);
@@ -129,8 +128,6 @@ void ahrs_dcm_init(void)
 bool ahrs_dcm_align(struct FloatRates *lp_gyro, struct FloatVect3 *lp_accel,
                       struct FloatVect3 *lp_mag)
 {
-	printf("We are using ahrs_dcm_align\n");
-
   /* Compute an initial orientation using euler angles */
   ahrs_float_get_euler_from_accel_mag(&ahrs_dcm.ltp_to_imu_euler, lp_accel, lp_mag);
 
@@ -217,7 +214,6 @@ void ahrs_dcm_update_accel(struct FloatVect3 *accel)
   ahrs_dcm.gps_age ++;
   if (ahrs_dcm.gps_age < 50) {    //Remove centrifugal acceleration and longitudinal acceleration
 #if USE_AHRS_GPS_ACCELERATIONS
-	  printf("We are using GPS accelerations\n");
     PRINT_CONFIG_MSG("AHRS_FLOAT_DCM uses GPS acceleration.")
     accel_float.x += ahrs_dcm.gps_acceleration;      // Longitudinal acceleration
 #endif
@@ -448,7 +444,6 @@ void Drift_correction()
 	  Vector_Add(Omega_I, Omega_I, Scaled_Omega_I); //adding integrator to the Omega_I
 #else // Use GPS Ground course to correct yaw gyro drift
   if (ahrs_dcm.gps_course_valid) {
-	  printf("course is valid\n");
     float course = ahrs_dcm.gps_course - M_PI; //This is the runaway direction of you "plane" in rad
     float COGX = cosf(course); //Course overground X axis
     float COGY = sinf(course); //Course overground Y axis
@@ -543,14 +538,12 @@ static void compute_ahrs_representations(void)
 
 void ahrs_dcm_set_body_to_imu(struct OrientationReps *body_to_imu)
 {
-	printf("Setting body to imu repres\n");
   ahrs_dcm_set_body_to_imu_quat(orientationGetQuat_f(body_to_imu));
 }
 
 void ahrs_dcm_set_body_to_imu_quat(struct FloatQuat *q_b2i)
 {
   orientationSetQuat_f(&ahrs_dcm.body_to_imu, q_b2i);
- printf("Setting body to imu quaternions\n");
   if (!ahrs_dcm.is_aligned) {
     /* Set ltp_to_imu so that body is zero */
     ahrs_dcm.ltp_to_imu_euler = *orientationGetEulers_f(&ahrs_dcm.body_to_imu);
