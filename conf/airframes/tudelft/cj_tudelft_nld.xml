@@ -20,10 +20,10 @@
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
       <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
       <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/><!-- TODO: best value unit="Hz" -->
-      <configure name="NAVIGATION_FREQUENCY" value="16"/> <!--  unit="Hz" -->
+      <configure name="NAVIGATION_FREQUENCY" value="8"/> <!--  unit="Hz" -->
       <configure name="CONTROL_FREQUENCY" value="120"/> <!--  unit="Hz" -->
       <configure name="TELEMETRY_FREQUENCY" value="60"/> <!--  unit="Hz" -->
-      <configure name="MODULES_FREQUENCY" value="512"/> <!--  unit="Hz" -->
+      <configure name="MODULES_FREQUENCY" value="500"/> <!--  unit="Hz" -->
 
       <!-- Airspeed sensor scaling -->
       <module name="airspeed_ets">
