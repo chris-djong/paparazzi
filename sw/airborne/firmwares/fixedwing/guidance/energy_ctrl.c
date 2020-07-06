@@ -131,7 +131,6 @@ float v_ctl_auto_groundspeed_sum_err;
 pprz_t v_ctl_throttle_setpoint;
 pprz_t v_ctl_throttle_slewed;
 float v_ctl_pitch_setpoint;
-float v_ctl_pitch_setpoint_follow_me;
 
 uint8_t v_ctl_speed_mode; //To be compatible with universal flightplan, not used for etecs
 
