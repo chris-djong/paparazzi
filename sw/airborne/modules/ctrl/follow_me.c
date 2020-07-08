@@ -518,7 +518,7 @@ void follow_me_pitch_loop(void){
 
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
 	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)) || fabs(dist_wp_follow.x > 5*roll_enable)){
-		follow_me_roll = 0;
+		follow_me_pitch = 0;
 	}
 
 	pitch_sum_err += dist_wp_follow.y;
