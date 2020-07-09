@@ -169,6 +169,7 @@
     </session>
     
     <session name="Flight UDP">
+      <program name="Messages"/>
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>

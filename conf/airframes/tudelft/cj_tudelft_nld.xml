@@ -147,7 +147,7 @@
   <!-- Set servos locations -->
   <servos driver="Pwm">
     <!-- <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/> -->
-    <servo name="ELEVON_RIGHT" no="3" min="1900" neutral="1500" max="1100"/>
+    <servo name="ELEVON_RIGHT" no="2" min="1900" neutral="1500" max="1100"/>
     <servo name="ELEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
         <!-- Define here to which CONNECTOR NUMBER the servo is connected to, on the autopilot cicuit board -->
   </servos>
