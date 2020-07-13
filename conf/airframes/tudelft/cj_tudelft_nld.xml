@@ -23,7 +23,7 @@
       <configure name="NAVIGATION_FREQUENCY" value="8"/>         <!--  unit="Hz" -->
       <configure name="CONTROL_FREQUENCY" value="120"/>          <!--  unit="Hz" -->
       <configure name="TELEMETRY_FREQUENCY" value="60"/>         <!--  unit="Hz" -->
-      <configure name="MODULES_FREQUENCY" value="500"/>          <!--  unit="Hz" -->
+     <!--  <configure name="MODULES_FREQUENCY" value="500"/> -->         <!--  unit="Hz" -->
 
       <!-- Airspeed sensor scaling -->
       <module name="airspeed_ets">
@@ -97,6 +97,7 @@
     <!-- Enable radio control -->
     <module name="radio_control" type="ppm">
       <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
+      <!-- <define name="RADIO_MODE" value="RADIO_GEAR"/> -->
       <configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
     </module>
 
@@ -178,11 +179,19 @@
   </command_laws>
 
   <!-- Set RC commands -->
+  <!-- This section link the channels of the RC transmitter (defined in radio control file) to the commands defined below  -->
   <rc_commands>
     <set command="THROTTLE" value="@THROTTLE"/> <!-- This command is needed because it is used in general autopilot code -->
     <set command="ROLL" value="@ROLL"/>
     <set command="PITCH" value="@PITCH"/>
   </rc_commands>
+  
+  <!-- Set RC commands that can be used in AUTO1 or AUTO2 -->
+  <auto_rc_commands>
+  <!--  <set command="THROTTLE"  value="@THROTTLE"/>   -->
+  <!--  <set command="ROLL" value="@ROLL"/>            -->
+  <!--  <set command="PITCH" value="@PITCH"/>          -->
+  </auto_rc_commands>
 
   <!-- Set AUTO1 limits -->
   <section name="AUTO1" prefix="AUTO1_">

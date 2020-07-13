@@ -20,7 +20,7 @@
 /**
  * @file "modules/ctrl/follow_me.c"
  * @author rotorcraft Freek van Tienen <freek.v.tienen@gmail.com>
- * @author fixedwing Chris de Jong <djchris261@hotmail.com>
+ * @author fixedwing Chris de Jong <chris@dejong.lu>
  * Control a FIXEDWING to follow at a defined distance from the target
  *
 */ 
@@ -544,9 +544,9 @@ void follow_me_roll_loop(void){
 	// If we have been in course and exceed the enable limits then nav follow is activated
 	// If we have been in follow and exceed the disable limits then nav course is activated
 	if (!roll_button_disable){
-		if (fabs(dist_wp_follow.x) > roll_enable){
+		if (fabs(dist_wp_follow.x) >= roll_enable){
 			follow_me_roll = 1;
-		} else if (fabs(dist_wp_follow.x) < roll_disable){
+		} else if (fabs(dist_wp_follow.x) <= roll_disable){
 			follow_me_roll = 0;
 		}
 	} else {
