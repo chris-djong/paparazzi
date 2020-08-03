@@ -28,6 +28,34 @@
 
 #include "peripherals/mpu60x0_spi.h"
 
+// Default channels order
+#ifndef IMU_MPU60x0_CHAN_X
+#define IMU_MPU60x0_CHAN_X 0
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_CHAN_X)
+#ifndef IMU_MPU60x0_CHAN_Y
+#define IMU_MPU60x0_CHAN_Y 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_CHAN_Y)
+#ifndef IMU_MPU60x0_CHAN_Z
+#define IMU_MPU60x0_CHAN_Z 2
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_CHAN_Z)
+
+#ifndef IMU_MPU60x0_X_SIGN
+#define IMU_MPU60x0_X_SIGN 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_X_SIGN)
+#ifndef IMU_MPU60x0_Y_SIGN
+#define IMU_MPU60x0_Y_SIGN 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_Y_SIGN)
+#ifndef IMU_MPU60x0_Z_SIGN
+#define IMU_MPU60x0_Z_SIGN 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU60x0_Z_SIGN)
+
+
 void mpu60x0_spi_init(struct Mpu60x0_Spi *mpu, struct spi_periph *spi_p, uint8_t slave_idx)
 {
   /* set spi_peripheral */
@@ -137,9 +165,25 @@ void mpu60x0_spi_event(struct Mpu60x0_Spi *mpu)
         mpu->data_accel.vect.x = Int16FromBuf(mpu->rx_buf, 2);
         mpu->data_accel.vect.y = Int16FromBuf(mpu->rx_buf, 4);
         mpu->data_accel.vect.z = Int16FromBuf(mpu->rx_buf, 6);
+
         mpu->data_rates.rates.p = Int16FromBuf(mpu->rx_buf, 10);
         mpu->data_rates.rates.q = Int16FromBuf(mpu->rx_buf, 12);
         mpu->data_rates.rates.r = Int16FromBuf(mpu->rx_buf, 14);
+
+        // Set channel order and signs
+        struct Int32Vect3 accel = {
+          IMU_MPU60x0_X_SIGN * (int32_t)(mpu->data_accel.value[IMU_MPU60x0_CHAN_X]),
+          IMU_MPU60x0_Y_SIGN * (int32_t)(mpu->data_accel.value[IMU_MPU60x0_CHAN_Y]),
+          IMU_MPU60x0_Z_SIGN * (int32_t)(mpu->data_accel.value[IMU_MPU60x0_CHAN_Z])
+        };
+        struct Int32Rates rates = {
+          IMU_MPU60x0_X_SIGN * (int32_t)(mpu->data_rates.value[IMU_MPU60x0_CHAN_X]),
+          IMU_MPU60x0_Y_SIGN * (int32_t)(mpu->data_rates.value[IMU_MPU60x0_CHAN_Y]),
+          IMU_MPU60x0_Z_SIGN * (int32_t)(mpu->data_rates.value[IMU_MPU60x0_CHAN_Z])
+        };
+
+        VECT3_COPY(mpu->data_accel.vect, accel);
+        RATES_COPY(mpu->data_rates.rates, rates);
 
         int16_t temp_raw = Int16FromBuf(mpu->rx_buf, 8);
         if (mpu->config.type == MPU60X0) {

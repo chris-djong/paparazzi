@@ -333,10 +333,6 @@ perhaps a few global alt exceptions? But where do they deroute to assuming the a
     <block name="Oval 1-2" strip_button="Oval (wp 1-2)" strip_icon="oval.png" group="base_pattern">
       <oval p1="1" p2="2" radius="nav_radius"/>
     </block>
-    <block name="Line 1-2" strip_button="Line (wp 1-2)" strip_icon="line.png" group="base_pattern">
-      <call_once fun="nav_line_setup()"/>
-      <call fun="nav_line_run(WP_1, WP_2, nav_radius)"/>
-    </block>
 
   </blocks>
 </flight_plan>
