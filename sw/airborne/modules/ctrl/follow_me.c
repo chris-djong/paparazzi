@@ -65,15 +65,15 @@ int32_t y_follow2;
 uint8_t follow_me_autopilot_mode = 0;  // this boolean is used in order to detect AUTO1 AUTO2 changes. A change in auto2 can result for example in a follow_me_soar_here execution
 
 // Roll loop
-float roll_enable = 3; // when this x distance is exceeded the roll PID is enabled
-float roll_disable = 1; // when the x distance is lower the roll PID is disabled again
+float roll_enable = 0; // when this x distance is exceeded the roll PID is enabled
+float roll_disable = 0; // when the x distance is lower the roll PID is disabled again
 uint8_t roll_button_disable = 1;  // In order to disable roll controler using buttons
 float roll_limit = 0.2; // maximum and minimum allowable roll angle
 float roll_pgain = 0.015;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
 
 // Pitch loop
-float pitch_enable = 1; // when this y distance is exceeded the pitch PID is enabled
+float pitch_enable = 0; // when this y distance is exceeded the pitch PID is enabled
 float pitch_disable = 0; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
 uint8_t pitch_button_disable = 1;  // in order to disable pitch controller using button
@@ -570,6 +570,7 @@ void follow_me_roll_loop(void){
 
 	// The -roll disable is used in order to excert a slightly inverted roll command once we reach the target
 	// The stops the UAV at the exact right point
+	// ToDo this probably gives an error as we move from one conditions to the next and change the loop
 	if (dist_wp_follow.x > 0){
 	    h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
 	}
@@ -719,5 +720,6 @@ void follow_me_stop(void){
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
 	roll_button_disable = 1;
+	pitch_button_disable = 1;
 }
 
