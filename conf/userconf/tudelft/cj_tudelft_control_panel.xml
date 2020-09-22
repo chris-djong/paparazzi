@@ -66,7 +66,13 @@
   </section>
   <section name="sessions">
     <session name="Soaring Sim">
-      <program name="Messages"/>
+      <program name="Messages">
+        <arg flag="-c" constant="telemetry"/>
+        <arg flag="-c" constant="datalink"/>
+        <arg flag="-c" constant="ground"/>
+        <arg flag="-c" constant="alert"/>
+        <arg flag="-c" constant="intermcu"/>
+      </program>
       <program name="Simulator">
         <arg flag="-a" constant="Disco_soaring"/>
         <arg flag="-t" constant="sim"/>

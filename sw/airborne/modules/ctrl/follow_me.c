@@ -44,6 +44,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 
+
 /*********************************
   Parameters for follow_me module
 *********************************/
@@ -302,7 +303,6 @@ struct FloatVect3 compute_state(void){
 	return transformation;
 }
 
-/*
 // Wind speed predictor
 struct FloatVect3 compute_wind_field(void);
 struct FloatVect3 compute_wind_field(void){
@@ -356,7 +356,6 @@ struct FloatVect3 compute_wind_field(void){
     }
     return wind_vector;
 }
-*/
 
 
 //void follow_me_soar_here(void);
@@ -553,12 +552,6 @@ void follow_me_roll_loop(void){
 		follow_me_roll = 0;
 	}
 
-	// if (( fabs(dist_wp_follow.x) > roll_enable && fabs(dist_wp_follow_old.x) <= roll_enable)  ){
-	// 	follow_me_roll = 1;
-	// } else if ((fabs(dist_wp_follow.x) <= roll_disable && fabs(dist_wp_follow_old.x) > roll_disable)) {
-	// 	follow_me_roll = 0;
-	// }
-
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
 	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)) || fabs(dist_wp_follow.x > 5*roll_enable)){
 		follow_me_roll = 0;
@@ -705,8 +698,12 @@ int follow_me_call(void){
 	follow_me_pitch_loop();
 	follow_me_roll_loop();
 	follow_me_throttle_loop();
-	// struct FloatVect3 wind = compute_wind_field();
+	struct FloatVect3 wind = compute_wind_field();
+   // init ivy and register callback for WORLD_ENV_REQ and NPS_SPEED_POS
+    IvySendMsg("%s WORLD_ENV %f %f %f 400 1 1", "0", wind.x, -wind.y, wind.z);
+
 	// struct FloatVect3* windspeed_f = stateGetWindspeed_f();
+    // printf("Windspeed vector is given by: %f %f %f\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);
 
 	// Move to the correct location
 	follow_me_go();
