@@ -314,8 +314,6 @@
       <field name="temp" type="int8" unit="deg"/>
     </message>
 
-    <!-- 38 is free -->
-
     <message name="DRAGSPEED" id="38">
       <description>
         Velocities in body axes (assuming small pitch/roll angles) as measured
@@ -442,7 +440,11 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- ID 55 is free -->
+    <message name="WORLD_ENV_DESIRED" id="55">
+      <field name="wind_east" type="float" unit="m/s" format="%.1f"/>
+      <field name="wind_north" type="float" unit="m/s" format="%.1f"/>
+      <field name="wind_up" type="float" unit="m/s" format="%.1f"/>    
+    </message>
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>

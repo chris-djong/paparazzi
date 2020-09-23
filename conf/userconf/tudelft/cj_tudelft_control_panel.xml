@@ -9,7 +9,7 @@
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
     </program>
-    <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+    <program name="Messages" command="sw/ground_segment/tmtc/messages -c datalink -c ground"/>
     <program name="Messages (Python)" command="sw/ground_segment/python/messages_app/messagesapp.py -c datalink"/>
     <program name="Settings" command="sw/ground_segment/tmtc/settings">
       <arg flag="-ac" constant="@AIRCRAFT"/>
@@ -66,13 +66,7 @@
   </section>
   <section name="sessions">
     <session name="Soaring Sim">
-      <program name="Messages">
-        <arg flag="-c" constant="telemetry"/>
-        <arg flag="-c" constant="datalink"/>
-        <arg flag="-c" constant="ground"/>
-        <arg flag="-c" constant="alert"/>
-        <arg flag="-c" constant="intermcu"/>
-      </program>
+      <program name="Messages"/>
       <program name="Simulator">
         <arg flag="-a" constant="Disco_soaring"/>
         <arg flag="-t" constant="sim"/>

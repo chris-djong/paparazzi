@@ -446,7 +446,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	if(DL_GROUND_GPS_ac_id(buf) != AC_ID)
 		return;
 
-	// Automaitcally move waypoint in case AUTO2 is engaged
+	// Automatically move waypoint in case AUTO2 is engaged
 	if ((autopilot.mode == 2) && (follow_me_autopilot_mode != 2)){
 		follow_me_soar_here();
 	}
@@ -698,12 +698,12 @@ int follow_me_call(void){
 	follow_me_pitch_loop();
 	follow_me_roll_loop();
 	follow_me_throttle_loop();
+
+	struct FloatVect3* windspeed_f = stateGetWindspeed_f();
+    printf("Windspeed vector is given by: %f %f %f\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);
 	struct FloatVect3 wind = compute_wind_field();
    // init ivy and register callback for WORLD_ENV_REQ and NPS_SPEED_POS
-    IvySendMsg("%s WORLD_ENV %f %f %f 400 1 1", "0", wind.x, -wind.y, wind.z);
-
-	// struct FloatVect3* windspeed_f = stateGetWindspeed_f();
-    // printf("Windspeed vector is given by: %f %f %f\n", windspeed_f->x, windspeed_f->y, windspeed_f->z);
+    IvySendMsg("%s WORLD_ENV_DESIRED %f %f %f 400 1 1", "0", 100, 100, 100);
 
 	// Move to the correct location
 	follow_me_go();
