@@ -8,7 +8,7 @@
   <firmware name="fixedwing">  
    <!-- Define default radius for oval eight and stdby -->
    <module name="follow_me"/> 
-   <module name="rl_soaring"/>
+   <module name="rl_soaring"/> 
    
     <!-- ************************************************
                AUTOPILOT TARGET 
