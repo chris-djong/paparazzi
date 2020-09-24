@@ -55,14 +55,14 @@ int16_t follow_me_distance_2 = 20 + 30; //  this is where the uav will fly to us
 int8_t lateral_offset = 0; // Amount in meters which the waypoint should be moved to the right with respect to the course itself
 int16_t stdby_distance = 110; // based on stbdy radius (80) + 30
 int16_t follow_me_height = 30; // desired height above ground station
-float follow_me_altitude;  // desired altitude in case the ground statin can not be reached for example
+float follow_me_altitude;  // desired altitude in case the ground station can not be reached for example
 uint16_t follow_me_region = 200;  // rectangular size of the follow me region. in case we leave this region we go to stbdy
 float follow_me_heading = 0;  // the heading that the boat is driving too / used to create the waypoints or calculate the position with respect to the boat
 int32_t x_follow;
 int32_t y_follow;
 int32_t x_follow2;
 int32_t y_follow2;
-uint8_t follow_me_autopilot_mode = 0;  // this boolean is used in order to detect AUTO1 AUTO2 changes. A change in auto2 can result for example in a follow_me_soar_here execution
+uint8_t follow_me_autopilot_mode = 0;  // this boolean is used in order to detect AUTO1 AUTO2 changes. A change to auto2 can result for example in a follow_me_soar_here execution
 
 // Roll loop
 float roll_enable = 0; // when this x distance is exceeded the roll PID is enabled
@@ -367,7 +367,7 @@ void follow_me_soar_here(void){
 		// Obtain the current position to calculate waypoint positions
 		struct UtmCoor_f *pos_Utm = stateGetPositionUtm_f();
 
-		// Set the follow_me_heading to the current heading of the UAV
+		// Set the follow_me_heading to the current heading of the UAV in case the GROUND GPS is not moving or moving barely
 		if (stationary_ground){
 		    follow_me_heading = stateGetNedToBodyEulers_f()->psi*180/M_PI;
 		}
@@ -408,6 +408,7 @@ void follow_me_init(void){
 void follow_me_startup(void){
     follow_me_call();
 
+    // Is this needed?
     if (!roll_button_disable){
 		if ((dist_wp_follow.x > roll_enable) || (dist_wp_follow.x < -roll_enable)){
 			follow_me_roll = 1;
@@ -424,8 +425,9 @@ void follow_me_set_heading(void){
     counter_heading++;
     if (counter_heading == heading_calc_counter){
     	counter_heading = 0;
-    	float diff_y;
     	float diff_x;
+    	float diff_y;
+    	// This is probably used in order to skip the first loop as ground_utm_old is set to 0 initially
     	if (ground_utm_old.north != 0 && ground_utm_old.east != 0){
             diff_y = ground_utm_new.north - ground_utm_old.north;
 			diff_x = ground_utm_new.east - ground_utm_old.east;
@@ -448,6 +450,7 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 		return;
 
 	// Automatically move waypoint in case AUTO2 is engaged
+	// It is assumed that the GROUND_GPS message is send constantly otherwise verifying this here will cause delays
 	if ((autopilot.mode == 2) && (follow_me_autopilot_mode != 2)){
 		follow_me_soar_here();
 	}
@@ -521,22 +524,26 @@ void follow_me_pitch_loop(void){
 		follow_me_pitch = 0;
 	}
 
-	pitch_sum_err += dist_wp_follow.y;
-	BoundAbs(pitch_sum_err, 20);
+	// Only perform the pitch setpoint calculations in case we have the loop activated
+	if (follow_me_pitch){
+		pitch_sum_err += dist_wp_follow.y;
+		BoundAbs(pitch_sum_err, 20);
 
-	v_ctl_pitch_setpoint_follow_me = +pitch_pgain*dist_wp_follow.y + pitch_igain*pitch_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*pitch_dgain;
+		v_ctl_pitch_setpoint_follow_me = +pitch_pgain*dist_wp_follow.y + pitch_igain*pitch_sum_err + (dist_wp_follow.y-dist_wp_follow_old.y)*pitch_dgain;
 
-	// Bound pitch by limits
-	if (v_ctl_pitch_setpoint_follow_me > pitch_limit){
-		v_ctl_pitch_setpoint_follow_me = pitch_limit;
-	}
-	else if (v_ctl_pitch_setpoint_follow_me < -pitch_limit){
-		v_ctl_pitch_setpoint_follow_me = -pitch_limit;
+		// Bound pitch by limits
+		if (v_ctl_pitch_setpoint_follow_me > pitch_limit){
+			v_ctl_pitch_setpoint_follow_me = pitch_limit;
+		}
+		else if (v_ctl_pitch_setpoint_follow_me < -pitch_limit){
+			v_ctl_pitch_setpoint_follow_me = -pitch_limit;
+		}
+	} else {
+	    v_ctl_pitch_setpoint_follow_me = 0;
 	}
 }
 
 // Roll angle controller
-// void follow_me_roll_loop(void);
 // void follow_me_roll_loop(void);
 void follow_me_roll_loop(void){
 	// Roll rate controller
@@ -562,21 +569,27 @@ void follow_me_roll_loop(void){
 	// BoundAbs(roll_sum_err, 20);
 	// h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
 
-	// The -roll disable is used in order to excert a slightly inverted roll command once we reach the target
-	// The stops the UAV at the exact right point
-	// ToDo this probably gives an error as we move from one conditions to the next and change the loop
-	if (dist_wp_follow.x > 0){
-	    h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
+	// In case the controller is activated we calculate the required angles otherwise save some processing time and set it to 0 straightaway
+	if (follow_me_roll){
+		// The -roll disable is used in order to excert a slightly inverted roll command once we reach the target
+		// The stops the UAV at the exact right point
+		// ToDo this probably gives an error as we move from one conditions to the next and change the loop
+		if (dist_wp_follow.x > 0){
+			h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
+		}
+		else {
+			h_ctl_roll_setpoint_follow_me = -roll_pgain*log(-(dist_wp_follow.x + roll_disable));
+		}
+		// Bound roll diff by limits
+		if (h_ctl_roll_setpoint_follow_me > roll_limit){
+			h_ctl_roll_setpoint_follow_me = roll_limit;
+		}
+		else if (h_ctl_roll_setpoint_follow_me < -roll_limit){
+			h_ctl_roll_setpoint_follow_me = -roll_limit;
+		}
+	} else {
+	    h_ctl_roll_setpoint_follow_me = 0;
 	}
-	else {
-	    h_ctl_roll_setpoint_follow_me = -roll_pgain*log(-(dist_wp_follow.x + roll_disable));
-	}
-	// Bound roll diff by limits
-	if (h_ctl_roll_setpoint_follow_me > roll_limit){
-		h_ctl_roll_setpoint_follow_me = roll_limit;
-	}
-	else if (h_ctl_roll_setpoint_follow_me < -roll_limit){
-		h_ctl_roll_setpoint_follow_me = -roll_limit;
 	}
 }
 
