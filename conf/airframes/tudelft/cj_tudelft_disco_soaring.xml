@@ -39,7 +39,6 @@
           <configure name="MODEM_BAUD" value="B57600"/>
       </module> -->
             
-      <!-- Option 1 EKF2 -->
       <module name="ins" type="alt_float"/> 
       
       <define name="DISCO_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_1000"/>
@@ -81,22 +80,22 @@
     
     <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
     
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
+    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
     <!-- If AHRS_MAG_CORRECT_FREQUENCY is set outside of target no need USE_MAGNETOMETER it is assumed TRUE -->
-    <configure name="USE_MAGNETOMETER" value="TRUE"/> <!-- Make sure is callibrated if set to TRUE -->    
+    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!-- Make sure is callibrated if set to TRUE -->    
     <!--  Vehicle -->
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm">
         <!-- Use Magnetometer for heading -->
-        <configure name="USE_MAGNETOMETER" value="TRUE"/>
-        <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/>
+        <configure name="USE_MAGNETOMETER" value="FALSE"/>
+        <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/>
         
         <!-- Enable GPS Heading  -->
         <configure name="AHRS_USE_GPS_HEADING" value="TRUE"/>
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="2.0" unit="m/s"/>
     </module>
-    <module name="actuators" type="disco"/>
     
+    <module name="actuators" type="disco"/>
     
     <!-- Navigation -->    
     <define name="DEBUG_GPS_UBX_UCENTER" value="TRUE"/>
@@ -118,8 +117,8 @@
     <!--  Trim can be added here by changing the neutral value -->
     <!--  Absolute travel limits can also be changed with the min/max values -->
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1880" neutral="1550" max="880"/> <!-- min is downward deflection-->
-    <servo name="AILEVON_LEFT" no="1" min="980" neutral="1400" max="1980"/>  <!-- max is upward deflection-->
+    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1450" max="900"/> <!-- higher is downward deflection-->
+    <servo name="AILEVON_LEFT" no="1" min="900" neutral="1350" max="1900"/>  <!-- higher is upward deflection-->
   </servos>
 
   <!-- ************************************************
@@ -174,15 +173,17 @@
     ************************************************  -->
   <section name="IMU" prefix="IMU_">
     
-    <!-- Calibration for PH-4HM performed on 22 of June 2020  -->                                          
-    <!-- for Disco PH-4HM labelled Chris -->                                            
-    <define name="ACCEL_X_NEUTRAL" value="-77"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-10"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-98"/>
-    <define name="ACCEL_X_SENS" value="4.878191439730589" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.865442056866066" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.827849982429958" integer="16"/>
-    <!-- end 22 June -->
+    <!-- Calibration for PH-4HM performed on 23 of September 2020  -->                                          
+    <!-- for Disco PH-4HM labelled Chris -->     
+    
+    <define name="ACCEL_X_NEUTRAL" value="-81"/>
+	<define name="ACCEL_Y_NEUTRAL" value="-11"/>
+	<define name="ACCEL_Z_NEUTRAL" value="-126"/>
+	<define name="ACCEL_X_SENS" value="4.873218674047738" integer="16"/>
+	<define name="ACCEL_Y_SENS" value="4.862792105510447" integer="16"/>
+	<define name="ACCEL_Z_SENS" value="4.825418727588493" integer="16"/>
+
+    <!-- end 23 September -->
 	
 	<define name="MAG_X_NEUTRAL" value="-243"/>
 	<define name="MAG_Y_NEUTRAL" value="28"/>
