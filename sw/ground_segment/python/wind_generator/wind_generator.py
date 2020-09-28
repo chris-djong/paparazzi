@@ -13,7 +13,7 @@ w_north_desired = 0
 w_up_desired = 0
 
 def get_wind():
-    return 20, 20, 20
+    return 7.5, 7.5, 7.5
 
 
 def ivy_request_callback(sender, msg, resp, *args, **kwargs):
@@ -27,7 +27,6 @@ def ivy_request_callback(sender, msg, resp, *args, **kwargs):
         return None
 
 
-#def worldenv_cb(m, r):
 def worldenv_cb(ac_id, _, msg):
     """
         Callback for paparazzi WORLD_ENV requests
@@ -44,7 +43,7 @@ def worldenv_cb(ac_id, _, msg):
     msg_back.set_value_by_name("wind_east", weast)
     msg_back.set_value_by_name("wind_north", wnorth)
     msg_back.set_value_by_name("wind_up", wup)
-    msg_back.set_value_by_name("ir_contrast", 400)
+    msg_back.set_value_by_name("ir_contrast", 266)
     msg_back.set_value_by_name("time_scale", 1)
     msg_back.set_value_by_name("gps_availability", 1)
     ivy_interface.send(msg_back, None)
