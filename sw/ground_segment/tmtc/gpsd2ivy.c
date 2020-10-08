@@ -67,7 +67,7 @@
 #define MSG_NAME    "FLIGHT_PARAM"
 #define MSG_ID		"GCS"
 
-#define TIMEOUT_PERIOD 10
+#define TIMEOUT_PERIOD 1
 
 #if GPSD_API_MAJOR_VERSION <= 6
 #define TIME_T double

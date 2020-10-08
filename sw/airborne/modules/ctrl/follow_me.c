@@ -469,10 +469,10 @@ void follow_me_parse_ground_gps(uint8_t *buf){
 	// fix_mode = DL_GROUND_GPS_mode(buf);
 
 	// Only set the new location if the new timestamp is later (otherwise probably due to package loss in between)
-	if (ground_timestamp > old_ground_timestamp){
+//	if (ground_timestamp > old_ground_timestamp){
 		follow_me_compute_wp();
 		ground_set = true;
-	}
+
 
 	// Set heading here so that it can be calculated already during stdby or Manual execution
     // Verify whether this can move to the ground_timestamp if condition above
@@ -711,10 +711,11 @@ int follow_me_call(void){
 	follow_me_pitch_loop();
 	follow_me_roll_loop();
 	follow_me_throttle_loop();
+
 	// struct FloatVect3 wind = compute_wind_field();
-	// struct FloatVect3* windspeed_f = stateGetWindspeed_f();
+	// struct FloatVect3* windspeed_f = stateGetWindsfpeed_f();
 	// init ivy and register callback for WORLD_ENV_REQ and NPS_SPEED_POS
-        // IvySendMsg("%s WORLD_ENV_DESIRED %f %f %f 400 1 1", "0", 100, 100, 100);
+    // IvySendMsg("%s WORLD_ENV_DESIRED %f %f %f 400 1 1", "0", 100, 100, 100);
 
 	// Move to the correct location
 	follow_me_go();
