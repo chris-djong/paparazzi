@@ -19,8 +19,9 @@
  */
 /**
  * @file "modules/rl_soaring/rl_soaring.c"
- * @author GJ van Dam
- * Obstacle avoidance method using RL and the aerodynamic interaction between obstacle and quadrotor
+ * @author Chris de Jong
+ * Autonomously soaring algorithm that changes position using Reinforcement Learning
+ * in order to detect the best manoeuvres
  */
 // Include header file
 #ifndef rl_soaring_H
@@ -96,11 +97,11 @@ float desired_accuracy = 3; // the uav has reached its state in case all directi
 #define action_size_height 1
 
 
-uint8_t state_accuracy = 7; // accuracy at which states are seperated between each other
+uint8_t state_accuracy = 7; // accuracy at which states are seperated between each other (in other words distance between states)
 
 uint8_t simulating_counter = 0;
 
-// Create variables for reference of flying window
+// Create variables for reference of flying window (what is the position we started at?)
 float lateral_offset_reference;
 float follow_me_distance_reference;
 float follow_me_height_reference;
@@ -525,14 +526,11 @@ int rl_soaring_call(void) {
 
 	// If we have reached our target the episode ends
 	average_distance = AverageDistance(dist_wp_follow);
-	simulating_counter++;
-	// if ((fabs(average_distance.x) < desired_accuracy) && (fabs(average_distance.y) < desired_accuracy)){
-	if (simulating_counter == 50){
+	if ((fabs(average_distance.x) < desired_accuracy) && (fabs(average_distance.y) < desired_accuracy)){
 	    rl_episode_target_reached = 1;
 	    average_distance.x = 10;
 	    average_distance.y = 10;
 	    average_distance.z = 10;
-	    simulating_counter = 0;
 	}
 
 	// Check whether the episode has ended

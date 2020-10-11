@@ -320,7 +320,7 @@
     <!-- Energy Control Algorithm -->
     <define name="AUTO_AIRSPEED_SETPOINT" value="14.0"/>
     <!-- <define name="AUTO_THROTTLE_NOMINAL_CRUISE_PITCH" value="0.15"/> -->
-    <define name="ALTITUDE_PGAIN" value="0.07"/>
+    <define name="ALTITUDE_PGAIN" value="0.08"/>
     <define name="AIRSPEED_PGAIN" value="0"/>  <!--  changed during last flight, was 0.19 -->
     <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0"/> <!-- set to 0 in order to be able to soar without throttle - was 0.5 before last flight-->
     <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.5"/>
@@ -337,9 +337,9 @@
     <define name="ENERGY_DIFF_PGAIN" value="0.07"/>
     <define name="ENERGY_DIFF_IGAIN" value="0.02"/>
 
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.39" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.0" unit="%/(m/s)"/>
     
-    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.12"/>
+    <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.05"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.004"/> 
     
   </section>

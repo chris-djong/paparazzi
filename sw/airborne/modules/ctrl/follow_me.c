@@ -69,8 +69,11 @@ float roll_enable = 0; // when this x distance is exceeded the roll PID is enabl
 float roll_disable = 0; // when the x distance is lower the roll PID is disabled again
 uint8_t roll_button_disable = 1;  // In order to disable roll controler using buttons
 float roll_limit = 0.2; // maximum and minimum allowable roll angle
-float roll_pgain = 0.015;
+float roll_pgain = 0.0;
+float roll_igain = 0.0;
+float roll_dgain = 0.0;
 uint8_t follow_me_roll = 0; // boolean variable used to overwrite h_ctl_roll_setpoint in stab_adaptive and stab_attitude
+float roll_sum_err = 0;
 
 // Pitch loop
 float pitch_enable = 0; // when this y distance is exceeded the pitch PID is enabled
@@ -561,13 +564,12 @@ void follow_me_roll_loop(void){
 	}
 
 	// This condition is required in case the relative wind is slower than the stall speed of the UAV
-	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance)) || fabs(dist_wp_follow.x > 5*roll_enable)){
+	if ((fabs(dist_wp_follow.y) > 3*fabs(follow_me_distance))){
 		follow_me_roll = 0;
 	}
 
-	// roll_sum_err += dist_wp_follow.x;
-	// BoundAbs(roll_sum_err, 20);
-	// h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
+	roll_sum_err += dist_wp_follow.x;
+	BoundAbs(roll_sum_err, 20);
 
 	// In case the controller is activated we calculate the required angles otherwise save some processing time and set it to 0 straightaway
 	if (follow_me_roll){
@@ -575,10 +577,14 @@ void follow_me_roll_loop(void){
 		// The stops the UAV at the exact right point
 		// ToDo this probably gives an error as we move from one conditions to the next and change the loop
 		if (dist_wp_follow.x > 0){
-			h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
+			// h_ctl_roll_setpoint_follow_me = roll_pgain*log(dist_wp_follow.x - roll_disable);
+			h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
+
 		}
 		else {
-			h_ctl_roll_setpoint_follow_me = -roll_pgain*log(-(dist_wp_follow.x + roll_disable));
+			// h_ctl_roll_setpoint_follow_me = -roll_pgain*log(-(dist_wp_follow.x + roll_disable));
+			h_ctl_roll_setpoint_follow_me = +roll_pgain*dist_wp_follow.x + roll_igain*roll_sum_err + (dist_wp_follow.x-dist_wp_follow_old.x)*roll_dgain;
+
 		}
 		// Bound roll diff by limits
 		if (h_ctl_roll_setpoint_follow_me > roll_limit){
