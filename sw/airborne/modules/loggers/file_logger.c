@@ -173,15 +173,6 @@ void file_logger_periodic(void)
 #ifdef SIM
   fprintf(file_logger, "%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d\n",
           counter, // int 1
-		  // imu.gyro.p, // int 2
-		  // imu.gyro.q, // int3
-		  // imu.gyro.r, // int 4
-		  // imu.accel.x, // int 5
-		  // imu.accel.y, // int 6
-		  // imu.accel.z, // int 7
-		  // imu.mag.x, // int 8
-		  // imu.mag.y, // int 9
-	      // imu.mag.z, // int 10
 #else
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d\n",
 	      counter, // int 1
