@@ -66,6 +66,10 @@
       <define name="AIRSPEED_ADC_BIAS" value="1"/>
       <module name="airspeed" type="adc"/>
       <module name="ins" type="alt_float"/>
+      
+      <module name="logger_file">
+        <define name="FILE_LOGGER_PATH" value="/home/chris/Documents/neverlandingdrone/chris_data/file_logger/sim"/>
+      </module> 
     </target>
         
     <!-- ************************************************

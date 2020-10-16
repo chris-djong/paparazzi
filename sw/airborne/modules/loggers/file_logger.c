@@ -110,7 +110,7 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw,stationary_ground\n"
+      "counter,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw,stationary_ground,throttle\n"
 #endif
     );
   }
@@ -145,6 +145,7 @@ void file_logger_periodic(void)
   int16_t radio_yaw = imcu_get_radio(RADIO_YAW);                          \
   int16_t radio_pitch = imcu_get_radio(RADIO_PITCH);                      \
   int16_t radio_roll =  imcu_get_radio(RADIO_ROLL);
+  int16_t radio_throttle = imcu_get_radio(RADIO_THROTTLE);
 
 
 #ifdef COMMAND_THRUST //For example rotorcraft
@@ -168,18 +169,20 @@ void file_logger_periodic(void)
           quat->qy,
           quat->qz
          );
-#else  // For fixedwing
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d\n",
+#else  // For fixedwing    IMU stuff:
+                           // add after first d:  ,%d,%d,%d,%d,%d,%d,%d,%d,%d
+  fprintf(file_logger, "%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d\n",
           counter, // int 1
-		  imu.gyro.p, // int 2
-		  imu.gyro.q, // int3
-		  imu.gyro.r, // int 4
-		  imu.accel.x, // int 5
-		  imu.accel.y, // int 6
-		  imu.accel.z, // int 7
-		  imu.mag.x, // int 8
-		  imu.mag.y, // int 9
-	      imu.mag.z, // int 10
+		  // imu.gyro.p, // int 2
+		  // imu.gyro.q, // int3
+		  // imu.gyro.r, // int 4
+		  // imu.accel.x, // int 5
+		  // imu.accel.y, // int 6
+		  // imu.accel.z, // int 7
+		  // imu.mag.x, // int 8
+		  // imu.mag.y, // int 9
+	      // imu.mag.z, // int 10
+
 		  h_ctl_aileron_setpoint, // int 11
 		  h_ctl_elevator_setpoint, // int 12
 		  ground_utm.east, // float 13
@@ -212,7 +215,9 @@ void file_logger_periodic(void)
 		  radio_pitch, // int16 40
 		  radio_roll, // int16 41
 		  radio_yaw, // int16 42
-		  stationary_ground //uint8_t 43
+		  radio_throttle,
+		  stationary_ground, //uint8_t 43
+		  autopilot.throttle // 44
          );
 #endif
   counter++;
