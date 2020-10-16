@@ -50,23 +50,6 @@ def worldenv_cb(ac_id, _, msg):
 
     print("Executing world_env_req cb..")
 
-"""
-def worlddesired_cb(ac_id, msg):
-    east, north, up = float(msg.get_field(3)),\
-        float(msg.get_field(4)),\
-        float(msg.get_field(5))
-    up *= -1
-
-    # And assign to global variables
-    global w_east_desired
-    w_east_desired = east
-    global w_north_desired
-    w_north_desired= north
-    global w_up_desired
-    w_up_desired = up
-
-    print("Executing world desired cb..")
-"""
 def signal_handler(signal, frame):
     print('\nShutting down IVY...')
     ivy_interface.shutdown()
