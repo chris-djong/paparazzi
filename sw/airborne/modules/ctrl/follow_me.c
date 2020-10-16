@@ -25,12 +25,12 @@
  *
 */ 
 
+
 #include <stdio.h>
 
 #include "follow_me.h"
 #include "state.h"
 #include "autopilot.h"
-
 
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
@@ -40,7 +40,6 @@
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"  // for h_ctl_roll_setpoint_follow_me
 #include "generated/flight_plan.h" // for waypoint reference pointers
-// #include <Ivy/ivy.h> // for go to block
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/fixedwing/guidance/energy_ctrl.h"
 
@@ -79,8 +78,7 @@ float roll_sum_err = 0;
 float pitch_enable = 0; // when this y distance is exceeded the pitch PID is enabled
 float pitch_disable = 0; // when the y distance is lower the pitch PID is disabled again
 uint8_t follow_me_pitch = 0; // boolean variable used to overwrite v_ctl_pitch_setpoint in guidance_v.c
-uint8_t pitch_button_disable = 0;  // in order to disable pitch controller using button - keep on immediately as gains are tuned
-float pitch_pgain = -0.035;
+float pitch_pgain = -0.02;
 float pitch_dgain = 0;
 float pitch_igain = 0;
 float pitch_sum_err = 0;
@@ -118,6 +116,8 @@ static struct LlaCoor_i ground_lla; // lla coordinates received by the GPS messa
 static uint32_t ground_timestamp; // only execut set wp function if we received a newer timestamp
 static uint32_t old_ground_timestamp;  // to compare it to the new timestamp
 struct UtmCoor_f ground_utm;  // global because required for file logger and called by soar_here
+
+
 
 /*********************************
   Average speed calculator
@@ -184,7 +184,6 @@ float AverageHeading(float diffx, float diffy)
 		return heading;
     }
 }
-
 
 
 /***********************************************************************************************************************
@@ -494,31 +493,15 @@ void follow_me_disable_roll(void){
 	follow_me_roll = 0;
 }
 
-// Function to enable pitch controller using buttons
-void follow_me_enable_pitch(void){
-	pitch_button_disable = 0;
-}
-
-// Function to disable pitch controller using button
-void follow_me_disable_pitch(void){
-	pitch_button_disable = 1;
-	follow_me_pitch = 0;
-}
-
 // Pitch angle controller
 // void follow_me_pitch_loop(void);
 // NOTE: The pitch has been completely disabled until roll and airspeed loop have been tested
 //void follow_me_pitch_loop(void);
 void follow_me_pitch_loop(void){
 	// Pitch rate controller
-	// If we have the pitch loop disabled via the button set the pitch to 0
-	if (!pitch_button_disable){
-		if (fabs(dist_wp_follow.y) > pitch_enable){
-			follow_me_pitch = 1;
-		} else if (fabs(dist_wp_follow.y) < pitch_disable){
-			follow_me_pitch = 0;
-		}
-	} else {
+	if (fabs(dist_wp_follow.y) > pitch_enable){
+		follow_me_pitch = 1;
+	} else if (fabs(dist_wp_follow.y) < pitch_disable){
 		follow_me_pitch = 0;
 	}
 
@@ -735,6 +718,5 @@ void follow_me_stop(void){
 	follow_me_roll = 0;
 	h_ctl_roll_setpoint_follow_me = 0;
 	roll_button_disable = 1;
-	pitch_button_disable = 1;
 }
 

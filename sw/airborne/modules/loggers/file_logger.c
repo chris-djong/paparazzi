@@ -56,6 +56,30 @@
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
+// Add wind vector for plotting of gaia wind prection
+#ifdef SIM
+#include <Ivy/ivy.h> // for ivy message interface
+/** The file pointer */
+static FILE *file_logger = NULL;
+
+// Obtain bindings for file logger
+/* Gaia Ivy functions */
+static void on_WORLD_ENV(IvyClientPtr app __attribute__((unused)),
+                         void *user_data __attribute__((unused)),
+                         int argc __attribute__((unused)), char *argv[]);
+
+// wind speed in m/s
+struct FloatVect3 wind_speed;
+static void on_WORLD_ENV(IvyClientPtr app __attribute__((unused)),
+                         void *user_data __attribute__((unused)),
+                         int argc __attribute__((unused)), char *argv[])
+{
+  wind_speed.x = atof(argv[1]); //east
+  wind_speed.y = atof(argv[2]); //north
+  wind_speed.z = atof(argv[3]); //up
+
+}
+#endif
 
 
 /** Set the default File logger path to the USB drive */
@@ -63,14 +87,16 @@
 #define FILE_LOGGER_PATH /data/video/usb
 #endif
 
-/** The file pointer */
-static FILE *file_logger = NULL;
 
 
 /** Logging functions */
 /** Start the file logger and open a new file */
 void file_logger_start(void)
 {
+// Bind to WORLD_ENV message in SIM
+#ifdef SIM
+  IvyBindMsg(on_WORLD_ENV, NULL, "^(\\S*) WORLD_ENV (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
+#endif
   // Create output folder if necessary
   if (access(STRINGIFY(FILE_LOGGER_PATH), F_OK)) {
     char save_dir_cmd[256];
@@ -110,7 +136,11 @@ void file_logger_start(void)
 #ifdef COMMAND_THRUST
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
 #else
-      "counter,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw,stationary_ground,throttle\n"
+#ifdef SIM
+      "counter,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw,radio_throttle,stationary_ground,throttle,wind_sim_speed_x,wind_sim_speed_y,wind_sim_speed_z\n"
+#else
+      "counter,gyro_p,gyro_q,gyro_r,accel_x,accel_y,accel_z,mag_x,mag_y,mag_z,h_ctl_aileron_setpoint,h_ctl_elevator_setpoint,ground_utm.east,ground_utm.north,ground_utm.alt,dist_wp_follow.x,dist_wp_follow.y,dist_wp_follow.z,pos_Utm->east,pos_Utm->north,pos_Utm->alt,wind->x,wind->y,wind->z,airspeed,GPS state aircraft,v_ctl_auto_airspeed_setpoint,ap_mode,follow_me_height,follow_me_altitude,follow_me_heading,dist_wp_follow2.x,dist_wp_follow2.y,dist_wp_follow2.z,follow_me_roll,h_ctl_roll_setpoint_follow_me,roll,yaw,theta,radio_pitch,radio_roll,radio_yaw,radio_throttle,stationary_ground,throttle\n"
+#endif
 #endif
     );
   }
@@ -146,6 +176,7 @@ void file_logger_periodic(void)
   int16_t radio_pitch = imcu_get_radio(RADIO_PITCH);                      \
   int16_t radio_roll =  imcu_get_radio(RADIO_ROLL);
   int16_t radio_throttle = imcu_get_radio(RADIO_THROTTLE);
+  float throttle = 100 * autopilot.throttle / MAX_PPRZ;
 
 
 #ifdef COMMAND_THRUST //For example rotorcraft
@@ -171,10 +202,10 @@ void file_logger_periodic(void)
          );
 #else  // For fixedwing
 #ifdef SIM
-  fprintf(file_logger, "%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%f\n",
           counter, // int 1
 #else
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%d,%d,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f\n",
 	      counter, // int 1
 		  imu.gyro.p, // int 2
 		  imu.gyro.q, // int3
@@ -220,7 +251,10 @@ void file_logger_periodic(void)
 		  radio_yaw, // int16 42
 		  radio_throttle,
 		  stationary_ground, //uint8_t 43
-		  autopilot.throttle // 44
+		  throttle // 44
+#ifdef SIM
+		  , wind_speed.x, wind_speed.y, wind_speed.z
+#endif
          );
 #endif
   counter++;

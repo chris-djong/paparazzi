@@ -131,22 +131,7 @@
       <deroute block="follow_me"/>   
     </block>
     
-    <!--  Enable pitch pid module  -->
-    <!-- Block 13 -->
-    <block name="follow_me_pitch_enable" strip_button="Enable Pitch" group="followme">
-      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
-      <call_once fun="follow_me_enable_pitch()"/>
-      <deroute block="follow_me"/>   
-    </block>
-    
-    <!--  Enable roll pid module  -->
-    <!-- Block 14 -->
-    <block name="follow_me_pitch_disable" strip_button="Disable Pitch" group="followme">
-      <!-- Exception not needed here because in follow me block already <exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/> -->
-      <call_once fun="follow_me_disable_pitch()"/>
-      <deroute block="follow_me"/>   
-    </block>
-    
+    <!--  Enable pitch pid module  -->    
     <!-- Block 13 -->    
     <!-- <block name="reinforce_learning" strip_button="Reinforcement Learning" group="rlsoaring">
       <!--exception cond="!InsideFlyingRegion(GetPosX(), GetPosY())" deroute="Standby"/
