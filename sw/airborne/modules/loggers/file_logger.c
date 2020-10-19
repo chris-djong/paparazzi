@@ -59,8 +59,7 @@
 // Add wind vector for plotting of gaia wind prection
 #ifdef SIM
 #include <Ivy/ivy.h> // for ivy message interface
-/** The file pointer */
-static FILE *file_logger = NULL;
+;
 
 // Obtain bindings for file logger
 /* Gaia Ivy functions */
@@ -81,6 +80,8 @@ static void on_WORLD_ENV(IvyClientPtr app __attribute__((unused)),
 }
 #endif
 
+/** The file pointer */
+static FILE *file_logger = NULL;
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
