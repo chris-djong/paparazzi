@@ -85,7 +85,7 @@
         <arg flag="--simulate"/>
       </program>
      <program name="Environment Simulator">
-        <arg flag="-w" constant="3"/> <!-- Wind speed -->
+        <arg flag="-w" constant="4"/> <!-- Wind speed -->
         <arg flag="-d" constant="0"/> <!-- Wind direction -->
       </program>
       <program name="Real-time Plotter">

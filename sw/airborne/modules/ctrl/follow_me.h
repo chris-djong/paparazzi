@@ -53,6 +53,8 @@ extern float roll_enable; // when this x distance is exceeded the roll PID is en
 extern float roll_disable; // when the x distance is lower the roll PID is disabled again
 extern float roll_limit; // maximum and minimum allowable change in desired_roll_angle compared to the desired value by the controller -> 0.2 is around 10 degree
 extern float roll_pgain;
+extern float roll_igain;
+extern float roll_dgain;
 
 extern float v_ctl_pitch_setpoint_follow_me;
 extern float pitch_enable; // when this y distance is exceeded the pitch PID is enabled
